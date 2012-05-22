@@ -209,6 +209,12 @@ top-tabs .badge:empty
   width: 23px; 
 }
 
+.webgl_panel
+{
+  background-image: url("../ui-images/mode_webgl.png");
+  width: 26px;
+}
+
 .storage {
   background-image: url("../ui-images/mode_storage.png");
   width: 24px;

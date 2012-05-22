@@ -333,6 +333,11 @@ window.cls.Client = function()
     new CompositeView('console_panel',
                       ui_strings.M_VIEW_LABEL_COMMAND_LINE,
                       layouts.console_rough_layout);
+    new CompositeView('webgl_panel',
+                      "WebGL", // TODO
+                      layouts.webgl_rough_layout,
+                      'webgl',
+                      services);
 
   };
 
@@ -612,6 +617,19 @@ ui_framework.layouts.utils_rough_layout =
   ]
 };
 
+ui_framework.layouts.webgl_rough_layout =
+{
+  dir: 'h',
+  width: 1000,
+  height: 1000,
+  children: [
+    {
+      height: 1000,
+      tabs: [ 'webgl_logger']
+    }
+  ]
+}
+
 ui_framework.layouts.storage_rough_layout =
 {
     dir: 'v',
@@ -656,6 +674,7 @@ ui_framework.layouts.main_layout =
       {view: 'js_mode', tab_class: JavaScriptTab},
       'network_mode',
       'resource_panel',
+      'webgl_panel',
       'storage',
       {view: 'console_mode', tab_class: ErrorConsoleTab},
       'utils',

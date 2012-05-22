@@ -232,6 +232,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                         "widget_preferences");
     new cls.StorageViewActions("widget_preferences");
 
+    /* WebGL inspection */
+    new cls.WebGLLogView("webgl_logger",
+                         "WebGL Calls Log", // TODO
+                         "scroll webgl_view logger")
+
     /* the following views must be created to get entry in the Settings tab */
 
     /* Environment */
