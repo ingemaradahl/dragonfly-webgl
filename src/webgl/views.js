@@ -6,7 +6,7 @@ window.cls = window.cls || {};
  * @constructor
  * @extends ViewBase
  */
-cls.WebGLLogView = function(id, name, container_class)
+cls.WebGLTraceView = function(id, name, container_class)
 {
   
   this.createView = function(container)
@@ -28,5 +28,5 @@ cls.WebGLLogView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLLogView.prototype = ViewBase;
+cls.WebGLTraceView.prototype = ViewBase;
 
