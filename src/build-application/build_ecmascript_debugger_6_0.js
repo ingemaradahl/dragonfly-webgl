@@ -235,7 +235,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* WebGL inspection */
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
-                           "scroll webgl_view tracer")
+                           "scroll webgl_view tracer");
+
+    new cls.WebGLStateView("webgl_state",
+                           "State", // TODO
+                           "scroll webgl_view state");
 
     /* the following views must be created to get entry in the Settings tab */
 
