@@ -240,6 +240,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLStateView("webgl_state",
                            "State", // TODO
                            "scroll webgl_view state");
+    cls.WebGLStateView.create_ui_widgets();
 
     /* the following views must be created to get entry in the Settings tab */
 

@@ -89,8 +89,23 @@ cls.WebGLState = function()
   this.get_state = function()
   {
     // Send webgl query to all runtimes
+    // TODO: This will result in one call to _finalize_webgl_query for each
+    // context, which will overwrite the current gl-
     var _runtimes = runtimes.getRuntimeIdsFromWindow(runtimes.getActiveWindowId());
     _runtimes.forEach(this._send_webgl_query.bind(this));
+  };
+
+  this.tabledef = {
+    column_order: ["variable", "value"],
+    columns: {
+      variable: {
+        label: "State Variable" // TODO
+      },
+      value: {
+        label: "Value",
+        sorter: "unsortable"
+      }
+    }
   };
 
 };
