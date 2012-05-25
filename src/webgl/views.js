@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 window.cls || (window.cls || {});
 cls.WebGL || (cls.WebGL = {});
@@ -36,14 +36,17 @@ cls.WebGLStateView = function(id, name, container_class)
 {
   this._state = null;
   this._sortable_table;
+  this._container = null;
 
   this.createView = function(container)
   {
+    this._container = container;
     this._state = new cls.WebGLState();
     this._table = this._table || 
                            new SortableTable(this._state.tabledef, null, null, null, null, false, "state-table");
-    this._table.set_data([{"variable" : "GL_VAR", "value": "GL_VALUE"}]);
-    container.clearAndRender(this._table.render());
+
+
+    messages.addListener('webgl-new-state', this._on_new_state.bind(this));
 
     // TODO temporary
     this._state.get_state();
@@ -55,6 +58,19 @@ cls.WebGLStateView = function(id, name, container_class)
 
   this.ondestroy = function() 
   {
+
+  };
+
+  this._on_new_state = function(obj_id)
+  {
+    var tbl_data = [];
+    var state = this._state.state[obj_id];
+    for (var pname in state)
+    {
+      tbl_data.push({"variable" : pname, "value" : state[pname]});
+    }
+    this._table.set_data(tbl_data);
+    this._container.clearAndRender(this._table.render());
 
   };
 

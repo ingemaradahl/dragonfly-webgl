@@ -198,6 +198,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <link rel="stylesheet" href="./storage/storage_style.css"/>
 <link rel="stylesheet" href="./screenshot/style.css"/>
 <link rel="stylesheet" href="./ui-scripts/tooltip/tooltip.css"/>
+<link rel="stylesheet" href="./webgl/style.css"/>
 
 
 
