@@ -14,15 +14,15 @@ cls.WebGLTraceView = function(id, name, container_class)
   this.createView = function(container)
   {
     // TODO temporary
-    window.services["ecmascript-debugger"].onConsoleLog = function (status, message)
-    {
-      alert(message);
-    };
+    //window.services["ecmascript-debugger"].onConsoleLog = function (status, message)
+    //{
+    //  alert(message);
+    //};
   };
 
   this.ondestroy = function() 
   {
-    window.services["ecmascript-debugger"].onConsoleLog = function (status, message) {};
+    //window.services["ecmascript-debugger"].onConsoleLog = function (status, message) {};
   };
 
   this.init(id, name, container_class);
@@ -46,19 +46,32 @@ cls.WebGLStateView = function(id, name, container_class)
                            new SortableTable(this._state.tabledef, null, null, null, null, false, "state-table");
 
 
-    messages.addListener('webgl-new-state', this._on_new_state.bind(this));
 
     // TODO temporary
     this._state.get_state();
-    // Determine if execution is paused
-    //   > if not, smart stuff
-    // Get state
-
+    this._render();
   };
 
   this.ondestroy = function() 
   {
+    // TODO remove listeners
 
+  };
+
+  this._render = function()
+  {
+    if (this._state.webgl_present) {
+      this._container.clearAndRender(this._table.render());
+    }
+    else
+    {
+      this._container.clearAndRender(
+        ['div',
+         ['p', "No WebGLContext present..."],
+         'class', 'info-box'
+        ]
+      );
+    }
   };
 
   this._on_new_state = function(obj_id)
@@ -71,8 +84,38 @@ cls.WebGLStateView = function(id, name, container_class)
     }
     this._table.set_data(tbl_data);
     this._container.clearAndRender(this._table.render());
-
   };
+
+  this._on_no_state = function()
+  {
+    this._render();
+  }
+
+  this._on_refresh = function()
+  {
+    if (this._state.webgl_present)
+    {
+      this._state.get_state();
+    }
+  };
+
+  this._on_new_window = function(window_id)
+  {
+    if (this._state)
+    {
+      this._state.get_state(window_id);
+    }
+  };
+
+  var eh = window.eventHandlers;
+
+  eh.click["refresh-webgl-state"] = this._on_refresh.bind(this);
+  // TODO: This doesn't work, runtimes aren't set properly when the message is
+  // posted :(
+  //messages.addListener("window-changed", this._on_new_window.bind(this));
+
+  messages.addListener('webgl-new-state', this._on_new_state.bind(this));
+  messages.addListener("webgl-no-state", this._on_no_state.bind(this));
 
   this.init(id, name, container_class);
 }
@@ -83,6 +126,38 @@ cls.WebGLStateView.prototype = ViewBase;
 
 cls.WebGLStateView.create_ui_widgets = function()
 {
-
+  new ToolbarConfig(
+    'webgl_state',
+    [
+      {
+        handler: 'refresh-webgl-state',
+        title: "Refresh the state", // TODO
+        icon: 'reload-webgl-state'
+      }
+    ],
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-context',
+        title: "Select WebGL context", // TODO
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['context-select'].getTemplate()
+      }
+    ]
+  );
 }
+
+
+cls.ContextSelect = function(id)
+{
+  var selected_value = "LOL";
+
+
+
+  this.init(id);
+};
+
+cls.ContextSelect.prototype = new CstSelect();
 

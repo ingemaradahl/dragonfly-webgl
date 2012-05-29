@@ -44,6 +44,7 @@ cls.WebGLState = function()
       {
         // TODO: indicate no WebGL stuff present D:
         this.webgl_present = false;
+        messages.post("webgl-no-state");
       }
       else {
         var return_arr = message[OBJECT_VALUE][OBJECT_ID];
@@ -138,6 +139,7 @@ cls.WebGLState = function()
       }
 
       this.state[obj_id] = data;
+      this.webgl_present = true;
       messages.post('webgl-new-state', obj_id);
     }
     else
@@ -149,12 +151,14 @@ cls.WebGLState = function()
   // ---------------------------------------------------------------------------
 
 
-  this.get_state = function()
+  this.get_state = function(window_id)
   {
+    window_id = window_id || runtimes.getActiveWindowId();
+
     // Send webgl query to all runtimes
     // TODO: This will result in one call to _finalize_webgl_query for each
     // runtime, which will overwrite the current _gl_object_ids array.
-    var _runtimes = runtimes.getRuntimeIdsFromWindow(runtimes.getActiveWindowId());
+    var _runtimes = runtimes.getRuntimeIdsFromWindow(window_id);
     _runtimes.forEach(this._send_webgl_query.bind(this));
   };
 

@@ -233,6 +233,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.StorageViewActions("widget_preferences");
 
     /* WebGL inspection */
+    window.webgl = new cls.WebGL.WebGLDebugger();
+
+    cls.ContextSelect.prototype = new CstSelect();
+    new cls.ContextSelect('context-select', 'context-options');
+
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
                            "scroll webgl_view tracer");
