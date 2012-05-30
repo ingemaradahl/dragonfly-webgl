@@ -41,14 +41,16 @@ cls.WebGLStateView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
-    this._state = new cls.WebGLState();
     this._table = this._table || 
-                           new SortableTable(this._state.tabledef, null, null, null, null, false, "state-table");
+                           new SortableTable(this.tabledef, null, null, null, null, false, "state-table");
 
 
 
     // TODO temporary
-    this._state.get_state();
+    if (window.webgl.contexts.length > 0)
+    {
+      window.webgl._send_state_query(window.webgl.contexts[0]);
+    }
     this._render();
   };
 
@@ -60,8 +62,17 @@ cls.WebGLStateView = function(id, name, container_class)
 
   this._render = function()
   {
-    if (this._state.webgl_present) {
+    if ((window.webgl.contexts.length > 0) && (this._state)) {
       this._container.clearAndRender(this._table.render());
+    }
+    else if (window.webgl.contexts.length > 0)
+    {
+      this._container.clearAndRender(
+        ['div',
+         ['p', "Loading WebGL state..."],
+         'class', 'info-box'
+        ]
+      );
     }
     else
     {
@@ -74,15 +85,16 @@ cls.WebGLStateView = function(id, name, container_class)
     }
   };
 
-  this._on_new_state = function(obj_id)
+  this._on_new_state = function(msg)
   {
+    var state = msg.state;
     var tbl_data = [];
-    var state = this._state.state[obj_id];
     for (var pname in state)
     {
       tbl_data.push({"variable" : pname, "value" : state[pname]});
     }
     this._table.set_data(tbl_data);
+    this._state = msg.state;
     this._container.clearAndRender(this._table.render());
   };
 
@@ -104,6 +116,20 @@ cls.WebGLStateView = function(id, name, container_class)
     if (this._state)
     {
       this._state.get_state(window_id);
+    }
+  };
+
+  this.tabledef = {
+    column_order: ["variable", "value"],
+    columns: {
+      variable: {
+        label: "State Variable", // TODO
+        classname: "col-pname"
+      },
+      value: {
+        label: "Value",
+        sorter: "unsortable"
+      }
     }
   };
 
