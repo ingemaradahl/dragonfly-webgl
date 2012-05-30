@@ -49,10 +49,12 @@ cls.WebGL.RPCs.query_contexts = function()
 cls.WebGL.RPCs.get_state = function ()
 {
   return ctx.get_state();
-}
+};
 
-
-
+cls.WebGL.RPCs.get_trace = function()
+{
+  return gl.last_frame_trace;
+};
 
 cls.WebGL.RPCs.injection = function () {
   function _wrap_function(context, function_name)
@@ -70,6 +72,18 @@ cls.WebGL.RPCs.injection = function () {
       {
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
+
+      var args = [];
+      for (var i = 0; i < arguments.length; i++)
+      {
+        args.push(arguments[i]);
+      }
+
+      // TODO: Temporary solution to not fill up memory with trace if gl.new_frame() is not used.
+      if (context.frame_trace.length < 1000)
+      {
+        context.frame_trace.push([function_name, error].concat(args).join("|"));
+      }
       return result;
     };
 
@@ -79,6 +93,16 @@ cls.WebGL.RPCs.injection = function () {
   {
     this.gl = true_webgl;
     var gl = true_webgl;
+
+    // TODO: temporary double buffering of frame traces.
+    this.frame_trace = [];
+    this.last_frame_trace = [];
+
+    this.new_frame = function()
+    {
+        this.last_frame_trace = this.frame_trace;
+        this.frame_trace = [];
+    }
 
     this.get_state = function()
     {
@@ -251,4 +275,5 @@ cls.WebGL.RPCs.injection = function () {
     this.currentContext = result;
     return result;
   };
+
 };
