@@ -51,12 +51,30 @@ cls.WebGL.RPCs.get_state = function ()
   return ctx.get_state();
 };
 
+cls.WebGL.RPCs.request_trace = function()
+{
+  console.log("Capturing next frame.");
+  gl.capture_next_frame = true;
+};
+
 cls.WebGL.RPCs.get_trace = function()
 {
-  return gl.last_frame_trace;
+  return gl.frame_trace;
 };
 
 cls.WebGL.RPCs.injection = function () {
+  var contexts = [];
+  
+  // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
+  window.requestAnimationFrame = function (fun)
+  {
+    window.setTimeout(fun, 1000 / 60);
+    for (var c = 0; c < contexts.length; c++)
+    {
+      if (contexts[c].new_frame) contexts[c].new_frame();
+    }
+  };
+
   function _wrap_function(context, function_name)
   {
     var gl = context.gl;
@@ -73,15 +91,14 @@ cls.WebGL.RPCs.injection = function () {
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
 
-      var args = [];
-      for (var i = 0; i < arguments.length; i++)
+      if (context.capturing_frame)
       {
-        args.push(arguments[i]);
-      }
+        var args = [];
+        for (var i = 0; i < arguments.length; i++)
+        {
+          args.push(arguments[i]);
+        }
 
-      // TODO: Temporary solution to not fill up memory with trace if gl.new_frame() is not used.
-      if (context.frame_trace.length < 1000)
-      {
         context.frame_trace.push([function_name, error].concat(args).join("|"));
       }
       return result;
@@ -91,17 +108,31 @@ cls.WebGL.RPCs.injection = function () {
 
   var WrappedContext = function(true_webgl)
   {
+    // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
+    contexts.push(this);
+
     this.gl = true_webgl;
     var gl = true_webgl;
 
-    // TODO: temporary double buffering of frame traces.
     this.frame_trace = [];
-    this.last_frame_trace = [];
+
+    this.capture_next_frame = false;
+    this.capturing_frame = false;
 
     this.new_frame = function()
     {
-        this.last_frame_trace = this.frame_trace;
+      if (this.capturing_frame) {
+        this.capturing_frame = false;
+        console.log("Frame have been captured.");
+        document.dispatchEvent(new Event("webgl-trace-complete"));
+      }
+
+      if (this.capture_next_frame)
+      {
+        this.capture_next_frame = false;
+        this.capturing_frame = true;
         this.frame_trace = [];
+      }
     }
 
     this.get_state = function()
