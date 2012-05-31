@@ -1,6 +1,6 @@
 "use strict";
 
-window.cls || (window.cls || {});
+window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
 cls.WebGL.WebGLDebugger = function ()
@@ -38,7 +38,11 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.request_state = function (ctx)
   {
-    this._send_state_query(ctx);
+    if (this.available())
+    {
+      ctx = (ctx || this.contexts[0]);
+      this._send_state_query(ctx);
+    }
   };
 
 
@@ -58,7 +62,7 @@ cls.WebGL.WebGLDebugger = function ()
     else
     {
       opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE + 
-          "failed to inject WebGL wrappi)g script");
+          "failed to inject WebGL wrapping script");
     }
 
     cont_callback();
@@ -121,6 +125,7 @@ cls.WebGL.WebGLDebugger = function ()
       }
 
       this.contexts = gl_object_ids;
+      messages.post('webgl-new-context', gl_object_ids);
     }
     else
     {

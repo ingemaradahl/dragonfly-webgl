@@ -1,6 +1,6 @@
 ﻿"use strict";
 
-window.cls || (window.cls || {});
+window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLTrace = function() 

@@ -235,8 +235,8 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* WebGL inspection */
     window.webgl = new cls.WebGL.WebGLDebugger();
 
-    cls.ContextSelect.prototype = new CstSelect();
-    new cls.ContextSelect('context-select', 'context-options');
+    cls.WebGLContextSelect.prototype = new CstSelect();
+    new cls.WebGLContextSelect('context-select', 'context-options');
 
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
