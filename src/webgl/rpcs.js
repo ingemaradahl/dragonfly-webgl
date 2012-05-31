@@ -57,6 +57,21 @@ cls.WebGL.RPCs.get_trace = function()
 };
 
 cls.WebGL.RPCs.injection = function () {
+  // TODO: temprary wraps the function requestAnimFrame from the webgl_utils library. Remove when we have a callback on new frame.
+  window.setTimeout(function ()
+  {
+    if (window.requestAnimFrame)
+    {
+      var orig_requestAnimFrame = window.requestAnimFrame;
+      window.requestAnimFrame = function()
+      {
+        var result = orig_requestAnimFrame.apply(this,arguments);
+        if (gl.new_frame) gl.new_frame();
+        return result;
+      };
+    }
+  }, 1000);
+
   function _wrap_function(context, function_name)
   {
     var gl = context.gl;
@@ -73,15 +88,15 @@ cls.WebGL.RPCs.injection = function () {
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
 
-      var args = [];
-      for (var i = 0; i < arguments.length; i++)
-      {
-        args.push(arguments[i]);
-      }
-
       // TODO: Temporary solution to not fill up memory with trace if gl.new_frame() is not used.
       if (context.frame_trace.length < 1000)
       {
+        var args = [];
+        for (var i = 0; i < arguments.length; i++)
+        {
+          args.push(arguments[i]);
+        }
+
         context.frame_trace.push([function_name, error].concat(args).join("|"));
       }
       return result;
