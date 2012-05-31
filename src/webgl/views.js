@@ -133,11 +133,13 @@ cls.WebGLStateView = function(id, name, container_class)
 
 
 
-    // TODO temporary
-    if (window.webgl.contexts.length > 0)
+    if (window.webgl.available())
     {
-      window.webgl._send_state_query(window.webgl.contexts[0]);
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
     }
+
     this._render();
   };
 
@@ -151,11 +153,13 @@ cls.WebGLStateView = function(id, name, container_class)
   {
     this._state = null;
 
-    // TODO temporary
-    if (window.webgl.contexts.length > 0)
+    if (window.webgl.available())
     {
-      window.webgl._send_state_query(window.webgl.contexts[0]);
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
     }
+
     this._render();
   };
 
@@ -202,25 +206,13 @@ cls.WebGLStateView = function(id, name, container_class)
     this._container.clearAndRender(this._table.render());
   };
 
-  this._on_no_state = function()
-  {
-    this._render();
-  }
-
   this._on_refresh = function()
   {
-    // TODO: Temporary
-    if (window.webgl.contexts.length > 0)
+    if (window.webgl.available())
     {
-      window.webgl._send_state_query(window.webgl.contexts[0]);
-    }
-  };
-
-  this._on_new_window = function(window_id)
-  {
-    if (this._state)
-    {
-      this._state.get_state(window_id);
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
     }
   };
 
@@ -244,7 +236,6 @@ cls.WebGLStateView = function(id, name, container_class)
   eh.click["refresh-webgl-state"] = this._on_refresh.bind(this);
 
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
-  messages.addListener("webgl-no-state", this._on_no_state.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
 
   this.init(id, name, container_class);

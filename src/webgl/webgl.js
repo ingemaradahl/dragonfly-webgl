@@ -16,7 +16,8 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.runtime_id != rt_id)
     {
       this.runtime_id = rt_id;
-      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", this._on_new_context.bind(this), false, false);
+      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", 
+          this._on_new_context.bind(this), false, false);
       this._send_injection(rt_id, cont_callback);
     }
   };
@@ -33,6 +34,11 @@ cls.WebGL.WebGLDebugger = function ()
     this.contexts = [];
 
     messages.post('webgl-clear');
+  };
+
+  this.request_state = function (ctx)
+  {
+    this._send_state_query(ctx);
   };
 
 
