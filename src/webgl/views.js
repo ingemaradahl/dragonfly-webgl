@@ -10,18 +10,36 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTraceView = function(id, name, container_class)
 {
   this._state = null;
+  this._container = null;
+  this.runtest = false;
 
   this.createView = function(container)
   {
+    this._container = container;
     // TODO temporary
     //window.services["ecmascript-debugger"].onConsoleLog = function (status, message)
     //{
     //  alert(message);
     //};
+    this.runtest = true;
+    //this.test(0, [0, 0, 1]);
   };
+
+  this.test = function (status, message)
+  {
+    if (this.runtest)
+    {
+      var n = message[2];
+      this._container.innerHTML = n;
+      var script = "(function(){ return " + n + " + 1;})()";
+      var tag = tagManager.set_callback(this, this.test);
+      window.services["ecmascript-debugger"].requestEval(tag, [webgl.runtime_id, 0, 0, script, []]);
+    }
+  }
 
   this.ondestroy = function() 
   {
+    this.runtest = false;
     //window.services["ecmascript-debugger"].onConsoleLog = function (status, message) {};
   };
 
@@ -60,8 +78,25 @@ cls.WebGLStateView = function(id, name, container_class)
 
   };
 
+  this.clear = function ()
+  {
+    this._state = null;
+
+    // TODO temporary
+    if (window.webgl.contexts.length > 0)
+    {
+      window.webgl._send_state_query(window.webgl.contexts[0]);
+    }
+    this._render();
+  };
+
   this._render = function()
   {
+    if (!this._container)
+    {
+      return;
+    }
+
     if ((window.webgl.contexts.length > 0) && (this._state)) {
       this._container.clearAndRender(this._table.render());
     }
@@ -105,9 +140,10 @@ cls.WebGLStateView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    if (this._state.webgl_present)
+    // TODO: Temporary
+    if (window.webgl.contexts.length > 0)
     {
-      this._state.get_state();
+      window.webgl._send_state_query(window.webgl.contexts[0]);
     }
   };
 
@@ -133,6 +169,7 @@ cls.WebGLStateView = function(id, name, container_class)
     }
   };
 
+
   var eh = window.eventHandlers;
 
   eh.click["refresh-webgl-state"] = this._on_refresh.bind(this);
@@ -142,6 +179,7 @@ cls.WebGLStateView = function(id, name, container_class)
 
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
   messages.addListener("webgl-no-state", this._on_no_state.bind(this));
+  messages.addListener('webgl-clear', this.clear.bind(this));
 
   this.init(id, name, container_class);
 }
