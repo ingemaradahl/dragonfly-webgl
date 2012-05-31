@@ -353,6 +353,11 @@ cst-select-option-list,
   background-image: url("../ui-images/icons/icon_reload.png");
 }
 
+.reload-webgl-trace::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
 .request_list\.clear-log-on-runtime-switch::before
 {
   background-image: url("../ui-images/icons/icon_clearonreload.png");

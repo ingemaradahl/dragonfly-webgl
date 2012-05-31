@@ -241,6 +241,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
                            "scroll webgl_view tracer");
+    cls.WebGLTraceView.create_ui_widgets();
 
     new cls.WebGLStateView("webgl_state",
                            "State", // TODO
