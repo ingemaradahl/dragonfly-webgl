@@ -55,7 +55,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   {
     if (window.webgl.contexts[0]) // TODO temporary
     {
-      this._trace.get_trace(window.webgl.contexts[0]); // TODO temp
+      this._trace.request_trace(window.webgl.contexts[0]); // TODO temp
     }
     else
     {
@@ -63,9 +63,8 @@ cls.WebGLTraceView = function(id, name, container_class)
     }
   };
 
-  this._on_new_trace = function(msg)
+  this._on_new_trace = function(trace)
   {
-    var trace = this._trace.trace_data[msg];
     var tbl_data = [];
     for (var i = 0; i < trace.length; i++)
     {
