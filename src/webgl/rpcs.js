@@ -63,20 +63,17 @@ cls.WebGL.RPCs.get_trace = function()
 };
 
 cls.WebGL.RPCs.injection = function () {
-  // TODO: temprary wraps the function requestAnimFrame from the webgl_utils library. Remove when we have a callback on new frame.
-  window.setTimeout(function ()
+  var contexts = [];
+  
+  // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
+  window.requestAnimationFrame = function (fun)
   {
-    if (window.requestAnimFrame)
+    window.setTimeout(fun, 1000 / 60);
+    for (var c = 0; c < contexts.length; c++)
     {
-      var orig_requestAnimFrame = window.requestAnimFrame;
-      window.requestAnimFrame = function()
-      {
-        var result = orig_requestAnimFrame.apply(this,arguments);
-        if (gl.new_frame) gl.new_frame();
-        return result;
-      };
+      if (contexts[c].new_frame) contexts[c].new_frame();
     }
-  }, 1000);
+  };
 
   function _wrap_function(context, function_name)
   {
@@ -111,6 +108,9 @@ cls.WebGL.RPCs.injection = function () {
 
   var WrappedContext = function(true_webgl)
   {
+    // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
+    contexts.push(this);
+
     this.gl = true_webgl;
     var gl = true_webgl;
 
