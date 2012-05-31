@@ -279,7 +279,13 @@ cls.WebGL.RPCs.injection = function () {
   var orig_getContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function ()
   {
-    // TODO: Only wrap webgl, not canvas2d
+    // Only wrap webgl, not canvas2d
+    var context_names = {"moz-webgl":null, "webkit-3d":null, "experimental-webgl":null, "webgl":null};
+    if (!(arguments[0] in context_names))
+    {
+      return orig_getContext.apply(this, arguments);
+    }
+
     var gl = orig_getContext.apply(this, arguments);
     if (gl == null)
     {

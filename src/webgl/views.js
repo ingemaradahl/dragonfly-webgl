@@ -10,6 +10,7 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTraceView = function(id, name, container_class)
 {
   this._state = null;
+  this._container = null;
 
   this.createView = function(container)
   {
@@ -23,7 +24,6 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this.ondestroy = function() 
   {
-    //window.services["ecmascript-debugger"].onConsoleLog = function (status, message) {};
   };
 
   this._render = function()
@@ -133,11 +133,13 @@ cls.WebGLStateView = function(id, name, container_class)
 
 
 
-    // TODO temporary
-    if (window.webgl.contexts.length > 0)
+    if (window.webgl.available())
     {
-      window.webgl._send_state_query(window.webgl.contexts[0]);
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
     }
+
     this._render();
   };
 
@@ -147,8 +149,27 @@ cls.WebGLStateView = function(id, name, container_class)
 
   };
 
+  this.clear = function ()
+  {
+    this._state = null;
+
+    if (window.webgl.available())
+    {
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
+    }
+
+    this._render();
+  };
+
   this._render = function()
   {
+    if (!this._container)
+    {
+      return;
+    }
+
     if ((window.webgl.contexts.length > 0) && (this._state)) {
       this._container.clearAndRender(this._table.render());
     }
@@ -185,24 +206,13 @@ cls.WebGLStateView = function(id, name, container_class)
     this._container.clearAndRender(this._table.render());
   };
 
-  this._on_no_state = function()
-  {
-    this._render();
-  }
-
   this._on_refresh = function()
   {
-    if (this._state.webgl_present)
+    if (window.webgl.available())
     {
-      this._state.get_state();
-    }
-  };
-
-  this._on_new_window = function(window_id)
-  {
-    if (this._state)
-    {
-      this._state.get_state(window_id);
+      // TODO: Temporary
+      window.webgl.request_state(window.webgl.contexts[0]);
+      //window.webgl.request_state(this._selected_context);
     }
   };
 
@@ -220,15 +230,13 @@ cls.WebGLStateView = function(id, name, container_class)
     }
   };
 
+
   var eh = window.eventHandlers;
 
   eh.click["refresh-webgl-state"] = this._on_refresh.bind(this);
-  // TODO: This doesn't work, runtimes aren't set properly when the message is
-  // posted :(
-  //messages.addListener("window-changed", this._on_new_window.bind(this));
 
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
-  messages.addListener("webgl-no-state", this._on_no_state.bind(this));
+  messages.addListener('webgl-clear', this.clear.bind(this));
 
   this.init(id, name, container_class);
 }

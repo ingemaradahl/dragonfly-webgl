@@ -13,15 +13,33 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.inject = function (rt_id, cont_callback)
   {
-    // TODO perhaps listen to some sort of message notifying new context change
-    // instead?
     if (this.runtime_id != rt_id)
     {
       this.runtime_id = rt_id;
-      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", this._on_new_context.bind(this), false, false);
+      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", 
+          this._on_new_context.bind(this), false, false);
       this._send_injection(rt_id, cont_callback);
     }
-  }
+  };
+
+  this.available = function ()
+  {
+    return this.contexts.length > 0;
+  };
+
+  this.clear = function ()
+  {
+    this.injected = false;
+    this.runtime_id = -1;
+    this.contexts = [];
+
+    messages.post('webgl-clear');
+  };
+
+  this.request_state = function (ctx)
+  {
+    this._send_state_query(ctx);
+  };
 
 
   this._send_injection = function (rt_id, cont_callback)
@@ -44,7 +62,7 @@ cls.WebGL.WebGLDebugger = function ()
     }
 
     cont_callback();
-  }
+  };
 
   this._on_new_context = function (message)
   {
@@ -57,7 +75,7 @@ cls.WebGL.WebGLDebugger = function ()
       var tag = tagManager.set_callback(this, this._handle_context_query);
       window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, []]);
     }
-  }
+  };
 
   this._handle_context_query = function(status, message)
   {
@@ -174,8 +192,7 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
+  messages.addListener('runtime-selected', this.clear.bind(this));
 
-
-
-}
+};
 
