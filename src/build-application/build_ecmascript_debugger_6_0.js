@@ -248,6 +248,12 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
 
+    new cls.WebGLBufferView("webgl_buffer",
+                            "Buffers", // TODO)
+                            "scroll webgl_view buffers");
+    cls.WebGLBufferView.create_ui_widgets();
+
+
     /* the following views must be created to get entry in the Settings tab */
 
     /* Environment */
