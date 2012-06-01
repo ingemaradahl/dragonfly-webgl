@@ -6,6 +6,7 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTrace = function() 
 {
   this.trace_data = [];
+  this._current_context = null;
 
   /* Interface */
   this.get_trace = function(){};
@@ -21,13 +22,14 @@ cls.WebGLTrace = function()
   this._send_trace_request = function(rt_id, obj_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.request_trace);
+    this._current_context = obj_id;
     window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["gl", obj_id]]]);
   };
 
   this._on_trace_complete = function(msg)
   {
     var rt_id = msg.runtime_id;
-    var obj_id = window.webgl.contexts[0];
+    var obj_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
     var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, obj_id]);
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["gl", obj_id]]]);
@@ -85,7 +87,11 @@ cls.WebGLTrace = function()
         data.push(new TraceEntry(function_name, error_code, args));
       }
 
-      this.trace_data.push(data);
+      if (obj_id in this.trace_data == false)
+      {
+        this.trace_data[obj_id] = [];
+      }
+      this.trace_data[obj_id].push(data);
       messages.post('webgl-new-trace', data);
     }
     else
@@ -99,12 +105,25 @@ cls.WebGLTrace = function()
   /**
    * Gets a trace of all WebGL calls from the current frame.
    * TODO: Temporary requires that the script runs gl.new_frame() before each new frame is drawn.
-   * @context_object_id Id of the context object which should be traced.
+   * @param context_object_id Id of the context object which should be traced.
    */
   this.request_trace = function(context_object_id)
   {
     this._send_trace_request(window.webgl.runtime_id, context_object_id);
   };
+
+  /*
+   * Gets the last trace data for a specified context id, null if not available.
+   */
+  this.get_last_trace = function(ctx)
+  {
+    var data = this.trace_data[ctx];
+    if (typeof(data) != "array" || data.length == 0)
+    {
+      return null;
+    }
+    return data[data.length-1];
+  }
 
   window.host_tabs.activeTab.addEventListener("webgl-trace-complete", 
       this._on_trace_complete.bind(this), false, false);

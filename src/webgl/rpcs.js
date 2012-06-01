@@ -88,6 +88,7 @@ cls.WebGL.RPCs.injection = function () {
       error = gl.getError();
       if (error !== gl.NO_ERROR)
       {
+        // TODO: will flood the console if inside a loop, perhaps not log always?
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
 

@@ -11,6 +11,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 {
   this._state = null;
   this._container = null;
+  this._current_context = null;
 
   this.createView = function(container)
   {
@@ -24,14 +25,19 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this.ondestroy = function() 
   {
+    // TODO remove listeners
   };
 
   this._render = function()
   {
-    if ((window.webgl.contexts.length > 0) && (this._trace_data)) {
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var trace;
+    if (ctx != false && (trace = this._trace.get_last_trace(ctx)) != null)
+    {
+      this._table.set_data(this._format_trace_table(trace));
       this._container.clearAndRender(this._table.render());
     }
-    else if (window.webgl.contexts.length > 0)
+    else if (window.webgl.available())
     {
       this._container.clearAndRender(
         ['div',
@@ -53,17 +59,34 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    if (window.webgl.contexts[0]) // TODO temporary
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    if (ctx != false)
     {
-      this._trace.request_trace(window.webgl.contexts[0]); // TODO temp
-    }
-    else
-    {
-      alert("WebGL is not present"); // TODO remove
+      this._trace.request_trace(ctx);
     }
   };
 
   this._on_new_trace = function(trace)
+  {
+    this._table.set_data(this._format_trace_table(trace));
+    this._trace_data = trace;
+    this._container.clearAndRender(this._table.render());
+  };
+
+  this._on_context_change = function(ctx)
+  {
+    this._current_context = ctx;
+    var trace = this._trace.get_last_trace(ctx);
+    if (trace != null)
+    {
+      this._table.set_data(this._format_trace_table(trace));
+    }
+
+    this._render();
+  };
+
+
+  this._format_trace_table = function(trace)
   {
     var tbl_data = [];
     for (var i = 0; i < trace.length; i++)
@@ -72,9 +95,7 @@ cls.WebGLTraceView = function(id, name, container_class)
       if (trace[i].has_error) call_text += " -> Error code: " + String(trace[i].error_code)
       tbl_data.push({"number" : String(i + 1), "call" : call_text});
     }
-    this._table.set_data(tbl_data);
-    this._trace_data = trace;
-    this._container.clearAndRender(this._table.render());
+    return tbl_data;
   };
 
   this.tabledef = {
@@ -95,6 +116,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   eh.click["refresh-webgl-trace"] = this._on_refresh.bind(this);
 
   messages.addListener('webgl-new-trace', this._on_new_trace.bind(this));
+  messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
 
   this.init(id, name, container_class);
 };
@@ -110,7 +132,17 @@ cls.WebGLTraceView.create_ui_widgets = function()
         icon: 'reload-webgl-trace'
       }
     ],
-    null
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-context',
+        title: "Select WebGL context", // TODO
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['context-select'].getTemplate()
+      }
+    ]
   );
 }
 
@@ -260,10 +292,6 @@ cls.WebGLStateView.prototype = ViewBase;
 
 
 
-
-
-
-
 cls.WebGLStateView.create_ui_widgets = function()
 {
   new ToolbarConfig(
@@ -291,9 +319,6 @@ cls.WebGLStateView.create_ui_widgets = function()
 
 
 
-
-
-
 cls.WebGLContextSelect = function(id)
 {
   this._option_list = [{}];
@@ -317,14 +342,25 @@ cls.WebGLContextSelect = function(id)
 
   };
 
+  /**
+   * Returns the id of the context that is currently selected.
+   * Returns false if there is no context selected.
+   */
+  this.get_selected_context = function()
+  {
+    if (window.webgl.available())
+      return window.webgl.contexts[this._selected_option_index];
+    return false;
+  };
+
   this.getTemplate = function()
   {
     var select = this;
     return function(view)
     {
       return window.templates['cst-select'](select, select.disabled);
-    }
-  }
+    };
+  };
 
   this.templateOptionList = function(select_obj)
   {
@@ -343,7 +379,7 @@ cls.WebGLContextSelect = function(id)
         "opt-index", i,
         "title", opt.title || "",
         "unselectable", "on"
-      ]
+      ];
     }
     return ret;
   };
@@ -351,6 +387,7 @@ cls.WebGLContextSelect = function(id)
   this.checkChange = function(target_ele)
   {
     var index = target_ele['opt-index'];
+    if (index == undefined) return false;
 
     if (this._selected_option_index != index)
     {
