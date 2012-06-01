@@ -417,7 +417,10 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/webgl.js"/>
 <script src="./webgl/views.js"/>
 <script src="./webgl/trace.js"/>
+<script src="./webgl/buffer_view.js"/>
 <script src="./webgl/rpcs.js"/>
+
+<script src="./webgl/shaders/buffer.vs" id="shader-vs" type="x-shader/x-vertex"/>
 
 <script src="./searches/jssearchview.js"/>
 
