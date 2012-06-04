@@ -11,7 +11,7 @@ cls.WebGLContextSelect = function(id)
 
   this.getSelectedOptionText = function()
   {
-    if (!this.disabled)
+    if (!this.disabled && this._option_list.length > 0)
     {
       return "WebGLContext #" + this._selected_option_index;
     }
