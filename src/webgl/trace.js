@@ -6,6 +6,8 @@ cls.WebGLTrace = function()
 {
   this._current_context = null;
 
+  this.api = new cls.WebGLAPI();
+
   // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
   this._send_trace_request = function(rt_id, obj_id)
   {

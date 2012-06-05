@@ -415,6 +415,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./ecma-debugger/jssourcetooltip.js"/>
 
 <script src="./webgl/data.js"/>
+<script src="./webgl/api.js"/>
 <script src="./webgl/webgl.js"/>
 <script src="./webgl/trace.js"/>
 <script src="./webgl/state.js"/>

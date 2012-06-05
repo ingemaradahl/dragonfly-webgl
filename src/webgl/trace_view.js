@@ -90,7 +90,8 @@ cls.WebGLTraceView = function(id, name, container_class)
     var tbl_data = [];
     for (var i = 0; i < trace.length; i++)
     {
-      var call_text = trace[i].function_name + "(" + trace[i].args.join(", ") + ")";
+      var tr = trace[i];
+      var call_text = window.webgl.trace.api.function_call_to_string(tr.function_name, tr.args);
       if (trace[i].has_error) call_text += " -> Error code: " + String(trace[i].error_code)
       tbl_data.push({"number" : String(i + 1), "call" : call_text});
     }
