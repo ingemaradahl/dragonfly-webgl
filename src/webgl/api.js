@@ -36,7 +36,7 @@ cls.WebGLAPI = function ()
       RANGE: 10,    // 2 floats
       RECT: 11,     // x, y, w, h (array with 4 values)
       STRING: 12,   // some arbitrary string
-      ULONG: 13
+      ULONG: 13,
       WH: 14        // width x height (array with 2 values)
   };
 
