@@ -71,13 +71,19 @@ cls.WebGLTestView = function(id, name, container_class)
   this._on_new_test = function(msg)
   {
 		this._test_time = window.webgl.data.get_test_data();
+		this._data_length = msg["test-length"];
 		this._container.clearAndRender(
 			['div',
 				['p', "Test done"],
 				['p', "Execution time: " + (this._test_time/1000)
 					+ " seconds."			
 				],
-				['p', "Size of payload: " + msg["test-length"] ],
+				['p', "Size of payload: " + this._data_length ],
+				// Assuming a string, every character 16bit long. 
+				// Last division by 1000000 for Mbit/s
+				['p', "Estimated speed: " + 
+					Math.round((16*this._data_length) / (this._test_time/1000) / 1000000) 
+					+ " Mbit/s"],	
 			'class', 'info-box'
 			]
 		);
