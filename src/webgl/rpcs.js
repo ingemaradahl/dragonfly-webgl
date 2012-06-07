@@ -18,6 +18,18 @@ cls.WebGL.RPCs.prepare = function(fun)
 
 /* The following functions will never be called by the dragonfly instance */
 
+
+cls.WebGL.RPCs.query_test = function()
+{
+	var data_length = 1000000;
+	var return_value = 'a';
+	for (var i=0; i<data_length-1; i++)
+	{
+		return_value += 'a';
+	}
+	return return_value;
+};
+
 cls.WebGL.RPCs.query_contexts = function() 
 {
   var canvas_tags = document.getElementsByTagName("canvas");

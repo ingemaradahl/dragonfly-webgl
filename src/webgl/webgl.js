@@ -12,6 +12,7 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
+	this.test = new cls.WebGLTest();
 
   // Object IDs for Wrapped Context Objects
   this.contexts = [];
@@ -40,6 +41,16 @@ cls.WebGL.WebGLDebugger = function ()
 
     messages.post('webgl-clear');
   };
+
+	this.request_test = function (ctx)
+	{
+		if (this.available())
+		{
+			window.webgl._start_time = (new Date()).getTime();
+			ctx = (ctx || this.contexts[0]);
+			this.test._send_test_query(ctx);
+		}
+	};
 
   this.request_state = function (ctx)
   {

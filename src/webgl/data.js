@@ -7,6 +7,8 @@ cls.WebGLData = function ()
   this.shaders = {};
 
   this.states = {};
+
+	this.test_data;
   
   // Stores all traces as a map where the key is the context id and the
   // value is a list of traces.
@@ -30,4 +32,20 @@ cls.WebGLData = function ()
     }
     this.traces[ctx_id].push(trace);
   };
+
+
+	// Gets the latest test data for speed test of data transmission
+	this.get_test_data = function()
+	{
+		var data = this.test_data;
+		if (typeof(data) != "number") return null;
+		return data;
+	};
+
+	// Put speed test results in the data stack
+	this.add_test_data = function(data)
+	{
+		this.test_data = data;
+	};
+
 };
