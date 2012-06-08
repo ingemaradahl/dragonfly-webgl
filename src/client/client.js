@@ -625,7 +625,7 @@ ui_framework.layouts.webgl_rough_layout =
   children: [
     {
       height: 1000,
-      tabs: [ 'webgl_trace', 'webgl_state', 'webgl_test']
+      tabs: ['webgl_trace', 'webgl_state', 'webgl_test', 'webgl_buffer']
     }
   ]
 }

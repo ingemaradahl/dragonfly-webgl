@@ -63,6 +63,36 @@ cls.WebGL.RPCs.get_state = function ()
   return ctx.get_state();
 };
 
+cls.WebGL.RPCs.get_buffers = function ()
+{
+  // START_INDEX should be replaced by the calling code.
+  var buffers = gl.buffers.slice(START_INDEX);
+  var out = [];
+  for(var i = 0; i < buffers.length; i++)
+  {
+    var buffer = buffers[i];
+    if (buffer == undefined) continue;
+    /* TODO: clone the data to a new array or make a second request to examine the array*/
+    var arr = buffer.data;
+    arr.target = buffer.target;
+    arr.usage = buffer.usage;
+    arr.index = i;
+    out.push(arr);
+  }
+  return out;
+};
+
+cls.WebGL.RPCs.get_buffer = function ()
+{
+  var buffer = gl.buffers[__INDEX__];
+  /* TODO: clone the data to a new array or make a second request to examine the array*/
+  var arr = buffer.data;
+  arr.target = buffer.target;
+  arr.usage = buffer.usage;
+  arr.index = __INDEX__;
+  return arr;
+};
+
 cls.WebGL.RPCs.request_trace = function()
 {
   console.log("Capturing next frame.");
@@ -87,14 +117,18 @@ cls.WebGL.RPCs.injection = function () {
     }
   };
 
-  function _wrap_function(context, function_name)
+  function _wrap_function(context, function_name, innerFuns)
   {
     var gl = context.gl;
     var original_function = gl[function_name];
 
+    var innerFunction = innerFuns[function_name];
+
     return function ()
     {
       var result = original_function.apply(gl, arguments);
+
+      if (innerFunction) innerFunction.call(context, result, arguments);
 
       var error = gl.NO_ERROR;
       error = gl.getError();
@@ -116,7 +150,6 @@ cls.WebGL.RPCs.injection = function () {
       }
       return result;
     };
-
   }
 
   var WrappedContext = function(true_webgl)
@@ -126,6 +159,10 @@ cls.WebGL.RPCs.injection = function () {
 
     this.gl = true_webgl;
     var gl = true_webgl;
+
+    this.buffers = [];
+    
+    this.current_buffer;
 
     this.frame_trace = [];
 
@@ -288,12 +325,37 @@ cls.WebGL.RPCs.injection = function () {
       });
     };
 
+    var innerFuns = {};
+    innerFuns.createBuffer = function(result, args)
+    {
+      if (this.buffers.length < 1000)
+      {
+        var buf = {};
+        buf.buffer = result;
+        var i = this.buffers.push(buf);
+        result._index = i - 1;
+        // TODO: ugly temporary solution to "ensure" that the webgl-debugger-ready message is recieved before this one.
+        setTimeout('document.dispatchEvent(new Event("webgl-buffer-created"))', 2000);
+      }
+    };
+    innerFuns.bindBuffer = function(result, args)
+    {
+      this.current_buffer = args[1]._index;
+    };
+    innerFuns.bufferData = function(result, args)
+    {
+      var buffer = this.buffers[this.current_buffer];
+      buffer.target = args[0];
+      buffer.data = args[1];
+      buffer.usage = args[2];
+    };
+
     // Copy enumerators and wrap functions
     for (var i in gl)
     {
       if (typeof gl[i] === "function")
       {
-        this[i] = _wrap_function(this, i);
+        this[i] = _wrap_function(this, i, innerFuns);
       }
       else
       {

@@ -238,9 +238,14 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLContextSelect.prototype = new CstSelect();
     new cls.WebGLContextSelect('context-select', 'context-options');
 
+    new cls.WebGLBufferView("webgl_buffer",
+                           "Buffers", // TODO
+                           "scroll webgl_view buffer");
+    cls.WebGLBufferView.create_ui_widgets();
+
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
-                           "scroll webgl_view tracer");
+                           "scroll webgl_view trace");
     cls.WebGLTraceView.create_ui_widgets();
 
     new cls.WebGLStateView("webgl_state",

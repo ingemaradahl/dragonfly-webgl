@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
@@ -10,6 +10,7 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.data = new cls.WebGLData();
 
+  this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
 	this.test = new cls.WebGLTest();
