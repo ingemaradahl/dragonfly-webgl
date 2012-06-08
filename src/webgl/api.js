@@ -357,12 +357,12 @@ cls.WebGLAPI = function ()
     this.name = name;
     this.returnType = returnType;
     this.args = args;
-    this.draw = draw || (false);
+    this.draw = draw === true;
   }
 
   GLFunction.prototype.generate_string = function(args, withType)
   {
-    withType = withType || (false);
+    withType = withType === true;
     var type = this.returnType == null ? "void" : this.returnType;
     var text;
     if (withType) text = type + " " + this.name + "(";

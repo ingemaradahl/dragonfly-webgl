@@ -10,6 +10,7 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.data = new cls.WebGLData();
 
+  this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
 

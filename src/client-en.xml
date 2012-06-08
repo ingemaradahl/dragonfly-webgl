@@ -417,11 +417,13 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/data.js"/>
 <script src="./webgl/api.js"/>
 <script src="./webgl/webgl.js"/>
+<script src="./webgl/buffer.js"/>
 <script src="./webgl/trace.js"/>
 <script src="./webgl/state.js"/>
 <script src="./webgl/views.js"/>
 <script src="./webgl/trace_view.js"/>
 <script src="./webgl/state_view.js"/>
+<script src="./webgl/buffer_view.js"/>
 <script src="./webgl/rpcs.js"/>
 
 <script src="./searches/jssearchview.js"/>
