@@ -348,12 +348,22 @@ cst-select-option-list,
   background-image: url("../ui-images/icons/icon_table.png");
 }
 
+.reload-webgl-test::before
+{
+	background-image: url("../ui-images/icons/icon_reload.png");
+}
+
 .reload-webgl-state::before
 {
   background-image: url("../ui-images/icons/icon_reload.png");
 }
 
 .reload-webgl-trace::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-buffer::before
 {
   background-image: url("../ui-images/icons/icon_reload.png");
 }
