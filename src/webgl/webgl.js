@@ -10,9 +10,10 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.data = new cls.WebGLData();
 
+  this.api = new cls.WebGLAPI();
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
-  this.trace = new cls.WebGLTrace();
+  this.trace = new cls.WebGLTrace(this.api);
 	this.test = new cls.WebGLTest();
 
   // Object IDs for Wrapped Context Objects

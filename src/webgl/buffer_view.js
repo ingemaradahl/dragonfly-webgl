@@ -42,7 +42,7 @@ cls.WebGLBufferView = function(id, name, container_class)
     {
       this._container.clearAndRender(
         ['div',
-         ['p', "No buffer available."],
+         ['p', "No buffers available."],
          'class', 'info-box'
         ]
       );
@@ -63,19 +63,11 @@ cls.WebGLBufferView = function(id, name, container_class)
     var ctx = window['cst-selects']['context-select'].get_selected_context();
     if (ctx != false)
     {
-      for(var i = 0; i < window.webgl.data.buffers.length; i++)
-      {
-        window.webgl.buffer._get_buffer_data(ctx, i);
-      }
+      window.webgl.buffer.get_buffers_data_all(window.webgl.runtime_id, ctx);
     }
   };
 
-  this._on_new_buffer = function()
-  {
-    // TODO: do stuff.
-  };
-
-  this._on_buffer_data_changed = function()
+  this._on_new_buffer = this._on_buffer_data_changed = function()
   {
     var buffers = window.webgl.data.buffers;
     this._table_data = this._format_buffer_table(buffers);
@@ -104,7 +96,10 @@ cls.WebGLBufferView = function(id, name, container_class)
       if (buffers.hasOwnProperty(key) && !isNaN(key)){
         var buffer = buffers[key];
         if (buffer == undefined) continue;
-        tbl_data.push({"number" : String(buffer.index), "target" : String(buffer.target), "usage" : String(buffer.usage), "data" : buffer.data.join(", ")});
+
+        // Ugly and temporary.
+        if (!buffer.available()) tbl_data.push({"number" : String(key), "data" : "Buffer is not available yet."});
+        else tbl_data.push({"number" : String(buffer.index), "target" : buffer.target_string(), "usage" : buffer.usage_string(), "data" : buffer.values.join(", ")});
       }
     }
     return tbl_data;

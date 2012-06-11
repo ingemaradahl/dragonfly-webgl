@@ -51,6 +51,15 @@ cls.WebGLAPI = function ()
     return fn.generate_string(args);
   };
 
+  this.function_argument_to_string = function(function_name, parameter_name, value)
+  {
+    if (!(function_name in this.functions)) return value;
+
+    var param = this.functions[function_name].get_parameter(parameter_name);
+    if (param == null) return value;
+    return param.generate_string(value);
+  };
+
   // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
   var webgl_constants = {
     ACTIVE_ATTRIBUTES: 35721,
@@ -380,6 +389,14 @@ cls.WebGLAPI = function ()
     return text + arrs.join(", ") + ")";
   };
 
+  GLFunction.prototype.get_parameter = function(parameter_name)
+  {
+    for (var i = 0; i < this.args.length; i++)
+    {
+      if (this.args[i].name == parameter_name) return this.args[i];
+    }
+    return null;
+  };
   /**
    * Handle functions with multiple definitions, where the number of parameters differ.
    * Same types as in GLFunction but the args parameter is of type [[GLParam]].

@@ -71,7 +71,7 @@ cls.WebGL.RPCs.get_buffers = function ()
   for(var i = 0; i < buffers.length; i++)
   {
     var buffer = buffers[i];
-    if (buffer == undefined) continue;
+    if (buffer == undefined || buffer.data == undefined) continue;
     /* TODO: clone the data to a new array or make a second request to examine the array*/
     var arr = buffer.data;
     arr.target = buffer.target;
@@ -82,15 +82,23 @@ cls.WebGL.RPCs.get_buffers = function ()
   return out;
 };
 
-cls.WebGL.RPCs.get_buffer = function ()
+cls.WebGL.RPCs.get_buffers_indices = function ()
 {
-  var buffer = gl.buffers[__INDEX__];
-  /* TODO: clone the data to a new array or make a second request to examine the array*/
-  var arr = buffer.data;
-  arr.target = buffer.target;
-  arr.usage = buffer.usage;
-  arr.index = __INDEX__;
-  return arr;
+  var buffers_indices = [__INDICES__];
+  var out = [];
+  for(var i = 0; i < buffers.length; i++)
+  {
+    var idx = buffer_ids[i];
+    var buffer = gl.buffers[i];
+    if (buffer == undefined) continue;
+    /* TODO: clone the data to a new array or make a second request to examine the array*/
+    var arr = buffer.data;
+    arr.target = buffer.target;
+    arr.usage = buffer.usage;
+    arr.index = i;
+    out.push(arr);
+  }
+  return out;
 };
 
 cls.WebGL.RPCs.request_trace = function()

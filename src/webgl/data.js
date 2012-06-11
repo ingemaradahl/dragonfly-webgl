@@ -16,7 +16,6 @@ cls.WebGLData = function ()
   this.traces = {};
 
   this.buffers = [];
-  this.buffers_requested_start = 0;
 
   /*
    * Gets the latest trace data for a specified context id, null if not available.
@@ -51,29 +50,56 @@ cls.WebGLData = function ()
 		this.test_data = data;
 	};
 
+	this.create_buffer = function()
+	{
+    this.buffers.push(new Buffer(this.buffers.length));
+	};
+
   /*
    * Inserts a buffer into the collection. Uses the index from the object.
    * If it already exists in it then the value is updated and the old value is returned.
    * Else null is returned.
    */
-  this.insert_buffer = function(buffer)
+  this.update_buffer_data = function(buffer_data)
   {
-    if (!(buffer.index in this.buffers))
+    var buffer;
+    if (buffer_data.index in this.buffers)
     {
-      this.buffers[buffer.index] = buffer;
-      return null;
+      buffer = this.buffers[buffer_data.index];
     }
-    
-    var old = this.buffers[buffer.index];
-    this.buffers[buffer.index] = buffer;
-    return old;
+    else
+    {
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+        "Failed to find buffer with id " + id);
+    }
+
+    buffer.set_data(buffer_data);
   };
 
-  /**
-   * Updates the number of requested buffers.
-   */
-  this.requested_buffers = function(number)
+  function Buffer(index)
   {
-    this.buffers_requested_start = Math.max(number, this.buffers_requested_start);
+    this.index = index;
+  }
+
+  Buffer.prototype.available = function ()
+  {
+    return this.values !== undefined;
+  };
+
+  Buffer.prototype.set_data = function (data)
+  {
+    this.target = data.target;
+    this.values = data.values;
+    this.usage = data.usage;
+  };
+
+  Buffer.prototype.usage_string = function ()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
+  };
+
+  Buffer.prototype.target_string = function ()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
   };
 };
