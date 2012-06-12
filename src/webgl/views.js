@@ -28,13 +28,13 @@ cls.WebGLContextSelect = function(id)
 
   /**
    * Returns the id of the context that is currently selected.
-   * Returns false if there is no context selected.
+   * Returns null if there is no context selected.
    */
   this.get_selected_context = function()
   {
     if (window.webgl.available())
       return window.webgl.contexts[this._selected_option_index];
-    return false;
+    return null;
   };
 
   this.getTemplate = function()

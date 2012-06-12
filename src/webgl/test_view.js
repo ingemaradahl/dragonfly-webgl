@@ -70,7 +70,7 @@ cls.WebGLTestView = function(id, name, container_class)
 
   this._on_new_test = function(msg)
   {
-		this._test_time = window.webgl.data.get_test_data();
+		this._test_time = window.webgl.data[msg["ctx"]].get_test_data();
 		this._data_length = msg["test-length"];
 		this._container.clearAndRender(
 			['div',

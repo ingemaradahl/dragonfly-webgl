@@ -2,38 +2,40 @@
 
 window.cls || (window.cls = {});
 
-// TODO: have one WebGLData object per context
+/*
+ * Manages data that concerns one single WebGL context.
+ */
 cls.WebGLData = function ()
 {
   this.shaders = {};
 
-  this.states = {};
+  this.states = [];
 
 	this.test_data;
-  
-  // Stores all traces as a map where the key is the context id and the
-  // value is a list of traces.
-  this.traces = {};
 
+  /*
+   * Call traces of WebGL calls.
+   * Stored in the same order as they are recived.
+   */
+  this.traces = [];
+
+  /*
+   * Buffers are stored as Buffer objects where they are ordered in the same 
+   * order as they are created on the remote side.
+   */
   this.buffers = [];
 
   /*
    * Gets the latest trace data for a specified context id, null if not available.
    */
-  this.get_latest_trace = function(ctx)
+  this.get_latest_trace = function()
   {
-    var data = this.traces[ctx];
-    if (typeof(data) != "array" || data.length == 0) return null;
-    return data[data.length-1];
+    return this.traces[this.traces.length-1];
   }
 
-  this.add_trace = function(ctx_id, trace)
+  this.add_trace = function(trace)
   {
-    if (ctx_id in this.traces == false)
-    {
-      this.traces[ctx_id] = [];
-    }
-    this.traces[ctx_id].push(trace);
+    this.traces.push(trace);
   };
 
 	// Gets the latest test data for speed test of data transmission

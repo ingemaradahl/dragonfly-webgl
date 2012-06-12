@@ -32,8 +32,8 @@ cls.WebGLBufferView = function(id, name, container_class)
   this._render = function()
   {
     if(!this._container) return;
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    if (window.webgl.data.buffers.length > 0 && this._table_data != null)
+    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
+    if (ctx_id != null && window.webgl.data[ctx_id].buffers.length > 0 && this._table_data != null)
     {
       this._table.set_data(this._table_data);
       this._container.clearAndRender(this._table.render());
@@ -61,24 +61,25 @@ cls.WebGLBufferView = function(id, name, container_class)
   this._on_refresh = function()
   {
     var ctx = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx != false)
+    if (ctx != null)
     {
       window.webgl.buffer.get_buffers_data_all(window.webgl.runtime_id, ctx);
     }
   };
 
-  this._on_new_buffer = this._on_buffer_data_changed = function()
+  this._on_new_buffers = this._on_buffer_data_changed = function(ctx_id)
   {
-    var buffers = window.webgl.data.buffers;
+    var buffers = window.webgl.data[ctx_id].buffers;
     this._table_data = this._format_buffer_table(buffers);
 
-    this._render();
+    var visible_ctx_id = window['cst-selects']['context-select'].get_selected_context();
+    if (visible_ctx_id == ctx_id) this._render();
   };
 
-  this._on_context_change = function(ctx)
+  this._on_context_change = function(ctx_id)
   {
-    this._current_context = ctx;
-    var buffers = window.webgl.data.buffers;
+    this._current_context = ctx_id;
+    var buffers = window.webgl.data[ctx_id].buffers;
     if (buffers != null)
     {
       this._table.set_data(this._format_buffer_table(buffers));
@@ -130,7 +131,7 @@ cls.WebGLBufferView = function(id, name, container_class)
   var eh = window.eventHandlers;
   eh.click["refresh-webgl-buffer"] = this._on_refresh.bind(this);
 
-  messages.addListener('webgl-new-buffer', this._on_new_buffer.bind(this));
+  messages.addListener('webgl-new-buffers', this._on_new_buffers.bind(this));
   messages.addListener('webgl-buffer-data-changed', this._on_buffer_data_changed.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
 

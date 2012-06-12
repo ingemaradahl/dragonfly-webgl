@@ -33,10 +33,10 @@ cls.WebGLTest = function ()
       }
       else 
 			{
-				window.webgl.data.add_test_data(
+				window.webgl.data[obj_id].add_test_data(
 					(new Date()).getTime() - window.webgl._start_time);
 				messages.post('webgl-new-test', 
-					{ "test-length" : message[VALUE].length }
+					{ "test-length" : message[VALUE].length, "ctx" : obj_id}
 				);
       }
     }

@@ -8,7 +8,8 @@ cls.WebGL.WebGLDebugger = function ()
   this.injected = false;
   this.runtime_id = -1;
 
-  this.data = new cls.WebGLData();
+  /* Each context have its own data object, the context id is used as a key. */
+  this.data = {};
 
   this.api = new cls.WebGLAPI();
   this.buffer = new cls.WebGLBuffer();
@@ -42,6 +43,12 @@ cls.WebGL.WebGLDebugger = function ()
     this.contexts = [];
 
     messages.post('webgl-clear');
+  };
+
+  this.add_context = function (context_id)
+  {
+    this.contexts.push(context_id);
+    this.data[context_id] = new cls.WebGLData();
   };
 
 	this.request_test = function (ctx)
@@ -145,10 +152,13 @@ cls.WebGL.WebGLDebugger = function ()
       var gl_object_ids = [];
       // TODO: Cleanup, describing all message indices
       // ?[0] -> ObjectChainList[0] -> ObjectList[0] -> ObjectInfo[1] -> Property
+      // TODO: Remove or mark contexts that no longer exists.
       var property_list = message[0][0][0][0][1];
       for (var i=0; i < property_list.length-1; i++)
       {
-        gl_object_ids.push(property_list[i][3][0]);
+        var ctx_id = property_list[i][3][0];
+        gl_object_ids.push(ctx_id);
+        if (!(ctx_id in this.data)) this.add_context(ctx_id);
       }
 
       this.contexts = gl_object_ids;

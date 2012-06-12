@@ -9,23 +9,23 @@ cls.WebGLTrace = function(api)
   this.api = api;
 
   // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
-  this._send_trace_request = function(rt_id, obj_id)
+  this._send_trace_request = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.request_trace);
-    this._current_context = obj_id;
-    window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["gl", obj_id]]]);
+    this._current_context = ctx_id;
+    window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["gl", ctx_id]]]);
   };
 
   this._on_trace_complete = function(msg)
   {
     var rt_id = msg.runtime_id;
-    var obj_id = this._current_context;
+    var ctx_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
-    var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, obj_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["gl", obj_id]]]);
+    var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, ctx_id]);
+    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["gl", ctx_id]]]);
   };
 
-  this._handle_trace_complete = function(status, message, rt_id, obj_id)
+  this._handle_trace_complete = function(status, message, rt_id, ctx_id)
   {
     var
       STATUS = 0,
@@ -45,7 +45,7 @@ cls.WebGLTrace = function(api)
       }
       else {
         var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._finalize_trace_complete, [rt_id, obj_id]);
+        var tag = tagManager.set_callback(this, this._finalize_trace_complete, [rt_id, ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
       }
     }
@@ -56,7 +56,7 @@ cls.WebGLTrace = function(api)
     }
   };
 
-  this._finalize_trace_complete = function(status, message, rt_id, obj_id)
+  this._finalize_trace_complete = function(status, message, rt_id, ctx_id)
   {
     if (status === 0)
     { 
@@ -77,7 +77,7 @@ cls.WebGLTrace = function(api)
         data.push(new TraceEntry(function_name, error_code, args));
       }
 
-      window.webgl.data.add_trace(obj_id, data);
+      window.webgl.data[ctx_id].add_trace(data);
       messages.post('webgl-new-trace', data);
     }
     else

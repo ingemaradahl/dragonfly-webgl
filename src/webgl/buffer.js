@@ -26,7 +26,7 @@ cls.WebGLBuffer = function()
     }
     this._requests[ctx_id] = 1;
 
-    var len = window.webgl.data.buffers.length;
+    var len = window.webgl.data[ctx_id].buffers.length;
 
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers).replace(/START_INDEX/g, len);
     var tag = tagManager.set_callback(this, this._handle_buffer_created, [rt_id, ctx_id]);
@@ -114,7 +114,7 @@ cls.WebGLBuffer = function()
       {
         var id = msg_vars[i][OBJECT_VALUE][OBJECT_ID];
         object_ids.push(id);
-        window.webgl.data.create_buffer();
+        window.webgl.data[ctx_id].create_buffer();
       }
 
       if (object_ids.length > 0)
@@ -126,7 +126,7 @@ cls.WebGLBuffer = function()
       var run = this._requests[ctx_id] > 1;
       this._requests[ctx_id] = 0;
       if (run) this._on_buffer_created({runtime_id: rt_id});
-      messages.post('webgl-new-buffer');
+      messages.post('webgl-new-buffers', ctx_id);
     }
     else
     {
@@ -254,10 +254,10 @@ cls.WebGLBuffer = function()
         delete buffer.length;
         delete buffer.buffer;
 
-        window.webgl.data.update_buffer_data(buffer);
+        window.webgl.data[ctx_id].update_buffer_data(buffer);
 
         // TODO: only send one message?
-        messages.post('webgl-buffer-data-changed', buffer);
+        messages.post('webgl-buffer-data-changed', ctx_id);
       }
     }
     else

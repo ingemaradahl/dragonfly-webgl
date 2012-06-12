@@ -29,9 +29,9 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._render = function()
   {
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
     var trace;
-    if (ctx != false && (trace = window.webgl.data.get_latest_trace(ctx)) != null)
+    if (ctx_id != null && (trace = window.webgl.data[ctx_id].get_latest_trace()) != null)
     {
       this._table.set_data(this._format_trace_table(trace));
       this._container.clearAndRender(this._table.render());
@@ -59,7 +59,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   this._on_refresh = function()
   {
     var ctx = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx != false)
+    if (ctx != null)
     {
       window.webgl.request_trace(ctx);
     }
@@ -75,7 +75,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   this._on_context_change = function(ctx)
   {
     this._current_context = ctx;
-    var trace = window.webgl.data.get_latest_trace(ctx);
+    var trace = window.webgl.data[ctx_id].get_latest_trace(ctx);
     if (trace != null)
     {
       this._table.set_data(this._format_trace_table(trace));

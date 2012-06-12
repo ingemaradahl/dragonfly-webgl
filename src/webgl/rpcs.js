@@ -354,8 +354,27 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buffer = this.buffers[this.current_buffer];
       buffer.target = args[0];
-      buffer.data = args[1];
+      buffer.data = typeof(args[1]) == "Number" ? [] : args[1];
       buffer.usage = args[2];
+    };
+    innerFuns.bufferSubData = function(result, args)
+    {
+      var buffer = this.buffers[this.current_buffer];
+      buffer.target = args[0];
+      buffer.data = buffer.data.slice(0, args[1]).concat(args[2]);
+    };
+    innerFuns.deleteBuffer = function(result, args)
+    {
+      for (var i = 0; i < this.buffers.length; i++)
+      {
+        var buffer = this.buffers[i];
+        if (buffer != null && buffer.buffer == args[0])
+        {
+          // TODO: should notify dragonfly about the deletion.
+          buffer.buffer = null;
+          break;
+        }
+      }
     };
 
     // Copy enumerators and wrap functions
