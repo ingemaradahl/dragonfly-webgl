@@ -65,16 +65,17 @@ cls.WebGLTrace = function(api)
       for (var i = 0; i < msg_vars.length - 1; i++)
       {
         var parts = msg_vars[i][2].split("|");
-        if (parts.length < 2)
+        if (parts.length < 3)
         {
           opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
             "A trace entry had incorrect data: [" + parts.join(", ") + "]");
           continue;
         }
         var function_name = parts[0];
-        var error_code = parts[1];
-        var args = parts.slice(2);
-        data.push(new TraceEntry(function_name, error_code, args));
+        var error_code = Number(parts[1]);
+        var result = parts[2];
+        var args = parts.slice(3);
+        data.push(new TraceEntry(function_name, error_code, result, args));
       }
 
       window.webgl.data[ctx_id].add_trace(data);
@@ -95,10 +96,12 @@ cls.WebGLTrace = function(api)
 /**
  * Used to store a single function call in a frame trace.
  */
-function TraceEntry(function_name, error_code, args)
+function TraceEntry(function_name, error_code, result, args)
 {
   this.function_name = function_name;
   this.error_code = error_code;
-  this.has_error = error_code === WebGLRenderingContext.NO_ERROR;
+  this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
+  this.result = result;
+  this.have_result = result !== "";
   this.args = args;
 }

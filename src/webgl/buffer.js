@@ -62,7 +62,7 @@ cls.WebGLBuffer = function()
     else if (message[OBJECT_VALUE][4] == "Error")
     {
       var obj_id = message[OBJECT_VALUE][OBJECT_ID];
-      var tag = tagManager.set_callback(this, this._handle_error, [rt_id, ctx_id]);
+      var tag = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
       window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [obj_id]]);
     }
     else
@@ -71,26 +71,6 @@ cls.WebGLBuffer = function()
           "failed _handle_buffer_created in WebGLBuffer");
     }
   }
-
-  this._handle_error = function(status, message, rt_id, ctx_id)
-  { 
-    if (status === 0)
-    { 
-      var msg_vars = message[0][0][0][0][1];
-      var obj = {};
-      for (var i = 0; i < msg_vars.length; i++)
-      {
-        obj[msg_vars[i][0]] = msg_vars[i][2];
-      }
-      console.log("Error:");
-      console.log(obj);
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _handle_error");
-    }
-  };
 
   this._finalize_buffer_created = function(status, message, rt_id, ctx_id)
   {

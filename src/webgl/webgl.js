@@ -171,5 +171,25 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
+  this.handle_error = function(status, message, rt_id, ctx_id)
+  { 
+    if (status === 0)
+    { 
+      var msg_vars = message[0][0][0][0][1];
+      var obj = {};
+      for (var i = 0; i < msg_vars.length; i++)
+      {
+        obj[msg_vars[i][0]] = msg_vars[i][2];
+      }
+      console.log("Remote error:");
+      console.log(obj);
+    }
+    else
+    {
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "failed _handle_error");
+    }
+  };
+
   messages.addListener('runtime-selected', this.clear.bind(this));
 };

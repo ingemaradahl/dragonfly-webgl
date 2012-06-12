@@ -151,10 +151,35 @@ cls.WebGL.RPCs.injection = function () {
         var args = [];
         for (var i = 0; i < arguments.length; i++)
         {
-          args.push(arguments[i]);
+          if (typeof(arguments[i]) === "object")
+          {
+            var obj = arguments[i];
+            if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+            {
+              // TODO: perhaps it should be possible to transfer the entire list if the user focuses the argument.
+              if (obj.length > 12)
+              {
+                var ls = Array.prototype.slice.call(obj, 0, 12);
+                args.push("[" + ls.join(", ") + ", ... (" + (obj.length - 12) + " more elements)]");
+              }
+              else
+              {
+                args.push("[" + Array.prototype.join.call(obj, ", ") + "]");
+              }
+            }
+            else
+            {
+              // TODO: handle other types as well.
+              args.push(arguments[i]);
+            }
+          }
+          else
+          {
+            args.push(arguments[i]);
+          }
         }
-
-        context.frame_trace.push([function_name, error].concat(args).join("|"));
+        var res = result === undefined ? "" : result;
+        context.frame_trace.push([function_name, error, res].concat(args).join("|"));
       }
       return result;
     };
@@ -354,7 +379,16 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buffer = this.buffers[this.current_buffer];
       buffer.target = args[0];
-      buffer.data = typeof(args[1]) == "Number" ? [] : args[1];
+      if (typeof(args[1]) === "number")
+      {
+        buffer.size = args[1];
+        buffer.data = [];
+      }
+      else
+      {
+        buffer.size = args[1].length;
+        buffer.data = args[1];
+      }
       buffer.usage = args[2];
     };
     innerFuns.bufferSubData = function(result, args)
