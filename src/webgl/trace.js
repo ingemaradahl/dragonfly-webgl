@@ -45,7 +45,7 @@ cls.WebGLTrace = function(api)
       }
       else {
         var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._finalize_trace_complete, [rt_id, ctx_id]);
+        var tag = tagManager.set_callback(this, this._examine_trace_complete, [rt_id, ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
       }
     }
@@ -56,30 +56,71 @@ cls.WebGLTrace = function(api)
     }
   };
 
+  this._examine_trace_complete = function(status, message, rt_id, ctx_id)
+  {
+    var
+      STATUS = 0,
+      TYPE = 1,
+      VALUE = 2,
+      OBJECT_VALUE = 3,
+      // sub message ObjectValue
+      OBJECT_ID = 0;
+
+    if (status === 0)
+    { 
+      var msg_vars = message[0][0][0][0][1]; 
+
+      var len = msg_vars.length - 1;
+
+      var object_ids = [];
+      for (var i = 0; i < len; i++)
+      {
+        var id = msg_vars[i][OBJECT_VALUE][OBJECT_ID];
+        object_ids.push(id);
+      }
+
+      if (object_ids.length > 0)
+      {
+        var tag = tagManager.set_callback(this, this._finalize_trace_complete, [rt_id, ctx_id]);
+        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
+      }
+    }
+    else
+    {
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "failed _finalize_buffer_created in WebGLTrace");
+    }
+  };
+
   this._finalize_trace_complete = function(status, message, rt_id, ctx_id)
   {
     if (status === 0)
     { 
-      var data = [];
-      var msg_vars = message[0][0][0][0][1]; 
-      for (var i = 0; i < msg_vars.length - 1; i++)
-      {
-        var parts = msg_vars[i][2].split("|");
-        if (parts.length < 3)
-        {
-          opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "A trace entry had incorrect data: [" + parts.join(", ") + "]");
-          continue;
-        }
-        var function_name = parts[0];
-        var error_code = Number(parts[1]);
-        var result = parts[2];
-        var args = parts.slice(3);
-        data.push(new TraceEntry(function_name, error_code, result, args));
-      }
+      if (message.length == 0) return;
 
-      window.webgl.data[ctx_id].add_trace(data);
-      messages.post('webgl-new-trace', data);
+      for (var i = 0; i < message[0].length; i++)
+      {
+        var msg_vars = message[0][i][0][0][1]; 
+        var data = [];
+        for (var j = 0; j < msg_vars.length - 1; j++)
+        {
+          var parts = msg_vars[j][2].split("|");
+          if (parts.length < 3)
+          {
+            opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+              "A trace entry had incorrect data: [" + parts.join(", ") + "]");
+            continue;
+          }
+          var function_name = parts[0];
+          var error_code = Number(parts[1]);
+          var result = parts[2];
+          var args = parts.slice(3);
+          data.push(new TraceEntry(function_name, error_code, result, args));
+        }
+
+        window.webgl.data[ctx_id].add_trace(data);
+        messages.post('webgl-new-trace', data);
+      }
     }
     else
     {
@@ -89,7 +130,7 @@ cls.WebGLTrace = function(api)
   };
   // ---------------------------------------------------------------------------
 
-  window.host_tabs.activeTab.addEventListener("webgl-trace-complete", 
+  window.host_tabs.activeTab.addEventListener("webgl-trace-completed", 
       this._on_trace_complete.bind(this), false, false);
 };
 

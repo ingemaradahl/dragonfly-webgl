@@ -4,31 +4,13 @@ window.cls || (window.cls = {});
 
 cls.WebGLBuffer = function() 
 {
-  /**
-   * Keeps track of how many requests that have been made per context to limit 
-   * the number of concurrent requests per context to one.
-   * Removes redundant requests since all buffers are gathered.
-   */
-  this._requests = {};
-
   this._on_buffer_created = function(msg)
   {
     var rt_id = msg.runtime_id;
     // TODO: figure out which context the event originates from, or poll all of them.
     var ctx_id = window.webgl.contexts[0];
 
-    // If it's already running for a specific context then let the current one 
-    // finish and later run it again when the current run is done.
-    if (ctx_id in this._requests && this._requests[ctx_id] > 0)
-    {
-      this._requests[ctx_id]++;
-      return;
-    }
-    this._requests[ctx_id] = 1;
-
-    var len = window.webgl.data[ctx_id].buffers.length;
-
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers).replace(/START_INDEX/g, len);
+    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers_new);
     var tag = tagManager.set_callback(this, this._handle_buffer_created, [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, 
         [rt_id, 0, 0, script, [["gl", ctx_id]]]);
@@ -84,7 +66,6 @@ cls.WebGLBuffer = function()
 
     if (status === 0)
     { 
-      var ctx_id = window.webgl.contexts[0];
       var msg_vars = message[0][0][0][0][1]; 
 
       var len = msg_vars.length - 1;
@@ -103,9 +84,6 @@ cls.WebGLBuffer = function()
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
       }
       
-      var run = this._requests[ctx_id] > 1;
-      this._requests[ctx_id] = 0;
-      if (run) this._on_buffer_created({runtime_id: rt_id});
       messages.post('webgl-new-buffers', ctx_id);
     }
     else
@@ -128,7 +106,7 @@ cls.WebGLBuffer = function()
 
   this.get_buffers_data_all = function(rt_id, ctx_id)
   {
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers).replace(/START_INDEX/g, 0);
+    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers);
     var tag = tagManager.set_callback(this, this._handle_buffers_data, [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, 
         [rt_id, 0, 0, script, [["gl", ctx_id]]]);
@@ -178,7 +156,6 @@ cls.WebGLBuffer = function()
 
     if (status === 0)
     { 
-      var ctx_id = window.webgl.contexts[0];
       var msg_vars = message[0][0][0][0][1]; 
 
       var len = msg_vars.length - 1;
@@ -195,10 +172,6 @@ cls.WebGLBuffer = function()
         var tag = tagManager.set_callback(this, this._finalize_buffers_data, [rt_id, ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
       }
-      
-      var run = this._requests[ctx_id] > 1;
-      this._requests[ctx_id] = 0;
-      if (run) this._on_buffer_created({runtime_id: rt_id});
     }
     else
     {
@@ -234,7 +207,10 @@ cls.WebGLBuffer = function()
         delete buffer.length;
         delete buffer.buffer;
 
-        window.webgl.data[ctx_id].update_buffer_data(buffer);
+        if (!("nodata" in buffer))
+        {
+          window.webgl.data[ctx_id].update_buffer_data(buffer);
+        }
 
         // TODO: only send one message?
         messages.post('webgl-buffer-data-changed', ctx_id);

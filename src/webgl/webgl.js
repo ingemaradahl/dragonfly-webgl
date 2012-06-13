@@ -159,6 +159,11 @@ cls.WebGL.WebGLDebugger = function ()
         var ctx_id = property_list[i][3][0];
         gl_object_ids.push(ctx_id);
         if (!(ctx_id in this.data)) this.add_context(ctx_id);
+
+        // Tell the target context that the debugger is ready.
+        var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.debugger_ready);
+        window.services["ecmascript-debugger"].requestEval(0,
+            [this.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
       }
 
       this.contexts = gl_object_ids;

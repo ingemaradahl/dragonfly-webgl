@@ -57,26 +57,62 @@ cls.WebGL.RPCs.query_contexts = function()
   }
 };
 
+cls.WebGL.RPCs.debugger_ready = function() 
+{
+  for (var key in gl.events)
+  {
+    if (gl.events.hasOwnProperty(key))
+    {
+      gl.events[key].set_ready();
+    }
+  }
+};
 
 cls.WebGL.RPCs.get_state = function ()
 {
   return ctx.get_state();
 };
 
-cls.WebGL.RPCs.get_buffers = function ()
+cls.WebGL.RPCs.get_buffers_new = function ()
 {
-  // START_INDEX should be replaced by the calling code.
-  var buffers = gl.buffers.slice(START_INDEX);
+  var buffers = gl.events["buffer-created"].get();
   var out = [];
   for(var i = 0; i < buffers.length; i++)
   {
     var buffer = buffers[i];
-    if (buffer == undefined || buffer.data == undefined) continue;
-    /* TODO: clone the data to a new array or make a second request to examine the array*/
+    if (buffer == undefined) continue;
+    var arr;
+    if (buffer.data === undefined)
+    {
+      arr = {};
+      arr.nodata = true;
+    }
+    else
+    {
+      /* TODO: clone the data to a new array or make a second request to examine the array*/
+      arr = buffer.data;
+      arr.target = buffer.target;
+      arr.usage = buffer.usage;
+    }
+    arr.index = buffer.buffer._index;
+    out.push(arr);
+  }
+  return out;
+};
+
+cls.WebGL.RPCs.get_buffers = function ()
+{
+  var buffers = gl.buffers;
+  var out = [];
+  for(var i = 0; i < buffers.length; i++)
+  {
+    var buffer = buffers[i];
+    if (buffer == undefined || buffer.data === undefined) continue;
+      /* TODO: clone the data to a new array or make a second request to examine the array*/
     var arr = buffer.data;
     arr.target = buffer.target;
     arr.usage = buffer.usage;
-    arr.index = i;
+    arr.index = buffer.buffer._index;
     out.push(arr);
   }
   return out;
@@ -109,7 +145,7 @@ cls.WebGL.RPCs.request_trace = function()
 
 cls.WebGL.RPCs.get_trace = function()
 {
-  return gl.frame_trace;
+  return gl.events["trace-completed"].get();
 };
 
 cls.WebGL.RPCs.injection = function () {
@@ -193,9 +229,14 @@ cls.WebGL.RPCs.injection = function () {
     this.gl = true_webgl;
     var gl = true_webgl;
 
+    this.events = {
+      "buffer-created": new MessageQueue("webgl-buffer-created"),
+      "trace-completed": new MessageQueue("webgl-trace-completed")
+    };
+
     this.buffers = [];
     
-    this.current_buffer;
+    this.current_buffer = null;
 
     this.frame_trace = [];
 
@@ -207,7 +248,7 @@ cls.WebGL.RPCs.injection = function () {
       if (this.capturing_frame) {
         this.capturing_frame = false;
         console.log("Frame have been captured.");
-        document.dispatchEvent(new Event("webgl-trace-complete"));
+        this.events["trace-completed"].post(this.frame_trace);
       }
 
       if (this.capture_next_frame)
@@ -216,7 +257,7 @@ cls.WebGL.RPCs.injection = function () {
         this.capturing_frame = true;
         this.frame_trace = [];
       }
-    }
+    };
 
     this.get_state = function()
     {
@@ -367,8 +408,8 @@ cls.WebGL.RPCs.injection = function () {
         buf.buffer = result;
         var i = this.buffers.push(buf);
         result._index = i - 1;
-        // TODO: ugly temporary solution to "ensure" that the webgl-debugger-ready message is recieved before this one.
-        setTimeout('document.dispatchEvent(new Event("webgl-buffer-created"))', 2000);
+
+        this.events["buffer-created"].post(buf);
       }
     };
     innerFuns.bindBuffer = function(result, args)
@@ -449,4 +490,36 @@ cls.WebGL.RPCs.injection = function () {
     return result;
   };
 
+  function MessageQueue(name, ready)
+  {
+    this.name = name;
+    this.ready = Boolean(ready);
+    this.running = false;
+    this.messages = [];
+  }
+  MessageQueue.prototype.post = function (message)
+  {
+    this.messages.push(message);
+    if (!this.running && this.ready)
+    {
+      document.dispatchEvent(new Event(this.name));
+      this.running = true;
+    }
+  };
+  MessageQueue.prototype.get = function ()
+  {
+    this.running = false;
+    var messages = this.messages;
+    this.messages = [];
+    return messages;
+  };
+  MessageQueue.prototype.set_ready = function ()
+  {
+    if (!this.ready && this.messages.length > 0)
+    {
+      document.dispatchEvent(new Event(this.name));
+      this.running = true;
+    }
+    this.ready = true;
+  };
 };
