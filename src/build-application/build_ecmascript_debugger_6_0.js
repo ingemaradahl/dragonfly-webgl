@@ -253,15 +253,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
 
-		new cls.WebGLTestView("webgl_test",
-													 "Payload Test",
-													 "scroll webgl_view test");
-		cls.WebGLTestView.create_ui_widgets();
+    new cls.WebGLTestView("webgl_test",
+                           "Payload Test",
+                           "scroll webgl_view test");
+    cls.WebGLTestView.create_ui_widgets();
 
-		new cls.WebGLTextureView("webgl_texture",
-														 "Textures",
-														 "scroll webgl_texture texture");
-		cls.WebGLTextureView.create_ui_widgets();
+    new cls.WebGLTextureView("webgl_texture",
+                             "Textures",
+                             "scroll webgl_texture texture");
+    cls.WebGLTextureView.create_ui_widgets();
 
     /* the following views must be created to get entry in the Settings tab */
 

@@ -7,13 +7,13 @@ window.cls || (window.cls = {});
  */
 cls.WebGLData = function ()
 {
-	this.texture_names = [];
+  this.texture_names = [];
 
   this.shaders = {};
 
   this.states = [];
 
-	this.test_data;
+  this.test_data;
 
   /*
    * Call traces of WebGL calls.
@@ -40,24 +40,24 @@ cls.WebGLData = function ()
     this.traces.push(trace);
   };
 
-	// Gets the latest test data for speed test of data transmission
-	this.get_test_data = function()
-	{
-		var data = this.test_data;
-		if (typeof(data) != "number") return null;
-		return data;
-	};
+  // Gets the latest test data for speed test of data transmission
+  this.get_test_data = function()
+  {
+    var data = this.test_data;
+    if (typeof(data) != "number") return null;
+    return data;
+  };
 
-	// Put speed test results in the data stack
-	this.add_test_data = function(data)
-	{
-		this.test_data = data;
-	};
+  // Put speed test results in the data stack
+  this.add_test_data = function(data)
+  {
+    this.test_data = data;
+  };
 
-	this.create_buffer = function()
-	{
+  this.create_buffer = function()
+  {
     this.buffers.push(new Buffer(this.buffers.length));
-	};
+  };
 
   /*
    * Inserts a buffer into the collection. Uses the index from the object.

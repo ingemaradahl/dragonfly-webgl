@@ -21,13 +21,13 @@ cls.WebGL.RPCs.prepare = function(fun)
 
 cls.WebGL.RPCs.query_test = function()
 {
-	var data_length = 1000000;
-	var return_value = 'a';
-	for (var i=0; i<data_length-1; i++)
-	{
-		return_value += 'a';
-	}
-	return return_value;
+  var data_length = 1000000;
+  var return_value = 'a';
+  for (var i=0; i<data_length-1; i++)
+  {
+    return_value += 'a';
+  }
+  return return_value;
 };
 
 cls.WebGL.RPCs.query_contexts = function() 
@@ -153,48 +153,48 @@ cls.WebGL.RPCs.get_trace = function()
 // Return all texture urls (===names).
 cls.WebGL.RPCs.get_texture_names = function()
 {
-	var names = [];
-	var i = 0;
-	for (; i < (gl.textures.length); i++)
-	{
-		names.push(gl.textures[i].src);
-	}
-	return names;	
+  var names = [];
+  var i = 0;
+  for (; i < (gl.textures.length); i++)
+  {
+    names.push(gl.textures[i].src);
+  }
+  return names; 
 };
 
 // Return texture as string image data. 
 cls.WebGL.RPCs.get_texture_as_data = function()
 {
-	var texture_url = "URL";
-	var i = 0;
-	var target_texture_index = undefined;
+  var texture_url = "URL";
+  var i = 0;
+  var target_texture_index = undefined;
 
-	for(; i < gl.textures.length; i++)
-	{
-		if (gl.textures[i].src === texture_url)
-		{
-			target_texture_index = i; 
-		}
-	}
-	
-	if (target_texture_index !== undefined)
-	{
-		var img = gl.textures[target_texture_index];
-		var canvas = document.createElement("canvas");
-		canvas.width = img.width;
-		canvas.height = img.height;
-	
-		var ctx = canvas.getContext("2d");
-		ctx.drawImage(img, 0, 0);
-	
-		var dataURL = canvas.toDataURL("image/png");
-	
-		return (dataURL);
-	}
-	else
-	{
-		console.log("ERROR IN WEBGL, couldn't get texture");
-	}
+  for(; i < gl.textures.length; i++)
+  {
+    if (gl.textures[i].src === texture_url)
+    {
+      target_texture_index = i; 
+    }
+  }
+  
+  if (target_texture_index !== undefined)
+  {
+    var img = gl.textures[target_texture_index];
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+  
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+  
+    var dataURL = canvas.toDataURL("image/png");
+  
+    return (dataURL);
+  }
+  else
+  {
+    console.log("ERROR IN WEBGL, couldn't get texture");
+  }
 };
 
 // End of texture related rpcs.
@@ -221,10 +221,10 @@ cls.WebGL.RPCs.injection = function () {
 
     return function ()
     {
-			// Execute original function and save result.
+      // Execute original function and save result.
       var result = original_function.apply(gl, arguments);
 
-			// If there is a wrapped function, we execute that afterwards.
+      // If there is a wrapped function, we execute that afterwards.
       if (innerFunction) innerFunction.call(context, result, arguments);
 
       var error = gl.NO_ERROR;
@@ -289,8 +289,8 @@ cls.WebGL.RPCs.injection = function () {
 
     this.buffers = [];
   
-		// Container of all HTML DOM Image Objects from the textures. 
-		this.textures = [];
+    // Container of all HTML DOM Image Objects from the textures. 
+    this.textures = [];
  
     this.current_buffer = null;
 
@@ -508,24 +508,24 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
-		// Texture code
-		innerFuns.bindTexture = function(result, args)
-		{
+    // Texture code
+    innerFuns.bindTexture = function(result, args)
+    {
 
-		};
+    };
 
-		// TODO All texImage functions must be wrapped and handled
-		innerFuns.texImage2D = function(result, args)
-		{
-			var texture = args[5]; // args[5] === image argument
-		  this.textures.push(texture);	
-			console.log("WebGLDebugger - texImage2d: Texture added " + texture);
-		};
+    // TODO All texImage functions must be wrapped and handled
+    innerFuns.texImage2D = function(result, args)
+    {
+      var texture = args[5]; // args[5] === image argument
+      this.textures.push(texture);  
+      console.log("WebGLDebugger - texImage2d: Texture added " + texture);
+    };
 
-		innerFuns.texSubImage2D = function(result, args)
-		{
-			//TODO
-		};
+    innerFuns.texSubImage2D = function(result, args)
+    {
+      //TODO
+    };
 
     // Copy enumerators and wrap functions
     for (var i in gl)

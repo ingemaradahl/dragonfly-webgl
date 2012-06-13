@@ -32,11 +32,11 @@ cls.WebGLTexture = function ()
             "failed _handle_texture_query in WebGLDebugger");
       }
       else 
-			{
-				var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-				var tag = tagManager.set_callback(this, this._finalize_texture_query, [ctx_id]);
-				window.services["ecmascript-debugger"].requestExamineObjects(tag,
-							[window.webgl.runtime_id, [return_arr]]);
+      {
+        var return_arr = message[OBJECT_VALUE][OBJECT_ID];
+        var tag = tagManager.set_callback(this, this._finalize_texture_query, [ctx_id]);
+        window.services["ecmascript-debugger"].requestExamineObjects(tag,
+              [window.webgl.runtime_id, [return_arr]]);
       }
     }
     else
@@ -46,30 +46,30 @@ cls.WebGLTexture = function ()
     }
   };
 
-	this._finalize_texture_query = function(status, message, obj_id)
-	{
-		if (status === 0)
-		{
-			var msg_vars = message[0][0][0][0][1];
-			window.webgl.data.texture_names = msg_vars;
-			messages.post('webgl-new-texture-names');
-		}
-		else
-		{		
-			opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-					"failed finalize_texture_query in WebGLDebugger");
-		}
-	};
+  this._finalize_texture_query = function(status, message, obj_id)
+  {
+    if (status === 0)
+    {
+      var msg_vars = message[0][0][0][0][1];
+      window.webgl.data.texture_names = msg_vars;
+      messages.post('webgl-new-texture-names');
+    }
+    else
+    {   
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "failed finalize_texture_query in WebGLDebugger");
+    }
+  };
 
 // Retrieves the image data of a choosen texture.
 
  this._get_texture_data = function(ctx_id, texture_url)
  {
     var script =
-				cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data).replace(/URL/,texture_url);
+        cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data).replace(/URL/,texture_url);
     var tag = tagManager.set_callback(this, this._handle_texture_data, [ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag,
-				[window.webgl.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
+        [window.webgl.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
  };
 
   this._handle_texture_data = function(status, message, ctx_id)
@@ -91,10 +91,10 @@ cls.WebGLTexture = function ()
             "failed _handle_texture_query in WebGLDebugger");
       }
       else 
-			{
-				var return_arr = message[VALUE];
-				messages.post('webgl-new-texture-data',
-						{ "texture-data" : return_arr });
+      {
+        var return_arr = message[VALUE];
+        messages.post('webgl-new-texture-data',
+            { "texture-data" : return_arr });
       }
     }
     else
@@ -104,19 +104,19 @@ cls.WebGLTexture = function ()
     }
   };
 
-	this._finalize_texture_query = function(status, message, obj_id)
-	{
-		if (status === 0)
-		{
-			var msg_vars = message[0][0][0][0][1];
-			window.webgl.data.texture_names = msg_vars;
-			messages.post('webgl-new-texture-names');
-		}
-		else
-		{		
-			opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-					"failed finalize_texture_query in WebGLDebugger");
-		}
-	};
+  this._finalize_texture_query = function(status, message, obj_id)
+  {
+    if (status === 0)
+    {
+      var msg_vars = message[0][0][0][0][1];
+      window.webgl.data.texture_names = msg_vars;
+      messages.post('webgl-new-texture-names');
+    }
+    else
+    {   
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "failed finalize_texture_query in WebGLDebugger");
+    }
+  };
 
 };
