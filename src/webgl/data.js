@@ -7,6 +7,8 @@ window.cls || (window.cls = {});
  */
 cls.WebGLData = function ()
 {
+	this.texture_names = [];
+
   this.shaders = {};
 
   this.states = [];

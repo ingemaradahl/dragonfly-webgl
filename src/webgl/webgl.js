@@ -16,6 +16,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace(this.api);
 	this.test = new cls.WebGLTest();
+	this.texture = new cls.WebGLTexture();
 
   // Object IDs for Wrapped Context Objects
   this.contexts = [];
@@ -26,7 +27,7 @@ cls.WebGL.WebGLDebugger = function ()
     {
       this.runtime_id = rt_id;
       window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", 
-          this._on_new_context.bind(this), false, false);
+      this._on_new_context.bind(this), false, false);
       this._send_injection(rt_id, cont_callback);
     }
   };
@@ -56,8 +57,31 @@ cls.WebGL.WebGLDebugger = function ()
 		if (this.available())
 		{
 			window.webgl._start_time = (new Date()).getTime();
+			// TODO choosen context
 			ctx = (ctx || this.contexts[0]);
 			this.test._send_test_query(ctx);
+		}
+	};
+
+	// Request for texture names (===urls).
+	this.request_textures = function(ctx)
+	{
+		if (this.available())
+		{
+			ctx = (ctx || this.contexts[0]);
+			this.texture._send_texture_query(ctx);
+		}
+	};
+
+	// Request for one texture image data string.
+	this.request_texture_data = function(ctx, texture_url)
+	{
+		console.log("trying to request data for " + texture_url);
+		if (this.available())
+		{
+			console.log("requesting texture data");
+			ctx = (ctx || this.contexts[0]);
+			this.texture._get_texture_data(ctx, texture_url);
 		}
 	};
 
