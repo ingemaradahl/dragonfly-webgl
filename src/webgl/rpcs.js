@@ -150,14 +150,52 @@ cls.WebGL.RPCs.get_trace = function()
 
 // RPCs related to the texture tab.
 
-// Return all texture urls (===names).
+// Return all texture "names || ids". There are five different types of 
+// objects that can be used as textures: ArrayBufferView, ImageData, 
+// HTMLImageElement, HTMLCanvasElement and HTMLVideoElement.
+ 
 cls.WebGL.RPCs.get_texture_names = function()
 {
   var names = [];
   var i = 0;
+  var j = 0;
+  var exists = false;
+  var text = "random canvas";
+
   for (; i < (gl.textures.length); i++)
   {
-    names.push(gl.textures[i].src);
+    switch(gl.textures[i].toString())
+    {
+      case "[object ArrayBufferView]":
+        console.log("ArrayBufferView, not implemented"); //TODO
+        break;
+      case "[object ImageData]":
+        console.log("ImageData, not implemented"); //TODO
+        break;
+      case "[object HTMLImageElement]":
+        names.push(gl.textures[i].src);
+        break;
+      case "[object HTMLCanvasElement]":  // Expensive!?
+        //names.push(gl.textures[i].id);
+        for (j=0; (j<names.length && !exists); j++)
+        {
+          if (names[j] === text)
+          {
+            exists = true;
+          }
+        }
+        if (!exists)
+        {
+          names.push(text);
+          console.log(text + " pushed");
+        }  
+      break;
+      case "[object HTMLVideoElement]":
+        console.log("HTMLVideoElement, not implemented"); //TODO
+        break;
+      default: console.log("ERROR in WebGLDebugger, couldn't resolve " +
+                           "texture object type: " + gl.textures[i].toString());
+    }
   }
   return names; 
 };
@@ -517,9 +555,13 @@ cls.WebGL.RPCs.injection = function () {
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
-      var texture = args[5]; // args[5] === image argument
-      this.textures.push(texture);  
-      console.log("WebGLDebugger - texImage2d: Texture added " + texture);
+      // There are five different calls to texImage2D with different kinds of
+      // arguments. ArrayBufferView, ImageData, HTMLImageElement,
+      // HTMLCanvasElement, and HTMLVideoElement. They are always the last 
+      // argument. 
+      var texture_container_object = args[args.length -1];
+      console.log(texture_container_object.toString());
+      this.textures.push(texture_container_object);
     };
 
     innerFuns.texSubImage2D = function(result, args)
