@@ -76,10 +76,8 @@ cls.WebGL.WebGLDebugger = function ()
   // Request for one texture image data string.
   this.request_texture_data = function(ctx, texture_url)
   {
-    console.log("trying to request data for " + texture_url);
     if (this.available())
     {
-      console.log("requesting texture data");
       ctx = (ctx || this.contexts[0]);
       this.texture._get_texture_data(ctx, texture_url);
     }

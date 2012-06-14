@@ -92,6 +92,7 @@ cls.WebGLTexture = function ()
       }
       else 
       {
+        // Sending back image data to view with messages.post.
         var return_arr = message[VALUE];
         messages.post('webgl-new-texture-data',
             { "texture-data" : return_arr });
@@ -101,21 +102,6 @@ cls.WebGLTexture = function ()
     {
       opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
           "failed _handle_texture_query in WebGLDebugger");
-    }
-  };
-
-  this._finalize_texture_query = function(status, message, obj_id)
-  {
-    if (status === 0)
-    {
-      var msg_vars = message[0][0][0][0][1];
-      window.webgl.data.texture_names = msg_vars;
-      messages.post('webgl-new-texture-names');
-    }
-    else
-    {   
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed finalize_texture_query in WebGLDebugger");
     }
   };
 
