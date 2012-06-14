@@ -19,6 +19,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
 	this.test = new cls.WebGLTest();
+  this.texture = new cls.WebGLTexture();
 
   this.inject = function (rt_id, cont_callback)
   {
@@ -51,15 +52,36 @@ cls.WebGL.WebGLDebugger = function ()
     this.data[context_id] = new cls.WebGLData();
   };
 
-	this.request_test = function (ctx)
-	{
-		if (this.available())
-		{
-			window.webgl._start_time = (new Date()).getTime();
-			ctx = (ctx || this.contexts[0]);
-			this.test._send_test_query(ctx);
-		}
-	};
+  this.request_test = function (ctx)
+  {
+    if (this.available())
+    {
+      window.webgl._start_time = (new Date()).getTime();
+      // TODO choosen context
+      ctx = (ctx || this.contexts[0]);
+      this.test._send_test_query(ctx);
+    }
+  };
+
+  // Request for texture names (===urls).
+  this.request_textures = function(ctx)
+  {
+    if (this.available())
+    {
+      ctx = (ctx || this.contexts[0]);
+      this.texture._send_texture_query(ctx);
+    }
+  };
+
+  // Request for one texture image data string.
+  this.request_texture_data = function(ctx, texture_url)
+  {
+    if (this.available())
+    {
+      ctx = (ctx || this.contexts[0]);
+      this.texture._get_texture_data(ctx, texture_url);
+    }
+  };
 
   this.request_state = function (ctx)
   {

@@ -350,7 +350,12 @@ cst-select-option-list,
 
 .reload-webgl-test::before
 {
-	background-image: url("../ui-images/icons/icon_reload.png");
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-texture::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
 }
 
 .reload-webgl-state::before
@@ -888,7 +893,7 @@ ui-menu > h2
   font-size: 11px;
   background: #fff;
   width: 170px;
-	height: 18px;
+  height: 18px;
   line-height: 14px;
   border: 1px solid #000;
   border-top-width: 0;

@@ -129,7 +129,56 @@ cls.WebGL.RPCs.request_trace = function()
 
 cls.WebGL.RPCs.get_trace = function()
 {
-  return handler.events["trace-completed"].get();
+  return gl.events["trace-completed"].get();
+};
+
+// RPCs related to the texture tab.
+
+// Return all texture urls (===names).
+cls.WebGL.RPCs.get_texture_names = function()
+{
+  var names = [];
+  var i = 0;
+  for (; i < (gl.textures.length); i++)
+  {
+    names.push(gl.textures[i].src);
+  }
+  return names;
+};
+
+// Return texture as string image data.
+cls.WebGL.RPCs.get_texture_as_data = function()
+{
+  var texture_url = "URL";
+  var i = 0;
+  var target_texture_index = undefined;
+
+  for(; i < gl.textures.length; i++)
+  {
+    if (gl.textures[i].src === texture_url)
+    {
+      target_texture_index = i;
+    }
+  }
+
+  if (target_texture_index !== undefined)
+  {
+    var img = gl.textures[target_texture_index];
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    var dataURL = canvas.toDataURL("image/png");
+
+    return (dataURL);
+  }
+  else
+  {
+    console.log("ERROR IN WEBGL, couldn't get texture");
+  }
 };
 
 cls.WebGL.RPCs.injection = function () {
@@ -154,6 +203,7 @@ cls.WebGL.RPCs.injection = function () {
 
     return function ()
     {
+      // Execute original function and save result.
       var result = original_function.apply(gl, arguments);
 
       var error = gl.NO_ERROR;
@@ -434,6 +484,25 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
+    // Texture code
+    innerFuns.bindTexture = function(result, args)
+    {
+
+    };
+
+    // TODO All texImage functions must be wrapped and handled
+    innerFuns.texImage2D = function(result, args)
+    {
+      var texture = args[5]; // args[5] === image argument
+      this.textures.push(texture);
+      console.log("WebGLDebugger - texImage2d: Texture added " + texture);
+    };
+
+    innerFuns.texSubImage2D = function(result, args)
+    {
+      //TODO
+    };
+
     // Copy enumerators and wrap functions
     for (var i in gl)
     {
@@ -479,11 +548,15 @@ cls.WebGL.RPCs.injection = function () {
   {
     this.gl = gl;
     this.context = context;
-    this.buffers = [];
-    this.frame_trace = [];
 
+    this.buffers = [];
+
+    this.frame_trace = [];
     this.capture_next_frame = false;
     this.capturing_frame = false;
+
+    // Container of all HTML DOM Image Objects from the textures.
+    this.textures = [];
 
     this.events = {
       "buffer-created": new MessageQueue("webgl-buffer-created"),

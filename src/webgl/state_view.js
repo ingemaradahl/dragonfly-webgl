@@ -99,7 +99,7 @@ cls.WebGLStateView = function(id, name, container_class)
     window.webgl.request_state(this._context);
     this._render();
   };
-
+	
   this._on_context_change = function(ctx)
   {
     this._context = ctx;
