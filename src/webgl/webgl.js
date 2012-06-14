@@ -8,26 +8,26 @@ cls.WebGL.WebGLDebugger = function ()
   this.injected = false;
   this.runtime_id = -1;
 
+  /* Object IDs for Handler objects from Wrapped contexts. */
+  this.contexts = [];
+
   /* Each context have its own data object, the context id is used as a key. */
   this.data = {};
 
   this.api = new cls.WebGLAPI();
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
-  this.trace = new cls.WebGLTrace(this.api);
-  this.test = new cls.WebGLTest();
+  this.trace = new cls.WebGLTrace();
+	this.test = new cls.WebGLTest();
   this.texture = new cls.WebGLTexture();
-
-  // Object IDs for Wrapped Context Objects
-  this.contexts = [];
 
   this.inject = function (rt_id, cont_callback)
   {
-    if (this.runtime_id != rt_id)
+    if (this.runtime_id !== rt_id)
     {
       this.runtime_id = rt_id;
-      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready", 
-      this._on_new_context.bind(this), false, false);
+      window.host_tabs.activeTab.addEventListener("webgl-debugger-ready",
+          this._on_new_context.bind(this), false, false);
       this._send_injection(rt_id, cont_callback);
     }
   };
@@ -111,13 +111,13 @@ cls.WebGL.WebGLDebugger = function ()
 
   this._handle_injection = function (status, message, rt_id, cont_callback)
   {
-    if (message[0] == 'completed')
+    if (message[0] === 'completed')
     {
       this.injected = true;
     }
     else
     {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE + 
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
           "failed to inject WebGL wrapping script");
     }
 
@@ -126,18 +126,16 @@ cls.WebGL.WebGLDebugger = function ()
 
   this._on_new_context = function (message)
   {
-    if (message.runtime_id == this.runtime_id) 
+    if (message.runtime_id === this.runtime_id)
     {
-      // Unfortunately, it's impossible to have the message contain the object
-      // id of the WrappedContext object without heavy modification to tabs.js,
-      // thus we need to query the DOM for the possible contexts.
-      var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.query_contexts);
-      var tag = tagManager.set_callback(this, this._handle_context_query);
-      window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, []]);
+      var canvas_id = message.object_id;
+      var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
+      var tag = tagManager.set_callback(this, this._handle_context_handler);
+      window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, [["canvas", canvas_id]]]);
     }
   };
 
-  this._handle_context_query = function(status, message)
+  this._handle_context_handler = function(status, message)
   {
     var
       STATUS = 0,
@@ -147,17 +145,25 @@ cls.WebGL.WebGLDebugger = function ()
       // sub message ObjectValue
       OBJECT_ID = 0;
 
-    if (message[STATUS] == 'completed')
+    if (message[STATUS] === 'completed')
     {
-      if (message[TYPE] == 'null')
+      if (message[TYPE] !== 'object')
       {
         opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "no WebGL context present, yet message recieved");
+            "WebGL context handler could not be recieved");
       }
-      else {
-        var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._finalize_context_query);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [this.runtime_id, [return_arr]]);
+      else
+      {
+        var handler_id = message[OBJECT_VALUE][OBJECT_ID];
+
+        this.add_context(handler_id);
+
+        // Tell the target context that the debugger is ready.
+        var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.debugger_ready);
+        window.services["ecmascript-debugger"].requestEval(0,
+            [this.runtime_id, 0, 0, script, [["handler", handler_id]]]);
+
+        messages.post('webgl-new-context', handler_id);
       }
     }
     else
@@ -167,41 +173,10 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
-  this._finalize_context_query = function(status, message)
+  this.handle_error = function(status, message, rt_id, ctx_id)
   {
     if (status === 0)
-    { 
-      var gl_object_ids = [];
-      // TODO: Cleanup, describing all message indices
-      // ?[0] -> ObjectChainList[0] -> ObjectList[0] -> ObjectInfo[1] -> Property
-      // TODO: Remove or mark contexts that no longer exists.
-      var property_list = message[0][0][0][0][1];
-      for (var i=0; i < property_list.length-1; i++)
-      {
-        var ctx_id = property_list[i][3][0];
-        gl_object_ids.push(ctx_id);
-        if (!(ctx_id in this.data)) this.add_context(ctx_id);
-
-        // Tell the target context that the debugger is ready.
-        var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.debugger_ready);
-        window.services["ecmascript-debugger"].requestEval(0,
-            [this.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
-      }
-
-      this.contexts = gl_object_ids;
-      messages.post('webgl-new-context', gl_object_ids);
-    }
-    else
     {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed finalize_context_query in WebGLDebugger");
-    }
-  };
-
-  this.handle_error = function(status, message, rt_id, ctx_id)
-  { 
-    if (status === 0)
-    { 
       var msg_vars = message[0][0][0][0][1];
       var obj = {};
       for (var i = 0; i < msg_vars.length; i++)

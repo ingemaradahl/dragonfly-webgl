@@ -5,15 +5,16 @@ window.cls || (window.cls = {});
 cls.WebGLState = function ()
 {
   // Retrieves the state of a WebGL context denoted by it's runtime & object id
-  this._send_state_query = function(obj_id)
+  this._send_state_query = function(ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_state);
-    var tag = tagManager.set_callback(this, this._handle_state_query, [obj_id]);
     // TODO: have runtime_id as a parameter
-    window.services["ecmascript-debugger"].requestEval(tag, [window.webgl.runtime_id, 0, 0, script, [["ctx", obj_id]]]);
+    var rt_id = window.webgl.runtime_id;
+    var tag = tagManager.set_callback(this, this._handle_state_query, [rt_id, ctx_id]);
+    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
-  this._handle_state_query = function(status, message, obj_id)
+  this._handle_state_query = function(status, message, rt_id, ctx_id)
   {
     var
       STATUS = 0,
@@ -23,7 +24,7 @@ cls.WebGLState = function ()
       // sub message ObjectValue
       OBJECT_ID = 0;
 
-    if (message[STATUS] == 'completed')
+    if (message[STATUS] === 'completed')
     {
       if (message[TYPE] == 'null')
       {
@@ -33,9 +34,15 @@ cls.WebGLState = function ()
       }
       else {
         var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._finalize_state_query, [obj_id]);
+        var tag = tagManager.set_callback(this, this._finalize_state_query, [ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [window.webgl.runtime_id, [return_arr]]);
       }
+    }
+    else if (message[OBJECT_VALUE][4] === "Error")
+    {
+      var obj_id = message[OBJECT_VALUE][OBJECT_ID];
+      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
+      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
     }
     else
     {
@@ -44,7 +51,7 @@ cls.WebGLState = function ()
     }
   };
 
-  this._finalize_state_query = function(status, message, obj_id)
+  this._finalize_state_query = function(status, message, ctx_id)
   {
     if (status === 0)
     { 
@@ -57,7 +64,7 @@ cls.WebGLState = function ()
         state[param] = value;
       }
 
-      messages.post('webgl-new-state', {"object_id" : obj_id, "state" : state });
+      messages.post('webgl-new-state', {"object_id" : ctx_id, "state" : state });
     }
     else
     {

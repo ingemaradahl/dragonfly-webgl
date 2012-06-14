@@ -16,13 +16,13 @@ cls.WebGLTraceView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table || 
+    this._table = this._table ||
                            new SortableTable(this.tabledef, null, null, null, null, false, "trace-table");
 
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     // TODO remove listeners
   };
@@ -91,7 +91,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     for (var i = 0; i < trace.length; i++)
     {
       var call = trace[i];
-      var call_text = window.webgl.trace.api.function_call_to_string(call.function_name, call.args);
+      var call_text = window.webgl.api.function_call_to_string(call.function_name, call.args);
       if (trace[i].have_result) call_text += " = " + String(trace[i].result)
       if (trace[i].have_error) call_text += " -> Error code: " + String(trace[i].error_code)
       tbl_data.push({"number" : String(i + 1), "call" : call_text});
