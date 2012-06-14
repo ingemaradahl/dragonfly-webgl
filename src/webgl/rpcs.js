@@ -3,7 +3,7 @@
  * in the dragonfly instance, except for the prepare method 
  */
 
-window.cls || (window.cls || {});
+window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
 cls.WebGL.RPCs = {};
@@ -71,6 +71,11 @@ cls.WebGL.RPCs.debugger_ready = function()
 cls.WebGL.RPCs.get_state = function ()
 {
   return ctx.get_state();
+};
+
+cls.WebGL.RPCs.get_snapshots = function ()
+{
+  return ctx.get_snapshots();
 };
 
 cls.WebGL.RPCs.get_buffers_new = function ()
@@ -161,7 +166,7 @@ cls.WebGL.RPCs.injection = function () {
     }
   };
 
-  function _wrap_function(context, function_name, innerFuns)
+  function _wrap_function(context, function_name, innerFuns, postCaptureFuns)
   {
     var gl = context.gl;
     var original_function = gl[function_name];
@@ -172,8 +177,6 @@ cls.WebGL.RPCs.injection = function () {
     {
       var result = original_function.apply(gl, arguments);
 
-      if (innerFunction) innerFunction.call(context, result, arguments);
-
       var error = gl.NO_ERROR;
       error = gl.getError();
       if (error !== gl.NO_ERROR)
@@ -182,15 +185,21 @@ cls.WebGL.RPCs.injection = function () {
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
 
+      if (innerFunction) innerFunction.call(context, result, arguments);
+
       if (context.capturing_frame)
       {
+        var call_idx = context.frame_trace.length;
+        var trace_idx = 0; // TODO: Differ from different traces
+        var postFunction = postCaptureFuns[function_name];
+
         var args = [];
         for (var i = 0; i < arguments.length; i++)
         {
           if (typeof(arguments[i]) === "object")
           {
             var obj = arguments[i];
-            if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+            if (obj && (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer)))
             {
               // TODO: perhaps it should be possible to transfer the entire list if the user focuses the argument.
               if (obj.length > 12)
@@ -215,7 +224,17 @@ cls.WebGL.RPCs.injection = function () {
           }
         }
         var res = result === undefined ? "" : result;
-        context.frame_trace.push([function_name, error, res].concat(args).join("|"));
+
+        switch (function_name)
+        {
+          case "drawArrays":
+          case "drawElements":
+            postFunction.call(context, trace_idx, call_idx);
+          default:
+            context.frame_trace.push([function_name, error, res].concat(args).join("|"));
+            break;
+        }
+
       }
       return result;
     };
@@ -235,6 +254,7 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     this.buffers = [];
+    this.fbo_snapshots = [];
     
     this.current_buffer = null;
 
@@ -248,6 +268,7 @@ cls.WebGL.RPCs.injection = function () {
       if (this.capturing_frame) {
         this.capturing_frame = false;
         console.log("Frame have been captured.");
+        this.events["trace-completed"].post(this.fbo_snapshots);
         this.events["trace-completed"].post(this.frame_trace);
       }
 
@@ -399,6 +420,12 @@ cls.WebGL.RPCs.injection = function () {
       });
     };
 
+    this.get_snapshots = function()
+    {
+      return this.fbo_snapshots;
+    };
+
+
     var innerFuns = {};
     innerFuns.createBuffer = function(result, args)
     {
@@ -452,12 +479,54 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
+    var postCaptureFuns = {};
+    postCaptureFuns.drawArrays = function(trace_idx, call_idx)
+    {
+      var gl = this.gl;
+
+      var width, height, fbo;
+      if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
+      {
+        width = fbo.width;
+        height = fbo.height;
+      }
+      else
+      {
+        // The default FBO is being used, assume it has the same dimensions as
+        // the viewport.. TODO: Consider better heuristic for finding dimension.
+        var viewport = gl.getParameter(gl.VIEWPORT);
+        var width = viewport[2];
+        var height = viewport[3];
+      }
+
+      // Image data will be stored as RGBA - 4 bytes per pixel
+      var size = width * height * 4;
+      var arr = new ArrayBuffer(size);
+      var pixels = new Uint8Array(arr);
+
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+      var snapshot = {
+        trace_idx : trace_idx,
+        call_idx : call_idx,
+        pixels : Array.prototype.slice.call(pixels),
+        size : size,
+        width : width,
+        height : height
+      };
+
+      this.fbo_snapshots.push(snapshot);
+
+      return snapshot;
+    };
+    postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
+
     // Copy enumerators and wrap functions
     for (var i in gl)
     {
       if (typeof gl[i] === "function")
       {
-        this[i] = _wrap_function(this, i, innerFuns);
+        this[i] = _wrap_function(this, i, innerFuns, postCaptureFuns);
       }
       else
       {

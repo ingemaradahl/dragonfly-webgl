@@ -48,7 +48,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.add_context = function (context_id)
   {
     this.contexts.push(context_id);
-    this.data[context_id] = new cls.WebGLData();
+    this.data[context_id] = new cls.WebGLData(context_id);
   };
 
 	this.request_test = function (ctx)

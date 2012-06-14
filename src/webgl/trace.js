@@ -23,6 +23,10 @@ cls.WebGLTrace = function(api)
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
     var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["gl", ctx_id]]]);
+
+    //var script_ = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_snapshots);
+    //var tag_ = tagManager.set_callback(this, this._handle_)
+
   };
 
   this._handle_trace_complete = function(status, message, rt_id, ctx_id)
@@ -102,21 +106,36 @@ cls.WebGLTrace = function(api)
       {
         var msg_vars = message[0][i][0][0][1]; 
         var data = [];
+        var fbo_ids = [];
         for (var j = 0; j < msg_vars.length - 1; j++)
         {
-          var parts = msg_vars[j][2].split("|");
-          if (parts.length < 3)
+          if (msg_vars[j][1] == "object")
           {
-            opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-              "A trace entry had incorrect data: [" + parts.join(", ") + "]");
-            continue;
+            // FBO snapshot object
+            fbo_ids.push(msg_vars[j][3][0]);
           }
-          var function_name = parts[0];
-          var error_code = Number(parts[1]);
-          var result = parts[2];
-          var args = parts.slice(3);
-          data.push(new TraceEntry(function_name, error_code, result, args));
+          else
+          {
+            // WebGL Function call
+            var parts = msg_vars[j][2].split("|");
+            if (parts.length < 3)
+            {
+              opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+                "A trace entry had incorrect data: [" + parts.join(", ") + "]");
+              continue;
+            }
+            var function_name = parts[0];
+            var error_code = Number(parts[1]);
+            var result = parts[2];
+            var args = parts.slice(3);
+
+            data.push(new TraceEntry(function_name, error_code, result, args));
+          }
         }
+
+        // Send a request to retrieve the FBO snapshot objects
+        var tag = tagManager.set_callback(this, this._examine_snapshots_complete, [rt_id, ctx_id]);
+        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, fbo_ids]);
 
         window.webgl.data[ctx_id].add_trace(data);
         messages.post('webgl-new-trace', data);
@@ -128,6 +147,42 @@ cls.WebGLTrace = function(api)
           "failed _finalize_trace_query in WebGLTrace");
     }
   };
+
+  this._examine_snapshots_complete = function(status, message, rt_id, ctx_id)
+  {
+    var 
+      NAME  = 0,
+      TYPE  = 1,
+      VALUE = 2;
+    if (status === 0)
+    { 
+      if (message.length == 0) return;
+
+      for (var i = 0; i < message[0].length; i++)
+      {
+        var msg_vars = message[0][i][0][0][1]; 
+        var snapshot = {};
+        for (var j in msg_vars)
+        {
+          var field = msg_vars[j];
+
+          if (field[TYPE] === "number")
+          {
+            snapshot[field[NAME]] = Number(field[VALUE]);
+          }
+          else if (field[TYPE] === "object")
+          {
+            snapshot["pixels_object"] =  field[3][0];
+          }
+        }
+        snapshot.pixels = null;
+        snapshot.downloading = false;
+
+        window.webgl.data[ctx_id].add_snapshot(snapshot);
+      }
+    }
+    
+  };
   // ---------------------------------------------------------------------------
 
   window.host_tabs.activeTab.addEventListener("webgl-trace-completed", 
@@ -137,7 +192,7 @@ cls.WebGLTrace = function(api)
 /**
  * Used to store a single function call in a frame trace.
  */
-function TraceEntry(function_name, error_code, result, args)
+function TraceEntry(function_name, error_code, result, args, img_id)
 {
   this.function_name = function_name;
   this.error_code = error_code;
@@ -145,4 +200,5 @@ function TraceEntry(function_name, error_code, result, args)
   this.result = result;
   this.have_result = result !== "";
   this.args = args;
+  this.img_id = img_id || null;
 }
