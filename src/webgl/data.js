@@ -5,8 +5,9 @@ window.cls || (window.cls = {});
 /*
  * Manages data that concerns one single WebGL context.
  */
-cls.WebGLData = function ()
+cls.WebGLData = function (context_id)
 {
+  this.context_id = context_id;
   this.texture_names = [];
 
   this.shaders = {};
@@ -20,6 +21,12 @@ cls.WebGLData = function ()
    * Stored in the same order as they are recived.
    */
   this.traces = [];
+
+  /*
+   * FBO snapshots coupled with WebGL calls in a trace
+   * Stored with same indexing as traces
+   */
+  this.snapshots = [];
 
   /*
    * Buffers are stored as Buffer objects where they are ordered in the same 
@@ -38,6 +45,57 @@ cls.WebGLData = function ()
   this.add_trace = function(trace)
   {
     this.traces.push(trace);
+  };
+
+  this.add_snapshot = function(snapshot)
+  {
+    this.snapshots[snapshot.trace_idx] || (this.snapshots[snapshot.trace_idx] = []);
+    this.snapshots[snapshot.trace_idx].push(snapshot);
+
+    if (!snapshot.pixels && !snapshot.downloading)
+    {
+      var tag = tagManager.set_callback(this, this._received_pixels, [snapshot]);
+      window.services["ecmascript-debugger"].requestExamineObjects(tag, [webgl.runtime_id, [snapshot.pixels_object]]);
+      snapshot.downloading = true;
+    }
+  };
+
+  // Gets the latest test data for speed test of data transmission
+  this.get_test_data = function()
+  {
+    var data = this.test_data;
+    if (typeof(data) != "number") return null;
+    return data;
+  };
+
+  // Put speed test results in the data stack
+  this.add_test_data = function(data)
+  {
+    this.test_data = data;
+  };
+
+  /*
+   * Since it's (for now) impossible to transfer typed arrays via scope, the
+   * entire fbo data has to be casted from an array of strings (scopes message
+   * system) to a native typed array
+   */
+  this._received_pixels = function(status, message, snapshot)
+  {
+    if (status === 0)
+    { 
+      if (message.length == 0) return;
+
+      var array_buffer = new ArrayBuffer(snapshot.size);
+      snapshot.pixels = new Uint8Array(array_buffer);
+
+      var pixels = message[0][0][0][0][1];
+      for (var i=0; i<snapshot.size; i++)
+      {
+        snapshot.pixels[i] = pixels[i][2];
+      }
+
+      snapshot.downloading = false;
+    }
   };
 
   // Gets the latest test data for speed test of data transmission

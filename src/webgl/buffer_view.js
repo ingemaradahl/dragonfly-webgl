@@ -80,7 +80,7 @@ cls.WebGLBufferView = function(id, name, container_class)
   {
     this._current_context = ctx_id;
     var buffers = window.webgl.data[ctx_id].buffers;
-    if (buffers != null)
+    if (buffers != null && this._table)
     {
       this._table.set_data(this._format_buffer_table(buffers));
     }
