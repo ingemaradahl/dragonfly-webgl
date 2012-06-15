@@ -232,94 +232,16 @@ cls.WebGL.RPCs.injection = function () {
     }
   };
 
-  function _wrap_function(handler, function_name, innerFuns)
+  /**
+   * Wrap all WebGL functions, copy all other values and create a handler
+   */
+  function _wrap_context(canvas)
   {
-    var gl = handler.gl;
-    var original_function = gl[function_name];
-
-    var innerFunction = innerFuns[function_name];
-
-    return function ()
-    {
-      // Execute original function and save result.
-      var result = original_function.apply(gl, arguments);
-
-      var error = gl.NO_ERROR;
-      error = gl.getError();
-      if (error !== gl.NO_ERROR)
-      {
-        // TODO: will flood the console if inside a loop, perhaps not log always?
-        console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
-      }
-
-      if (innerFunction) innerFunction.call(handler, result, arguments, error);
-
-      if (handler.capturing_frame)
-      {
-        var args = [];
-        for (var i = 0; i < arguments.length; i++)
-        {
-          if (typeof(arguments[i]) === "object")
-          {
-            var obj = arguments[i];
-            if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
-            {
-              // TODO: perhaps it should be possible to transfer the entire list if the user focuses the argument.
-              if (obj.length > 12)
-              {
-                var ls = Array.prototype.slice.call(obj, 0, 12);
-                args.push("[" + ls.join(", ") + ", ... (" + (obj.length - 12) + " more elements)]");
-              }
-              else
-              {
-                args.push("[" + Array.prototype.join.call(obj, ", ") + "]");
-              }
-            }
-            else
-            {
-              // TODO: handle other types as well.
-              args.push(arguments[i]);
-            }
-          }
-          else
-          {
-            args.push(arguments[i]);
-          }
-        }
-        var res = result === undefined ? "" : result;
-        handler.frame_trace.push([function_name, error, res].concat(args).join("|"));
-      }
-      return result;
-    };
-  }
-
-  var WrappedContext = function(true_webgl, canvas)
-  {
-    // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
-    contexts.push(this);
-
-    var gl = true_webgl;
-
-    this.frame_trace = [];
+    // We will keep all native functions and enumerators in this object
+    var gl = {};
 
     var handler = new Handler(this, gl);
     canvas.____handler = handler;
-
-    this.new_frame = function()
-    {
-      if (handler.capturing_frame) {
-        handler.capturing_frame = false;
-        console.log("Frame have been captured.");
-        handler.events["trace-completed"].post(handler.frame_trace);
-      }
-
-      if (handler.capture_next_frame)
-      {
-        handler.capture_next_frame = false;
-        handler.capturing_frame = true;
-        handler.frame_trace = [];
-      }
-    };
 
     handler.get_state = function()
     {
@@ -461,6 +383,73 @@ cls.WebGL.RPCs.injection = function () {
       });
     };
 
+    // Stores the oldest error that have occured since last call to getError
+    // When there have been no error it should have the value NO_ERROR
+    var oldest_error = this.NO_ERROR;
+
+    function _wrap_function(handler, function_name, original_function, innerFuns)
+    {
+      var gl = handler.gl;
+
+      var innerFunction = innerFuns[function_name];
+
+      return function ()
+      {
+        // Execute original function and save result.
+        // TODO catch exceptions
+        var result = original_function.apply(this, arguments);
+
+        var error = gl.getError();
+        if (error !== gl.NO_ERROR)
+        {
+          if (oldest_error === gl.NO_ERROR) oldest_error = error;
+          // TODO: will flood the console if inside a loop, perhaps not log always?
+          console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
+        }
+        else if (innerFunction)
+        {
+          innerFunction.call(handler, result, arguments);
+        }
+
+        if (handler.capturing_frame)
+        {
+          var args = [];
+          for (var i = 0; i < arguments.length; i++)
+          {
+            if (typeof(arguments[i]) === "object")
+            {
+              var obj = arguments[i];
+              if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+              {
+                // TODO: perhaps it should be possible to transfer the entire list if the user focuses the argument.
+                if (obj.length > 12)
+                {
+                  var ls = Array.prototype.slice.call(obj, 0, 12);
+                  args.push("[" + ls.join(", ") + ", ... (" + (obj.length - 12) + " more elements)]");
+                }
+                else
+                {
+                  args.push("[" + Array.prototype.join.call(obj, ", ") + "]");
+                }
+              }
+              else
+              {
+                // TODO: handle other types as well.
+                args.push(arguments[i]);
+              }
+            }
+            else
+            {
+              args.push(arguments[i]);
+            }
+          }
+          var res = result === undefined ? "" : result;
+          handler.trace.push([function_name, error, res].concat(args).join("|"));
+        }
+        return result;
+      };
+    }
+
     var innerFuns = {};
     innerFuns.createBuffer = function(result, args)
     {
@@ -476,11 +465,11 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.bindBuffer = function(result, args)
     {
-      this.current_buffer = args[1]._index;
+      this.bound_buffer = args[1]._index;
     };
     innerFuns.bufferData = function(result, args)
     {
-      var buffer = this.buffers[this.current_buffer];
+      var buffer = this.buffers[this.bound_buffer];
       buffer.target = args[0];
       if (typeof(args[1]) === "number")
       {
@@ -494,11 +483,9 @@ cls.WebGL.RPCs.injection = function () {
       }
       buffer.usage = args[2];
     };
-    innerFuns.bufferSubData = function(result, args, error)
+    innerFuns.bufferSubData = function(result, args)
     {
-      if (error !== this.gl.NO_ERROR) return;
-
-      var buffer = this.buffers[this.current_buffer];
+      var buffer = this.buffers[this.bound_buffer];
       buffer.target = args[0];
 
       var offset = args[1];
@@ -527,7 +514,6 @@ cls.WebGL.RPCs.injection = function () {
     {
 
     };
-
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
@@ -539,27 +525,51 @@ cls.WebGL.RPCs.injection = function () {
       console.log(texture_container_object.toString());
       this.textures.push(texture_container_object);
     };
-
     innerFuns.texSubImage2D = function(result, args)
     {
       //TODO
     };
 
     // Copy enumerators and wrap functions
-    for (var i in gl)
+    for (var i in this)
     {
-      if (typeof gl[i] === "function")
+      if (typeof this[i] === "function")
       {
-        this[i] = _wrap_function(handler, i, innerFuns);
+        gl[i] = this[i].bind(this);
+        this[i] = _wrap_function(handler, i, this[i], innerFuns);
       }
       else
       {
-        this[i] = gl[i];
+        gl[i] = this[i];
       }
     }
 
-    canvas.dispatchEvent(new Event("webgl-debugger-ready"));
-  };
+    this.new_frame = function()
+    {
+      if (handler.capturing_frame) {
+        handler.capturing_frame = false;
+        console.log("Frame have been captured.");
+        handler.events["trace-completed"].post(handler.trace);
+      }
+
+      if (handler.capture_next_frame)
+      {
+        handler.capture_next_frame = false;
+        handler.capturing_frame = true;
+        handler.trace = [];
+      }
+    };
+
+    var orig_getError = this.getError;
+    this.getError = function()
+    {
+      orig_getError.call(this);
+
+      var error = oldest_error;
+      oldest_error = gl.NO_ERROR;
+      return error;
+    };
+  }
 
 
   var orig_getContext = HTMLCanvasElement.prototype.getContext;
@@ -567,20 +577,20 @@ cls.WebGL.RPCs.injection = function () {
   {
     // Only wrap webgl, not canvas2d
     var context_names = {"moz-webgl":null, "webkit-3d":null, "experimental-webgl":null, "webgl":null};
-    if (!(arguments[0] in context_names))
-    {
-      return orig_getContext.apply(this, arguments);
-    }
-
     var gl = orig_getContext.apply(this, arguments);
-    if (gl == null)
+    if (!(arguments[0] in context_names) || gl == null)
     {
-      return null;
+      return gl;
     }
 
-    var result = new WrappedContext(gl, this);
-    this.currentContext = result;
-    return result;
+    // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
+    contexts.push(gl);
+
+    _wrap_context.call(gl, this);
+
+    this.dispatchEvent(new Event("webgl-debugger-ready"));
+
+    return gl;
   };
 
   /**
@@ -592,8 +602,10 @@ cls.WebGL.RPCs.injection = function () {
     this.context = context;
 
     this.buffers = [];
+    // Index of the currently bound buffer
+    this.bound_buffer = null;
 
-    this.frame_trace = [];
+    this.trace = [];
     this.capture_next_frame = false;
     this.capturing_frame = false;
 
@@ -604,8 +616,6 @@ cls.WebGL.RPCs.injection = function () {
       "buffer-created": new MessageQueue("webgl-buffer-created"),
       "trace-completed": new MessageQueue("webgl-trace-completed")
     };
-
-    this.current_buffer = null;
   }
 
   /**

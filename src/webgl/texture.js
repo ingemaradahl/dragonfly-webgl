@@ -31,7 +31,7 @@ cls.WebGLTexture = function ()
         opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
             "failed _handle_texture_query in WebGLDebugger");
       }
-      else 
+      else
       {
         var return_arr = message[OBJECT_VALUE][OBJECT_ID];
         var tag = tagManager.set_callback(this, this._finalize_texture_query, [ctx_id]);
@@ -55,7 +55,7 @@ cls.WebGLTexture = function ()
       messages.post('webgl-new-texture-names');
     }
     else
-    {   
+    {
       opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
           "failed finalize_texture_query in WebGLDebugger");
     }
@@ -67,12 +67,12 @@ cls.WebGLTexture = function ()
  {
     var script =
         cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data).replace(/URL/,texture_url);
-    var tag = tagManager.set_callback(this, this._handle_texture_data, [ctx_id]);
+    var tag = tagManager.set_callback(this, this._handle_texture_data, [window.webgl.runtime_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag,
         [window.webgl.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
  };
 
-  this._handle_texture_data = function(status, message, ctx_id)
+  this._handle_texture_data = function(status, message, rt_id, ctx_id)
   {
     var
       STATUS = 0,
@@ -90,13 +90,19 @@ cls.WebGLTexture = function ()
         opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
             "failed _handle_texture_query in WebGLDebugger");
       }
-      else 
+      else
       {
         // Sending back image data to view with messages.post.
         var return_arr = message[VALUE];
         messages.post('webgl-new-texture-data',
             { "texture-data" : return_arr });
       }
+    }
+    else if (message[OBJECT_VALUE][4] === "Error")
+    {
+      var obj_id = message[OBJECT_VALUE][OBJECT_ID];
+      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
+      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
     }
     else
     {
