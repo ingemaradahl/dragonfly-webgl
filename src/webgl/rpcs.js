@@ -1,6 +1,6 @@
 ﻿/* This file contains RPCs (Remote Procedure Calls), functions executed remotely
  * on the host debugged by the WebGL inspection utility, and are never executed
- * in the dragonfly instance, except for the prepare method 
+ * in the dragonfly instance, except for the prepare method
  */
 
 window.cls || (window.cls = {});
@@ -30,47 +30,31 @@ cls.WebGL.RPCs.query_test = function()
 	return return_value;
 };
 
-cls.WebGL.RPCs.query_contexts = function() 
+/**
+ * Retrieves the handler from a canvas after a WebGL context have been created.
+ * canvas should be defined by Dragonfly.
+ */
+cls.WebGL.RPCs.get_handler = function()
 {
-  var canvas_tags = document.getElementsByTagName("canvas");
-  canvas_tags = Array.prototype.slice.call(canvas_tags);
-  var contexts = [];
-  var gl;
-
-  for (var c in canvas_tags)
-  {
-    // The wrapper creates the 'currentContext' field on the canvas object if
-    // getContext has been called
-    if (canvas_tags[c].currentContext)
-    {
-      contexts.push(canvas_tags[c].currentContext);
-    }
-  }
-
-  if (contexts.length > 0)
-  {
-    return contexts;
-  }
-  else
-  {
-    return null;
-  }
+  var handler = canvas.____handler;
+  delete canvas.____handler;
+  return handler;
 };
 
-cls.WebGL.RPCs.debugger_ready = function() 
+cls.WebGL.RPCs.debugger_ready = function()
 {
-  for (var key in gl.events)
+  for (var key in handler.events)
   {
-    if (gl.events.hasOwnProperty(key))
+    if (handler.events.hasOwnProperty(key))
     {
-      gl.events[key].set_ready();
+      handler.events[key].set_ready();
     }
   }
 };
 
 cls.WebGL.RPCs.get_state = function ()
 {
-  return ctx.get_state();
+  return handler.get_state();
 };
 
 cls.WebGL.RPCs.get_snapshots = function ()
@@ -80,12 +64,12 @@ cls.WebGL.RPCs.get_snapshots = function ()
 
 cls.WebGL.RPCs.get_buffers_new = function ()
 {
-  var buffers = gl.events["buffer-created"].get();
+  var buffers = handler.events["buffer-created"].get();
   var out = [];
   for(var i = 0; i < buffers.length; i++)
   {
     var buffer = buffers[i];
-    if (buffer == undefined) continue;
+    if (buffer === undefined) continue;
     var arr;
     if (buffer.data === undefined)
     {
@@ -107,12 +91,12 @@ cls.WebGL.RPCs.get_buffers_new = function ()
 
 cls.WebGL.RPCs.get_buffers = function ()
 {
-  var buffers = gl.buffers;
+  var buffers = handler.buffers;
   var out = [];
   for(var i = 0; i < buffers.length; i++)
   {
     var buffer = buffers[i];
-    if (buffer == undefined || buffer.data === undefined) continue;
+    if (buffer === undefined || buffer.data === undefined) continue;
       /* TODO: clone the data to a new array or make a second request to examine the array*/
     var arr = buffer.data;
     arr.target = buffer.target;
@@ -130,8 +114,8 @@ cls.WebGL.RPCs.get_buffers_indices = function ()
   for(var i = 0; i < buffers.length; i++)
   {
     var idx = buffer_ids[i];
-    var buffer = gl.buffers[i];
-    if (buffer == undefined) continue;
+    var buffer = handler.buffers[i];
+    if (buffer === undefined) continue;
     /* TODO: clone the data to a new array or make a second request to examine the array*/
     var arr = buffer.data;
     arr.target = buffer.target;
@@ -145,17 +129,104 @@ cls.WebGL.RPCs.get_buffers_indices = function ()
 cls.WebGL.RPCs.request_trace = function()
 {
   console.log("Capturing next frame.");
-  gl.capture_next_frame = true;
+  handler.capture_next_frame = true;
 };
 
 cls.WebGL.RPCs.get_trace = function()
 {
-  return gl.events["trace-completed"].get();
+  return handler.events["trace-completed"].get();
+};
+
+// RPCs related to the texture tab.
+
+// Return all texture "names || ids". There are five different types of
+// objects that can be used as textures: ArrayBufferView, ImageData,
+// HTMLImageElement, HTMLCanvasElement and HTMLVideoElement.
+
+cls.WebGL.RPCs.get_texture_names = function()
+{
+  var names = [];
+  var i = 0;
+  var j = 0;
+  var exists = false;
+  var text = "random canvas";
+
+  for (; i < (gl.textures.length); i++)
+  {
+    switch(gl.textures[i].toString())
+    {
+      case "[object ArrayBufferView]":
+        console.log("ArrayBufferView, not implemented"); //TODO
+        break;
+      case "[object ImageData]":
+        console.log("ImageData, not implemented"); //TODO
+        break;
+      case "[object HTMLImageElement]":
+        names.push(gl.textures[i].src);
+        break;
+      case "[object HTMLCanvasElement]":  // Expensive!?
+        //names.push(gl.textures[i].id);
+        for (j=0; (j<names.length && !exists); j++)
+        {
+          if (names[j] === text)
+          {
+            exists = true;
+          }
+        }
+        if (!exists)
+        {
+          names.push(text);
+          console.log(text + " pushed");
+        }
+      break;
+      case "[object HTMLVideoElement]":
+        console.log("HTMLVideoElement, not implemented"); //TODO
+        break;
+      default: console.log("ERROR in WebGLDebugger, couldn't resolve " +
+                           "texture object type: " + gl.textures[i].toString());
+    }
+  }
+  return names;
+};
+
+// Return texture as string image data.
+cls.WebGL.RPCs.get_texture_as_data = function()
+{
+  var texture_url = "URL";
+  var i = 0;
+  var target_texture_index = undefined;
+
+  for(; i < gl.textures.length; i++)
+  {
+    if (gl.textures[i].src === texture_url)
+    {
+      target_texture_index = i;
+    }
+  }
+
+  if (target_texture_index !== undefined)
+  {
+    var img = gl.textures[target_texture_index];
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    var dataURL = canvas.toDataURL("image/png");
+
+    return (dataURL);
+  }
+  else
+  {
+    console.log("ERROR IN WEBGL, couldn't get texture");
+  }
 };
 
 cls.WebGL.RPCs.injection = function () {
   var contexts = [];
-  
+
   // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
   window.requestAnimationFrame = function (fun)
   {
@@ -166,15 +237,16 @@ cls.WebGL.RPCs.injection = function () {
     }
   };
 
-  function _wrap_function(context, function_name, innerFuns, postCaptureFuns)
+  function _wrap_function(handler, function_name, innerFuns, postCaptureFuns)
   {
-    var gl = context.gl;
+    var gl = handler.gl;
     var original_function = gl[function_name];
 
     var innerFunction = innerFuns[function_name];
 
     return function ()
     {
+      // Execute original function and save result.
       var result = original_function.apply(gl, arguments);
 
       var error = gl.NO_ERROR;
@@ -185,11 +257,11 @@ cls.WebGL.RPCs.injection = function () {
         console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
       }
 
-      if (innerFunction) innerFunction.call(context, result, arguments);
+      if (innerFunction) innerFunction.call(handler, result, arguments, error);
 
-      if (context.capturing_frame)
+      if (handler.capturing_frame)
       {
-        var call_idx = context.frame_trace.length;
+        var call_idx = handler.frame_trace.length;
         var trace_idx = 0; // TODO: Differ from different traces
         var postFunction = postCaptureFuns[function_name];
 
@@ -229,140 +301,128 @@ cls.WebGL.RPCs.injection = function () {
         {
           case "drawArrays":
           case "drawElements":
-            postFunction.call(context, trace_idx, call_idx);
+            postFunction.call(handler, trace_idx, call_idx);
           default:
-            context.frame_trace.push([function_name, error, res].concat(args).join("|"));
+            handler.frame_trace.push([function_name, error, res].concat(args).join("|"));
             break;
         }
-
       }
       return result;
     };
   }
 
-  var WrappedContext = function(true_webgl)
+  var WrappedContext = function(true_webgl, canvas)
   {
     // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
     contexts.push(this);
 
-    this.gl = true_webgl;
     var gl = true_webgl;
-
-    this.events = {
-      "buffer-created": new MessageQueue("webgl-buffer-created"),
-      "trace-completed": new MessageQueue("webgl-trace-completed")
-    };
-
-    this.buffers = [];
-    this.fbo_snapshots = [];
-    
-    this.current_buffer = null;
 
     this.frame_trace = [];
 
-    this.capture_next_frame = false;
-    this.capturing_frame = false;
+    var handler = new Handler(this, gl);
+    canvas.____handler = handler;
 
     this.new_frame = function()
     {
-      if (this.capturing_frame) {
-        this.capturing_frame = false;
+      if (handler.capturing_frame) {
+        handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        this.events["trace-completed"].post(this.fbo_snapshots);
-        this.events["trace-completed"].post(this.frame_trace);
+        handler.events["trace-completed"].post(handler.fbo_snapshots);
+        handler.events["trace-completed"].post(handler.frame_trace);
       }
 
-      if (this.capture_next_frame)
+      if (handler.capture_next_frame)
       {
-        this.capture_next_frame = false;
-        this.capturing_frame = true;
-        this.frame_trace = [];
+        handler.capture_next_frame = false;
+        handler.capturing_frame = true;
+        handler.frame_trace = [];
       }
     };
 
-    this.get_state = function()
+    handler.get_state = function()
     {
       var pnames = [
-        "ALPHA_BITS", 
-        "ACTIVE_TEXTURE", 
+        "ALPHA_BITS",
+        "ACTIVE_TEXTURE",
         "ALIASED_LINE_WIDTH_RANGE",
-        "ALIASED_POINT_SIZE_RANGE", 
-        "ALPHA_BITS", 
+        "ALIASED_POINT_SIZE_RANGE",
+        "ALPHA_BITS",
         "ARRAY_BUFFER_BINDING",
         "BLEND_DST_ALPHA",
-        "BLEND_DST_RGB", 
-        "BLEND_EQUATION_ALPHA", 
+        "BLEND_DST_RGB",
+        "BLEND_EQUATION_ALPHA",
         "BLEND_EQUATION_RGB",
-        "BLEND_SRC_ALPHA", 
-        "BLEND_SRC_RGB", 
-        "BLEND", 
+        "BLEND_SRC_ALPHA",
+        "BLEND_SRC_RGB",
+        "BLEND",
         "BLEND_COLOR",
-        "BLUE_BITS", 
+        "BLUE_BITS",
         "COLOR_CLEAR_VALUE",
-        "COLOR_WRITEMASK", 
-        "COMPRESSED_TEXTURE_FORMATS", 
+        "COLOR_WRITEMASK",
+        "COMPRESSED_TEXTURE_FORMATS",
         "CULL_FACE",
-        "CULL_FACE_MODE", 
-        "CURRENT_PROGRAM", 
-        "DEPTH_BITS", 
+        "CULL_FACE_MODE",
+        "CURRENT_PROGRAM",
+        "DEPTH_BITS",
         "DEPTH_CLEAR_VALUE",
-        "DEPTH_FUNC", 
-        "DEPTH_RANGE", 
-        "DEPTH_TEST", 
+        "DEPTH_FUNC",
+        "DEPTH_RANGE",
+        "DEPTH_TEST",
         "DEPTH_WRITEMASK",
-        "ELEMENT_ARRAY_BUFFER_BINDING", 
-        "DITHER", 
+        "ELEMENT_ARRAY_BUFFER_BINDING",
+        "DITHER",
         "FRAMEBUFFER_BINDING",
-        "FRONT_FACE", 
-        "GENERATE_MIPMAP_HINT", 
-        "GREEN_BITS", 
-        "LINE_WIDTH", 
-        "MAX_COMBINED_TEXTURE_IMAGE_UNITS", 
+        "FRONT_FACE",
+        "GENERATE_MIPMAP_HINT",
+        "GREEN_BITS",
+        "LINE_WIDTH",
+        "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
         "MAX_TEXTURE_IMAGE_UNITS",
-        "MAX_CUBE_MAP_TEXTURE_SIZE", 
+        "MAX_CUBE_MAP_TEXTURE_SIZE",
         "MAX_RENDERBUFFER_SIZE",
-        "MAX_TEXTURE_SIZE", 
-        "MAX_VARYING_VECTORS", 
+        "MAX_TEXTURE_SIZE",
+        "MAX_VARYING_VECTORS",
         "MAX_VERTEX_ATTRIBS",
-        "MAX_VERTEX_TEXTURE_IMAGE_UNITS", 
+        "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
         "MAX_VERTEX_UNIFORM_VECTORS",
-        "MAX_VIEWPORT_DIMS", 
+        "MAX_VIEWPORT_DIMS",
         "PACK_ALIGNMENT",
         "POLYGON_OFFSET_FACTOR", "POLYGON_OFFSET_FILL",
-        "POLYGON_OFFSET_UNITS", 
+        "POLYGON_OFFSET_UNITS",
         "RED_BITS",
-        "RENDERBUFFER_BINDING", 
-        "RENDERER", 
+        "RENDERBUFFER_BINDING",
+        "RENDERER",
         "SAMPLE_BUFFERS",
-        "SAMPLE_COVERAGE_INVERT", 
-        "SAMPLE_COVERAGE_VALUE", 
+        "SAMPLE_COVERAGE_INVERT",
+        "SAMPLE_COVERAGE_VALUE",
         "SAMPLES",
-        "SCISSOR_BOX", 
-        "SCISSOR_TEST", 
-        "SHADING_LANGUAGE_VERSION", 
-        "STENCIL_BITS", 
-        "STENCIL_CLEAR_VALUE", 
+        "SCISSOR_BOX",
+        "SCISSOR_TEST",
+        "SHADING_LANGUAGE_VERSION",
+        "STENCIL_BITS",
+        "STENCIL_CLEAR_VALUE",
         "STENCIL_TEST",
         "STENCIL_STENCIL_BACK_FAIL",
-        "STENCIL_BACK_FUNC", 
+        "STENCIL_BACK_FUNC",
         "STENCIL_BACK_REF","STENCIL_BACK_VALUE_MASK",
-        "STENCIL_BACK_WRITEMASK", 
+        "STENCIL_BACK_WRITEMASK",
         "STENCIL_FAIL",
-        "STENCIL_FUNC", 
-        "STENCIL_REF","STENCIL_VALUE_MASK", 
+        "STENCIL_FUNC",
+        "STENCIL_REF","STENCIL_VALUE_MASK",
         "STENCIL_WRITEMASK",
-        "STENCIL_BACK_PASS_DEPTH_FAIL", 
+        "STENCIL_BACK_PASS_DEPTH_FAIL",
         "STENCIL_BACK_PASS_DEPTH_PASS",
-        "STENCIL_PASS_DEPTH_FAIL", 
+        "STENCIL_PASS_DEPTH_FAIL",
         "STENCIL_PASS_DEPTH_PASS",
-        "TEXTURE_BINDING_2D", 
-        "TEXTURE_BINDING_CUBE_MAP", 
+        "TEXTURE_BINDING_2D",
+        "TEXTURE_BINDING_CUBE_MAP",
         "UNPACK_ALIGNMENT",
-        "UNPACK_COLORSPACE_CONVERSION_WEBGL", 
+        "UNPACK_COLORSPACE_CONVERSION_WEBGL",
         "UNPACK_FLIP_Y_WEBGL",
-        "UNPACK_PREMULTIPLY_ALPHA_WEBGL", 
-        "VENDOR", 
-        "VERSION", 
+        "UNPACK_PREMULTIPLY_ALPHA_WEBGL",
+        "VENDOR",
+        "VERSION",
         "VIEWPORT"
       ];
 
@@ -384,7 +444,7 @@ cls.WebGL.RPCs.injection = function () {
 
       // Wrap up the entire state in an array of string as it permits dragonfly to
       // get the state in two calls instead of one per parameter.
-      return pnames.map(function(p){ 
+      return pnames.map(function(p) {
           var val = gl.getParameter(gl[p]);
           switch (p) {
             case "ALIASED_LINE_WIDTH_RANGE":
@@ -408,7 +468,7 @@ cls.WebGL.RPCs.injection = function () {
               if (typeof val === "boolean") {
                 return [p, String(val)].join("|");
               }
-              else if (!(val in back_dict)) 
+              else if (!(val in back_dict))
               {
                 return [p, String(val)].join("|");
               }
@@ -418,11 +478,6 @@ cls.WebGL.RPCs.injection = function () {
               }
           }
       });
-    };
-
-    this.get_snapshots = function()
-    {
-      return this.fbo_snapshots;
     };
 
 
@@ -459,24 +514,53 @@ cls.WebGL.RPCs.injection = function () {
       }
       buffer.usage = args[2];
     };
-    innerFuns.bufferSubData = function(result, args)
+    innerFuns.bufferSubData = function(result, args, error)
     {
+      if (error !== this.gl.NO_ERROR) return;
+
       var buffer = this.buffers[this.current_buffer];
       buffer.target = args[0];
-      buffer.data = buffer.data.slice(0, args[1]).concat(args[2]);
+
+      var offset = args[1];
+      var end = args[2].length - offset;
+      for (var i = 0; i < end; i++)
+      {
+        buffer.data[i + offset] = args[2][i];
+      }
     };
     innerFuns.deleteBuffer = function(result, args)
     {
       for (var i = 0; i < this.buffers.length; i++)
       {
         var buffer = this.buffers[i];
-        if (buffer != null && buffer.buffer == args[0])
+        if (buffer != null && buffer.buffer === args[0])
         {
           // TODO: should notify dragonfly about the deletion.
           buffer.buffer = null;
           break;
         }
       }
+    };
+    innerFuns.bindTexture = function(result, args)
+    {
+    
+    };
+
+    // TODO All texImage functions must be wrapped and handled
+    innerFuns.texImage2D = function(result, args)
+    {
+      // There are five different calls to texImage2D with different kinds of
+      // arguments. ArrayBufferView, ImageData, HTMLImageElement,
+      // HTMLCanvasElement, and HTMLVideoElement. They are always the last
+      // argument.
+      //var texture_container_object = args[args.length -1];
+      //console.log(texture_container_object.toString());
+      //this.textures.push(texture_container_object);
+    };
+
+    innerFuns.texSubImage2D = function(result, args)
+    {
+      //TODO
     };
 
     var postCaptureFuns = {};
@@ -526,7 +610,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       if (typeof gl[i] === "function")
       {
-        this[i] = _wrap_function(this, i, innerFuns, postCaptureFuns);
+        this[i] = _wrap_function(handler, i, innerFuns, postCaptureFuns);
       }
       else
       {
@@ -534,7 +618,7 @@ cls.WebGL.RPCs.injection = function () {
       }
     }
 
-    document.dispatchEvent(new Event("webgl-debugger-ready"));
+    canvas.dispatchEvent(new Event("webgl-debugger-ready"));
   };
 
 
@@ -554,11 +638,46 @@ cls.WebGL.RPCs.injection = function () {
       return null;
     }
 
-    var result = new WrappedContext(gl);
+    var result = new WrappedContext(gl, this);
     this.currentContext = result;
     return result;
   };
 
+  /**
+   * Handles communication between the wrapped context and Dragonfly.
+   */
+  function Handler(context, gl)
+  {
+    this.gl = gl;
+    this.context = context;
+
+    this.buffers = [];
+
+    this.frame_trace = [];
+    this.fbo_snapshots = [];
+    this.capture_next_frame = false;
+    this.capturing_frame = false;
+
+    // Container of all HTML DOM Image Objects from the textures.
+    this.textures = [];
+
+    this.events = {
+      "buffer-created": new MessageQueue("webgl-buffer-created"),
+      "trace-completed": new MessageQueue("webgl-trace-completed")
+    };
+
+    this.current_buffer = null;
+
+    this.get_snapshots = function()
+    {
+      return this.fbo_snapshots;
+    };
+
+  }
+
+  /**
+   * Queues messages for pickup by Dragonfly.
+   */
   function MessageQueue(name, ready)
   {
     this.name = name;

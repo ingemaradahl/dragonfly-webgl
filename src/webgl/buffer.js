@@ -2,7 +2,7 @@
 
 window.cls || (window.cls = {});
 
-cls.WebGLBuffer = function() 
+cls.WebGLBuffer = function()
 {
   this._on_buffer_created = function(msg)
   {
@@ -12,8 +12,8 @@ cls.WebGLBuffer = function()
 
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers_new);
     var tag = tagManager.set_callback(this, this._handle_buffer_created, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, 
-        [rt_id, 0, 0, script, [["gl", ctx_id]]]);
+    window.services["ecmascript-debugger"].requestEval(tag,
+        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
   this._handle_buffer_created = function(status, message, rt_id, ctx_id)
@@ -26,7 +26,7 @@ cls.WebGLBuffer = function()
       // sub message ObjectValue
       OBJECT_ID = 0;
 
-    if (message[STATUS] == 'completed')
+    if (message[STATUS] === 'completed')
     {
       if (message[TYPE] == 'null')
       {
@@ -41,18 +41,18 @@ cls.WebGLBuffer = function()
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
       }
     }
-    else if (message[OBJECT_VALUE][4] == "Error")
+    else if (message[OBJECT_VALUE][4] === "Error")
     {
       var obj_id = message[OBJECT_VALUE][OBJECT_ID];
-      var tag = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
-      window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [obj_id]]);
+      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
+      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
     }
     else
     {
       opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
           "failed _handle_buffer_created in WebGLBuffer");
     }
-  }
+  };
 
   this._finalize_buffer_created = function(status, message, rt_id, ctx_id)
   {
@@ -65,8 +65,8 @@ cls.WebGLBuffer = function()
       OBJECT_ID = 0;
 
     if (status === 0)
-    { 
-      var msg_vars = message[0][0][0][0][1]; 
+    {
+      var msg_vars = message[0][0][0][0][1];
 
       var len = msg_vars.length - 1;
 
@@ -83,7 +83,7 @@ cls.WebGLBuffer = function()
         var tag = tagManager.set_callback(this, this._finalize_buffers_data, [rt_id, ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
       }
-      
+
       messages.post('webgl-new-buffers', ctx_id);
     }
     else
@@ -100,16 +100,16 @@ cls.WebGLBuffer = function()
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers_indices).replace(/__INDICES__/g, buffer_indices.join(","));
     var tag = tagManager.set_callback(this, this._handle_buffers_data, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, 
-        [rt_id, 0, 0, script, [["gl", ctx_id]]]);
+    window.services["ecmascript-debugger"].requestEval(tag,
+        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
   this.get_buffers_data_all = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers);
     var tag = tagManager.set_callback(this, this._handle_buffers_data, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, 
-        [rt_id, 0, 0, script, [["gl", ctx_id]]]);
+    window.services["ecmascript-debugger"].requestEval(tag,
+        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
   this._handle_buffers_data = function(status, message, rt_id, ctx_id)
@@ -122,7 +122,7 @@ cls.WebGLBuffer = function()
       // sub message ObjectValue
       OBJECT_ID = 0;
 
-    if (message[STATUS] == 'completed')
+    if (message[STATUS] === 'completed')
     {
       if (message[TYPE] == 'null')
       {
@@ -155,8 +155,8 @@ cls.WebGLBuffer = function()
       OBJECT_ID = 0;
 
     if (status === 0)
-    { 
-      var msg_vars = message[0][0][0][0][1]; 
+    {
+      var msg_vars = message[0][0][0][0][1];
 
       var len = msg_vars.length - 1;
 
@@ -183,12 +183,12 @@ cls.WebGLBuffer = function()
   this._finalize_buffers_data = function(status, message, rt_id, ctx_id)
   {
     if (status === 0)
-    { 
-      if (message.length == 0) return;
+    {
+      if (message.length === 0) return;
 
       for (var i = 0; i < message[0].length; i++)
       {
-        var msg_vars = message[0][i][0][0][1]; 
+        var msg_vars = message[0][i][0][0][1];
 
         var buffer = {};
         var values = [];
@@ -198,7 +198,7 @@ cls.WebGLBuffer = function()
           var key = msg_vars[j][0];
           var type = msg_vars[j][1];
           var value = msg_vars[j][2];
-          if (isNaN(key)) buffer[key] = type == "number" ? Number(value) : value;
+          if (isNaN(key)) buffer[key] = type === "number" ? Number(value) : value;
           else values.push(Number(value));
           // Assumes that the keys are in the correct order.
         }
@@ -223,6 +223,6 @@ cls.WebGLBuffer = function()
     }
   };
 
-  window.host_tabs.activeTab.addEventListener("webgl-buffer-created", 
+  window.host_tabs.activeTab.addEventListener("webgl-buffer-created",
       this._on_buffer_created.bind(this), false, false);
 };

@@ -8,6 +8,8 @@ window.cls || (window.cls = {});
 cls.WebGLData = function (context_id)
 {
   this.context_id = context_id;
+  this.texture_names = [];
+
   this.shaders = {};
 
   this.states = [];
@@ -56,6 +58,20 @@ cls.WebGLData = function (context_id)
       window.services["ecmascript-debugger"].requestExamineObjects(tag, [webgl.runtime_id, [snapshot.pixels_object]]);
       snapshot.downloading = true;
     }
+  };
+
+  // Gets the latest test data for speed test of data transmission
+  this.get_test_data = function()
+  {
+    var data = this.test_data;
+    if (typeof(data) != "number") return null;
+    return data;
+  };
+
+  // Put speed test results in the data stack
+  this.add_test_data = function(data)
+  {
+    this.test_data = data;
   };
 
   /*

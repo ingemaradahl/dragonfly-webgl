@@ -2,18 +2,19 @@
 
 window.cls || (window.cls = {});
 
-cls.WebGLTrace = function(api) 
+/**
+ * Gathers a trace of all WebGL calls during a frame.
+ */
+cls.WebGLTrace = function()
 {
   this._current_context = null;
-
-  this.api = api;
 
   // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
   this._send_trace_request = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.request_trace);
     this._current_context = ctx_id;
-    window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["gl", ctx_id]]]);
+    window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
   this._on_trace_complete = function(msg)
@@ -22,11 +23,7 @@ cls.WebGLTrace = function(api)
     var ctx_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
     var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["gl", ctx_id]]]);
-
-    //var script_ = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_snapshots);
-    //var tag_ = tagManager.set_callback(this, this._handle_)
-
+    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
   this._handle_trace_complete = function(status, message, rt_id, ctx_id)
@@ -39,7 +36,7 @@ cls.WebGLTrace = function(api)
       // sub message ObjectValue
       OBJECT_ID = 0;
 
-    if (message[STATUS] == 'completed')
+    if (message[STATUS] === 'completed')
     {
       if (message[TYPE] == 'null')
       {
@@ -52,6 +49,12 @@ cls.WebGLTrace = function(api)
         var tag = tagManager.set_callback(this, this._examine_trace_complete, [rt_id, ctx_id]);
         window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
       }
+    }
+    else if (message[OBJECT_VALUE][4] === "Error")
+    {
+      var obj_id = message[OBJECT_VALUE][OBJECT_ID];
+      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
+      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
     }
     else
     {
@@ -71,8 +74,8 @@ cls.WebGLTrace = function(api)
       OBJECT_ID = 0;
 
     if (status === 0)
-    { 
-      var msg_vars = message[0][0][0][0][1]; 
+    {
+      var msg_vars = message[0][0][0][0][1];
 
       var len = msg_vars.length - 1;
 
@@ -99,12 +102,12 @@ cls.WebGLTrace = function(api)
   this._finalize_trace_complete = function(status, message, rt_id, ctx_id)
   {
     if (status === 0)
-    { 
-      if (message.length == 0) return;
+    {
+      if (message.length === 0) return;
 
       for (var i = 0; i < message[0].length; i++)
       {
-        var msg_vars = message[0][i][0][0][1]; 
+        var msg_vars = message[0][i][0][0][1];
         var data = [];
         var fbo_ids = [];
         for (var j = 0; j < msg_vars.length - 1; j++)
@@ -185,20 +188,19 @@ cls.WebGLTrace = function(api)
   };
   // ---------------------------------------------------------------------------
 
-  window.host_tabs.activeTab.addEventListener("webgl-trace-completed", 
+  window.host_tabs.activeTab.addEventListener("webgl-trace-completed",
       this._on_trace_complete.bind(this), false, false);
-};
 
-/**
- * Used to store a single function call in a frame trace.
- */
-function TraceEntry(function_name, error_code, result, args, img_id)
-{
-  this.function_name = function_name;
-  this.error_code = error_code;
-  this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
-  this.result = result;
-  this.have_result = result !== "";
-  this.args = args;
-  this.img_id = img_id || null;
-}
+  /**
+   * Used to store a single function call in a frame trace.
+   */
+  function TraceEntry(function_name, error_code, result, args)
+  {
+    this.function_name = function_name;
+    this.error_code = error_code;
+    this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
+    this.result = result;
+    this.have_result = result !== "";
+    this.args = args;
+  }
+};
