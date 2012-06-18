@@ -10,8 +10,6 @@ cls.WebGLData = function (context_id)
   this.context_id = context_id;
   this.texture_names = [];
 
-  this.shaders = {};
-
   this.states = [];
 
   this.test_data;
@@ -58,6 +56,27 @@ cls.WebGLData = function (context_id)
       window.services["ecmascript-debugger"].requestExamineObjects(tag, [webgl.runtime_id, [snapshot.pixels_object]]);
       snapshot.downloading = true;
     }
+  };
+
+  /*
+   * Gets the appropriate FBO snapshot determined by trace and call index
+   */
+  this.get_snapshot_by_call = function(trace, call)
+  {
+    if (!this.snapshots[trace]) return null;
+
+    var c = -1;
+    var result = null;
+    for (var s in this.snapshots[trace])
+    {
+      var snapshot = this.snapshots[trace][s];
+      if (snapshot.call_idx <= call && snapshot.call_idx > c)
+      {
+        result = snapshot;
+      }
+    }
+
+    return result;
   };
 
   // Gets the latest test data for speed test of data transmission
