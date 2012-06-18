@@ -84,7 +84,6 @@ cls.WebGLTraceView = function(id, name, container_class)
     this._render();
   };
 
-
   this._format_trace_table = function(trace)
   {
     var tbl_data = [];
@@ -99,8 +98,87 @@ cls.WebGLTraceView = function(id, name, container_class)
     return tbl_data;
   };
 
+  this._on_table_click = function(evt, target)
+  {
+    var obj_id = target["data-object-id"];
+    var call_no = parseInt(obj_id.number)-1; // Indexing in table starts with 1
+
+    this.display_snapshot_by_call(call_no);
+  };
+
+  this.display_snapshot_by_call = function(call)
+  {
+    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
+
+    var snapshot = webgl.data[ctx_id].get_snapshot_by_call(0, call);
+    if (!snapshot)
+    {
+      this._container.innerHTML = "No snapshot for call " + call;
+      return;
+    }
+
+    if (snapshot.downloading)
+    {
+      this._container.innerHTML = "Snapshot still downloading...";
+      return;
+    }
+
+
+    // TODO: Only temporary of course
+    this._container.innerHTML = "<canvas id=\"gl-canvas\" width=\"400\" height=\"400\"></canvas>";
+    var cnv = document.getElementById("gl-canvas");
+    var gl = cnv.getContext("experimental-webgl");
+    gl.clearColor(0.2, 0.5, 0.3, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+
+    var prg = webgl.compileProgram(webgl.shaders["texture-vs"].src, 
+                                   webgl.shaders["texture-fs"].src,
+                                   gl);
+    
+    gl.useProgram(prg)
+    prg.positionAttrib = gl.getAttribLocation(prg, "aVertexPosition");
+    gl.enableVertexAttribArray(prg.positionAttrib);
+
+    prg.uvAttrib = gl.getAttribLocation(prg, "aTexturePosition");
+    gl.enableVertexAttribArray(prg.uvAttrib);
+
+    prg.samplerUniform = gl.getUniformLocation(prg, "uSampler");
+
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+
+    // WebGL has limited NPOT texturing support
+    // http://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, snapshot.width, snapshot.height, 0,
+                  gl.RGBA, gl.UNSIGNED_BYTE, snapshot.pixels);
+
+    var positions = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positions);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(webgl.quad), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(prg.positionAttrib, 2, gl.FLOAT, false, 0, 0);
+
+    var uv = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uv);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(webgl.uv), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(prg.uvAttrib, 2, gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(prg.samplerUniform, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  };
+
   this.tabledef = {
     column_order: ["number", "call"],
+    handler: "webgl-trace-table", 
+    idgetter: function(res) { return res; },
     columns: {
       number: {
         label: "Number",
@@ -115,6 +193,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
   eh.click["refresh-webgl-trace"] = this._on_refresh.bind(this);
+  eh.click["webgl-trace-table"] = this._on_table_click.bind(this);
 
   messages.addListener('webgl-new-trace', this._on_new_trace.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
