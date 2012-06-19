@@ -86,7 +86,7 @@ cls.WebGLTrace = function()
       data.push(new TraceEntry(function_name, error_code, result, args));
     }
 
-    window.webgl.examine_array(this, trace.snapshots, this._examine_snapshots_complete, [rt_id, ctx_id], false);
+    window.webgl.examine_array(this, trace.snapshots, window.webgl.extract_array_callback(this._examine_snapshots_complete, null, true), [rt_id, ctx_id], false);
 
     window.webgl.data[ctx_id].add_trace(data);
     messages.post("webgl-new-trace", data);
@@ -97,44 +97,17 @@ cls.WebGLTrace = function()
     return new TraceArg(obj[0][3][4]); // TODO Temporary
   };
 
-  this._examine_snapshots_complete = function(status, message, rt_id, ctx_id)
+  this._examine_snapshots_complete = function(data, rt_id, ctx_id)
   {
-    var
-      NAME  = 0,
-      TYPE  = 1,
-      VALUE = 2;
-
-    if (status === 0)
+    for (var i = 0; i < data.length; i++)
     {
-      if (message.length === 0) return;
+      var snapshot = data[i];
+      snapshot.pixels_object = snapshot.pixels.object_id;
+      snapshot.pixels = null;
+      snapshot.downloading = false;
 
-      for (var i = 0; i < message[0].length; i++)
-      {
-        var msg_vars = message[0][i][0][0][1];
-        var snapshot = {};
-        for (var j in msg_vars)
-        {
-          var field = msg_vars[j];
-
-          if (field[TYPE] === "number")
-          {
-            snapshot[field[NAME]] = Number(field[VALUE]);
-          }
-          else if (field[TYPE] === "object")
-          {
-            snapshot.pixels_object = field[3][0];
-          }
-        }
-        snapshot.pixels = null;
-        snapshot.downloading = false;
-
-        window.webgl.data[ctx_id].add_snapshot(snapshot);
-        //snapshots.push(snapshot);
-      }
-
-      //window.webgl.data[ctx_id].add_snapshots(snapshots);
+      window.webgl.data[ctx_id].add_snapshot(snapshot);
     }
-    
   };
   // ---------------------------------------------------------------------------
 
