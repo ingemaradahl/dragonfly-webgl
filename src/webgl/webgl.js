@@ -483,7 +483,7 @@ cls.WebGL.WebGLDebugger = function ()
    *   Arguments: [list of objects, runtime id, ..., root object id]
    * @param {Function} error_callback optional, is called when an error occurs.
    */
-  this.extract_array_callback = function(callback, error_callback)
+  this.extract_array_callback = function(callback, error_callback, revive)
   {
     return function(status, message)
     {
@@ -498,10 +498,56 @@ cls.WebGL.WebGLDebugger = function ()
        var data = [];
        if (message.length !== 0)
        {
-         for (var i = 0; i < message[0].length; i++)
+         var i, msg_vars;
+         if (revive)
          {
-           var msg_vars = message[0][i][0][0][1];
-           data.push(msg_vars);
+           for (i = 0; i < message[0].length; i++)
+           {
+             var obj;
+             if (message[0][i][0][0][0][4] === "Array") obj = [];
+             else obj = {};
+
+             msg_vars = message[0][i][0][0][1];
+             for (var j = 0; j < msg_vars.length; j++) {
+               var key = msg_vars[j][0];
+               var type = msg_vars[j][1];
+               var value = msg_vars[j][2];
+
+               switch (type)
+               {
+                 case "number":
+                   value = Number(value);
+                   break;
+                 case "boolean":
+                   value = Boolean(value);
+                   break;
+                 case "null":
+                   value = null;
+                   break;
+                 case "undefined":
+                   value = undefined;
+                   break;
+                 case "object":
+                   value = {
+                     object_id: msg_vars[j][3][0],
+                     type: msg_vars[j][3][2],
+                     class_name: msg_vars[j][3][4],
+                   };
+                   break;
+               }
+
+               obj[key] = value;
+             }
+             data.push(obj);
+           }
+         }
+         else
+         {
+           for (i = 0; i < message[0].length; i++)
+           {
+             msg_vars = message[0][i][0][0][1];
+             data.push(msg_vars);
+           }
          }
        }
        callback.apply(this, [data].concat(Array.prototype.slice.call(arguments, 2)));
