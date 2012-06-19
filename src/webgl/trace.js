@@ -129,8 +129,12 @@ cls.WebGLTrace = function()
         snapshot.downloading = false;
 
         window.webgl.data[ctx_id].add_snapshot(snapshot);
+        //snapshots.push(snapshot);
       }
+
+      //window.webgl.data[ctx_id].add_snapshots(snapshots);
     }
+    
   };
   // ---------------------------------------------------------------------------
 
