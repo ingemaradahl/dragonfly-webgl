@@ -58,6 +58,28 @@ cls.WebGLData = function (context_id)
     }
   };
 
+  this.add_snapshots = function(snapshots)
+  {
+    var to_download = [];
+
+    for (var s in snapshots)
+    {
+      var snapshot = snapshots[s];
+
+      this.snapshots[snapshot.trace_idx] || (this.snapshots[snapshot.trace_idx] = []);
+      this.snapshots[snapshot.trace_idx].push(snapshot);
+
+      if (!snapshot.pixels && !snapshot.downloading)
+      {
+        to_download.push(snapshot.pixels_object);
+        snapshot.downloading = true;
+      }
+    }
+
+    var tag = tagManager.set_callback(this, this._received_pixels, [snapshot]);
+    window.services["ecmascript-debugger"].requestExamineObjects(tag, [webgl.runtime_id, to_download]);
+  };
+
   /*
    * Gets the appropriate FBO snapshot determined by trace and call index
    */
@@ -104,16 +126,20 @@ cls.WebGLData = function (context_id)
     { 
       if (message.length == 0) return;
 
-      var array_buffer = new ArrayBuffer(snapshot.size);
-      snapshot.pixels = new Uint8Array(array_buffer);
-
-      var pixels = message[0][0][0][0][1];
-      for (var i=0; i<snapshot.size; i++)
+      for (var i=0; i<message[0].length; i++)
       {
-        snapshot.pixels[i] = pixels[i][2];
-      }
+        var pixels = message[0][i][0][0][1];
 
-      snapshot.downloading = false;
+        var array_buffer = new ArrayBuffer(snapshot.size);
+        snapshot.pixels = new Uint8Array(array_buffer);
+
+        for (var i=0; i<snapshot.size; i++)
+        {
+          snapshot.pixels[i] = pixels[i][2];
+        }
+
+        snapshot.downloading = false;
+      }
     }
   };
 

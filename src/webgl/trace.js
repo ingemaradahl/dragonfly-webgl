@@ -136,9 +136,12 @@ cls.WebGLTrace = function()
           }
         }
 
-        // Send a request to retrieve the FBO snapshot objects
-        var tag = tagManager.set_callback(this, this._examine_snapshots_complete, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, fbo_ids]);
+        if (fbo_ids.length > 0)
+        {
+          // Send a request to retrieve the FBO snapshot objects
+          var tag = tagManager.set_callback(this, this._examine_snapshots_complete, [rt_id, ctx_id]);
+          window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, fbo_ids]);
+        }
 
         window.webgl.data[ctx_id].add_trace(data);
         messages.post('webgl-new-trace', data);
@@ -161,6 +164,8 @@ cls.WebGLTrace = function()
     { 
       if (message.length == 0) return;
 
+      var snapshots = [];
+
       for (var i = 0; i < message[0].length; i++)
       {
         var msg_vars = message[0][i][0][0][1]; 
@@ -182,7 +187,10 @@ cls.WebGLTrace = function()
         snapshot.downloading = false;
 
         window.webgl.data[ctx_id].add_snapshot(snapshot);
+        //snapshots.push(snapshot);
       }
+
+      //window.webgl.data[ctx_id].add_snapshots(snapshots);
     }
     
   };
