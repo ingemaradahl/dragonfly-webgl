@@ -498,6 +498,7 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.bindBuffer = function(result, args)
     {
+      if (args[1] == null) return;
       this.bound_buffer = args[1]._index;
     };
     innerFuns.bufferData = function(result, args)
@@ -582,6 +583,9 @@ cls.WebGL.RPCs.injection = function () {
         width = viewport[2];
         height = viewport[3];
       }
+
+      //height = Math.min(height, 200);
+      //width = Math.min(width, 200);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
