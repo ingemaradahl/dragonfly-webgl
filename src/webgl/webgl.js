@@ -173,8 +173,10 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
-  this.handle_error = function(status, message, rt_id, ctx_id)
+  this.handle_error = function(status, message, obj_id)
   {
+    window.services["ecmascript-debugger"].requestReleaseObjects(0, [obj_id]);
+
     if (status === 0)
     {
       var msg_vars = message[0][0][0][0][1];
@@ -191,6 +193,235 @@ cls.WebGL.WebGLDebugger = function ()
       opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
           "failed _handle_error");
     }
+  };
+
+  /**
+   * Extracts the result from requestEval call. If its a object then its examined.
+   * The runtime id must be set as first element in the argument list.
+   * Last argument must be the object id of the result from the eval request.
+   * @param {Function} callback this is called when the object have been examined.
+   *   Arguments: [status, object/value, runtime id, ...(, object id)]
+   * @param {Function} error_callback optional, is called when an error occurs.
+   * @param {Boolean} release_objects optional, iff true then objects are released after they are examined.
+   */
+  this.eval_examine_callback = function(callback, error_callback, release_objects)
+  {
+    var obj_id;
+
+    function release_objects_callback()
+    {
+      window.services["ecmascript-debugger"].requestReleaseObjects(0, [obj_id]);
+      callback.apply(this, arguments);
+    }
+
+    return function(status, message, rt_id)
+    {
+      var STATUS = 0;
+      var TYPE = 1;
+      var VALUE = 2;
+      var OBJECT = 3;
+
+      var OBJECT_ID = 0;
+      var OBJECT_TYPE = 4;
+
+      if (message[STATUS] === "completed")
+      {
+        var args = Array.prototype.slice.call(arguments, 2);
+        if (message[TYPE] === "object")
+        {
+          obj_id = message[OBJECT][OBJECT_ID];
+          args.push(obj_id);
+          var next_callback = release_objects === true ? release_objects_callback : callback;
+          var tag = tagManager.set_callback(this, next_callback, args);
+          window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [obj_id]]);
+        }
+        else
+        {
+          var value = message[VALUE];
+          switch (message[TYPE])
+          {
+            case "number":
+              value = Number(value);
+              break;
+            case "boolean":
+              value = Boolean(value);
+              break;
+            case "null":
+              value = null;
+              break;
+            case "undefined":
+              value = undefined;
+              break;
+          }
+          callback.apply(this, [0, value].concat(args)); // 0 is the status
+        }
+      }
+      else if (message[STATUS] === "unhandled-exception" && message[OBJECT][OBJECT_TYPE] === "Error")
+      {
+        obj_id = message[OBJECT][OBJECT_ID];
+        var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [obj_id]);
+        window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]], true, true); //TODO
+      }
+      else
+      {
+        if (error_callback != null) error_callback.apply(this, arguments);
+        else opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+            "An unknown error occured during execution of a script on the host " +
+            "function eval_examine_callback in WebGLDebugger.");
+      }
+    };
+  };
+
+  /**
+   * Examines all objects in an array. Use as a callback on requestExamineObjects
+   * where a single object id is specified.
+   * The runtime id must be set as first element in the argument list.
+   * Last argument must be the object id of the result from the eval request.
+   * @param {Function} callback this is called when the objects have been examined.
+   *   Arguments: [status, list of objects, runtime id, ..., root object id]
+   *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
+   * @param {Function} error_callback optional, is called when an error occurs.
+   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Boolean} release_object optional, iff true then the object id in
+   *   the last argument will be released when all array elements have been examined.
+   */
+  this.examine_array_callback = function(callback, error_callback, extract, release_object)
+  {
+    var root_object_id;
+
+    function release_objects_callback()
+    {
+      window.services["ecmascript-debugger"].requestReleaseObjects(0, root_object_id);
+      callback.apply(this, arguments);
+    }
+
+    return function(status, message, rt_id)
+    {
+      var STATUS = 0;
+      var TYPE = 1;
+      var VALUE = 2;
+      var OBJECT = 3;
+      // sub message ObjectValue
+      var OBJECT_ID = 0;
+
+      if (status === 0)
+      {
+        var msg_vars = message[0][0][0][0][1];
+
+        // ignore the last element since its the lenth of the array
+        var len = msg_vars.length - 1;
+
+        var object_ids = [];
+        for (var i = 0; i < len; i++)
+        {
+          var id = msg_vars[i][OBJECT][OBJECT_ID];
+          object_ids.push(id);
+        }
+
+        var args = Array.prototype.slice.call(arguments, 2);
+        if (object_ids.length > 0)
+        {
+          var next_callback = callback;
+          if (release_object === true)
+          {
+            next_callback = release_objects_callback;
+            root_object_id = arguments[arguments.length - 1];
+          }
+          if (extract === true)
+          {
+            next_callback = window.webgl.extract_array_callback.call(this, next_callback, error_callback);
+          }
+          var tag = tagManager.set_callback(this, next_callback, args);
+          window.services["ecmascript-debugger"].requestExamineObjects(tag,
+              [rt_id, object_ids]);
+        }
+        else
+        {
+          callback.apply(this, [0, []].concat(args));
+        }
+      }
+      else
+      {
+        if (error_callback != null) error_callback.apply(this, arguments);
+        else opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+            "failed examine_array_callback in WebGLDebugger");
+      }
+    };
+  };
+
+  /**
+   * Use as a callback on requestEval where the result is an array.
+   * Examines the object that object that is resturned from requestEval and then examines the sub objects (the elements in the array).
+   * @param {Function} callback this is called when the array have been examined.
+   *   Arguments: [status, list of objects, runtime id, ..., root object id]
+   *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
+   * @param {Function} error_callback optional, is called when an error occurs.
+   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Boolean} release_object optional, iff true then the object id in
+   *   the last argument will be released when all array elements have been examined.
+   */
+  this.examine_array_objects_eval_callback = function(callback, error_callback, extract, release_objects)
+  {
+    return this.eval_examine_callback(this.examine_array_callback(callback, error_callback, extract, release_objects), error_callback, false);
+  };
+
+  /**
+   * Examines an array that is on Scopes ObjectInfo form.
+   * @param {Object} that context that the callback should be running with.
+   * @param {Array} array Array with type ObjectInfo of the elements.
+   * @param {Function} callback this is called when the array have been examined.
+   *   Arguments: [status, list of objects, runtime id, ..., root object id]
+   *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
+   * @param {Array} args arguments that should be passed to the callback.
+   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Function} error_callback optional, is called when an error occurs.
+   */
+  this.examine_array = function(that, array, callback, args, extract, error_callback)
+  {
+    if (extract === true)
+    {
+      callback = window.webgl.extract_array_callback.call(this, callback, error_callback);
+    }
+    var ids = [];
+    for (var j = 0; j < array.length; j++) {
+      if (array[j][1] !== "object") continue;
+      ids.push(array[j][3][0]);
+    }
+
+    var tag = tagManager.set_callback(that, callback, args);
+    window.services["ecmascript-debugger"].requestExamineObjects(tag, [args[0], ids]);
+  };
+
+  /**
+   * Use as a callback from requestExamineObjects. Simplifies the structure of
+   * the recieved message.
+   * @param {Function} callback this is called when the array have been examined.
+   *   Arguments: [list of objects, runtime id, ..., root object id]
+   * @param {Function} error_callback optional, is called when an error occurs.
+   */
+  this.extract_array_callback = function(callback, error_callback)
+  {
+    return function(status, message)
+    {
+      if (status !== 0)
+      {
+        if (error_callback != null) error_callback.apply(this, arguments);
+        else opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+            "failed extract_array in WebGLDebugger");
+        return;
+      }
+
+       var data = [];
+       if (message.length !== 0)
+       {
+         for (var i = 0; i < message[0].length; i++)
+         {
+           var msg_vars = message[0][i][0][0][1];
+           data.push(msg_vars);
+         }
+       }
+       callback.apply(this, [data].concat(Array.prototype.slice.call(arguments, 2)));
+    };
   };
 
   messages.addListener('runtime-selected', this.clear.bind(this));

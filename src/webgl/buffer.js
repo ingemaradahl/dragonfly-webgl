@@ -198,14 +198,20 @@ cls.WebGLBuffer = function()
           var key = msg_vars[j][0];
           var type = msg_vars[j][1];
           var value = msg_vars[j][2];
-          if (isNaN(key)) buffer[key] = type === "number" ? Number(value) : value;
-          else values.push(Number(value));
+          if (isNaN(key))
+          {
+            if (key === "buffer") buffer[key] = msg_vars[j][3][0];
+            else buffer[key] = type === "number" ? Number(value) : value;
+          }
+          else
+          {
+            values.push(Number(value));
+          }
           // Assumes that the keys are in the correct order.
         }
 
         buffer.values = values;
         delete buffer.length;
-        delete buffer.buffer;
 
         if (!("nodata" in buffer))
         {

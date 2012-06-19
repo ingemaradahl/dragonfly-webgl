@@ -84,6 +84,7 @@ cls.WebGL.RPCs.get_buffers_new = function ()
       arr.usage = buffer.usage;
     }
     arr.index = buffer.buffer._index;
+    arr.buffer = buffer.buffer;
     out.push(arr);
   }
   return out;
@@ -240,12 +241,13 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Wrap all WebGL functions, copy all other values and create a handler
    */
-  function _wrap_context(canvas)
+  function wrap_context(canvas)
   {
     // We will keep all native functions and enumerators in this object
     var gl = {};
 
     var handler = new Handler(this, gl);
+    // Temporarly expose the handler so we can get it with Dragonfly.
     canvas.____handler = handler;
 
     handler.get_state = function()
@@ -392,7 +394,7 @@ cls.WebGL.RPCs.injection = function () {
     // When there have been no error it should have the value NO_ERROR
     var oldest_error = this.NO_ERROR;
 
-    function _wrap_function(handler, function_name, original_function, innerFuns, postCaptureFuns)
+    function wrap_function(handler, function_name, original_function, innerFuns, postCaptureFuns)
     {
       var gl = handler.gl;
 
@@ -418,7 +420,7 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          var call_idx = handler.trace.length;
+          var call_idx = handler.trace.calls.length;
           var trace_idx = 0; // TODO: Differ from different traces
           var postFunction = postCaptureFuns[function_name];
 
@@ -428,43 +430,57 @@ cls.WebGL.RPCs.injection = function () {
             if (typeof(arguments[i]) === "object" && arguments[i] !== null)
             {
               var obj = arguments[i];
-              if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
-              {
-                // TODO: perhaps it should be possible to transfer the entire list if the user focuses the argument.
-                if (obj.length > 12)
-                {
-                  var ls = Array.prototype.slice.call(obj, 0, 12);
-                  args.push("[" + ls.join(", ") + ", ... (" + (obj.length - 12) + " more elements)]");
-                }
-                else
-                {
-                  args.push("[" + Array.prototype.join.call(obj, ", ") + "]");
-                }
-              }
-              else
-              {
-                // TODO: handle other types as well.
-                args.push(arguments[i]);
-              }
+              var trace_obj = format_object(obj);
+              var trace_obj_index = handler.trace.objects.push(trace_obj) - 1;
+              args.push("@" + String(trace_obj_index));
             }
             else
             {
               args.push(arguments[i]);
             }
           }
+
           var res = result === undefined ? "" : result;
+          handler.trace.calls.push([function_name, error, res].concat(args).join("|"));
+
           switch (function_name)
           {
             case "drawArrays":
             case "drawElements":
               postFunction.call(handler, trace_idx, call_idx);
-            default:
-              handler.trace.push([function_name, error, res].concat(args).join("|"));
               break;
           }
         }
         return result;
       };
+    }
+
+    var format_regexp = /^\[object (\w)\]$/;
+    function format_object(obj, args)
+    {
+      var display;
+      var type = obj.constructor.name;
+      if (type === "Function.prototype") type = obj.toString().replace(format_regexp, "$1");
+      var target = obj;
+      if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+      {
+        var ls = Array.prototype.concat.call([], obj);
+        var trace_obj = new TraceObject(target, type);
+        trace_obj.data = ls;
+        return trace_obj;
+      }
+      else if (obj instanceof WebGLUniformLocation)
+      {
+        // TODO enable below when we gathers info about shaders
+        // display = handler.lookup_uniform(obj).name;
+      }
+      else if (obj instanceof WebGLBuffer)
+      {
+        var buffer = handler.lookup_buffer(obj);
+        target = buffer.buffer;
+      }
+
+      return new TraceObject(target, type, display);
     }
 
     var innerFuns = {};
@@ -583,7 +599,7 @@ cls.WebGL.RPCs.injection = function () {
         height : height
       };
 
-      this.fbo_snapshots.push(snapshot);
+      this.trace.fbo_snapshots.push(snapshot);
 
       return snapshot;
     };
@@ -595,7 +611,7 @@ cls.WebGL.RPCs.injection = function () {
       if (typeof this[i] === "function")
       {
         gl[i] = this[i].bind(this);
-        this[i] = _wrap_function(handler, i, this[i], innerFuns, postCaptureFuns);
+        this[i] = wrap_function(handler, i, this[i], innerFuns, postCaptureFuns);
       }
       else
       {
@@ -608,7 +624,6 @@ cls.WebGL.RPCs.injection = function () {
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        handler.events["trace-completed"].post(handler.fbo_snapshots);
         handler.events["trace-completed"].post(handler.trace);
       }
 
@@ -616,7 +631,7 @@ cls.WebGL.RPCs.injection = function () {
       {
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
-        handler.trace = [];
+        handler.trace = new Trace();
       }
     };
 
@@ -646,7 +661,7 @@ cls.WebGL.RPCs.injection = function () {
     // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
     contexts.push(gl);
 
-    _wrap_context.call(gl, this);
+    wrap_context.call(gl, this);
 
     this.dispatchEvent(new Event("webgl-debugger-ready"));
 
@@ -665,7 +680,7 @@ cls.WebGL.RPCs.injection = function () {
     // Index of the currently bound buffer
     this.bound_buffer = null;
 
-    this.trace = [];
+    this.trace = null;
     this.fbo_snapshots = [];
     this.capture_next_frame = false;
     this.capturing_frame = false;
@@ -681,6 +696,17 @@ cls.WebGL.RPCs.injection = function () {
     this.get_snapshots = function()
     {
       return this.fbo_snapshots;
+    };
+
+    this.lookup_buffer = function(buffer)
+    {
+      for (var i = 0; i < this.buffers.length; i++) {
+        if (this.buffers[i].buffer === buffer)
+        {
+          return this.buffers[i];
+        }
+      }
+      return null;
     };
   }
 
@@ -719,4 +745,18 @@ cls.WebGL.RPCs.injection = function () {
     }
     this.ready = true;
   };
+
+  function Trace()
+  {
+    this.calls = [];
+    this.objects = [];
+    this.fbo_snapshots = [];
+  }
+
+  function TraceObject(target, type, display)
+  {
+    this.target = target;
+    this.type = type;
+    if (display !== undefined) this.display = display;
+  }
 };
