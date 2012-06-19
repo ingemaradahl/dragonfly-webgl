@@ -3,7 +3,7 @@
 window.cls || (window.cls = {});
 
 /*
- * Contains information about the WebGL functions, such as their return type, 
+ * Contains information about the WebGL functions, such as their return type,
  * names and types of parameters. Is used to display a more informative trace.
  */
 cls.WebGLAPI = function ()
@@ -12,7 +12,7 @@ cls.WebGLAPI = function ()
 
   this.add_function = function(name, returnType, args)
   {
-    if (args === undefined && typeof(returnType) == "object")
+    if (args === undefined && typeof(returnType) === "object")
     {
       this.functions[name] = returnType;
     }
@@ -382,10 +382,10 @@ cls.WebGLAPI = function ()
     {
       var arr = this.args[i];
       var value = args[i];
-      
+
       arrs.push(arr.generate_string(value));
     }
-    
+
     return text + arrs.join(", ") + ")";
   };
 
@@ -393,7 +393,7 @@ cls.WebGLAPI = function ()
   {
     for (var i = 0; i < this.args.length; i++)
     {
-      if (this.args[i].name == parameter_name) return this.args[i];
+      if (this.args[i].name === parameter_name) return this.args[i];
     }
     return null;
   };
@@ -416,13 +416,13 @@ cls.WebGLAPI = function ()
     var arrs = [];
     for (var i = 0; i < this.args.length; i++)
     {
-      if (this.args[i].length == args.length)
+      if (this.args[i].length === args.length)
       {
         for (var j = 0; j < args.length; j++)
         {
           var arr = this.args[i][j];
           var value = args[j];
-          
+
           arrs.push(arr.generate_string(value));
         }
         break;
@@ -430,7 +430,7 @@ cls.WebGLAPI = function ()
     }
 
     // If there where no match above just use the param values as output.
-    if (arrs.length == 0) arrs = args;
+    if (arrs.length === 0) arrs = args;
 
     return text + arrs.join(", ") + ")";
   };
@@ -445,7 +445,8 @@ cls.WebGLAPI = function ()
 
   GLParam.prototype.generate_string = function(value)
   {
-    return value;
+    if (typeof(value) === "object" && value.generate_string !== undefined) return value.generate_string();
+    return String(value);
   };
 
   // --------------------------
@@ -463,8 +464,8 @@ cls.WebGLAPI = function ()
   {
     for (var key in this.values)
     {
-      if (this.values.hasOwnProperty(key) && 
-          webgl_constants[this.values[key]] == value)
+      if (this.values.hasOwnProperty(key) &&
+          webgl_constants[this.values[key]] === value)
       {
         return this.values[key];
       }
@@ -501,7 +502,7 @@ cls.WebGLAPI = function ()
 
 
   // --------------------------
-  
+
   var colorParams = [
       new GLParam("red", this.TYPES.FLOAT),
       new GLParam("green", this.TYPES.FLOAT),
@@ -510,7 +511,7 @@ cls.WebGLAPI = function ()
     ];
 
   var textureTypesEnum = ["UNSIGNED_BYTE", "UNSIGNED_SHORT_5_6_5", "UNSIGNED_SHORT_4_4_4_4", "UNSIGNED_SHORT_5_5_5_1", "FLOAT", "HALF_FLOAT_OES", "UNSIGNED_SHORT", "UNSIGNED_INT"];
-  
+
   var texParamNames = ["TEXTURE_MAG_FILTER", "TEXTURE_MIN_FILTER", "TEXTURE_WRAP_S", "TEXTURE_WRAP_T", "TEXTURE_MAX_ANISOTROPY_EXT"];
 
   // Values below are partially borrowed from WebGL inspector.

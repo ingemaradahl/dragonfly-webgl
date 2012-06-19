@@ -22,85 +22,88 @@ cls.WebGLTrace = function()
     var rt_id = msg.runtime_id;
     var ctx_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
-    var tag = tagManager.set_callback(this, this._handle_trace_complete, [rt_id, ctx_id]);
+    var tag = tagManager.set_callback(this,
+        window.webgl.examine_array_objects_eval_callback(this._examine_trace_complete, null, true),
+        [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
-  this._handle_trace_complete = function(status, message, rt_id, ctx_id)
+  this._examine_trace_complete = function(data, rt_id, ctx_id, root_object_id)
   {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
+    for (var i = 0; i < data.length; i++) {
+      var trace = data[i];
 
-    if (message[STATUS] === 'completed')
-    {
-      if (message[TYPE] == 'null')
+      // TODO release the root object when all traces have been recieved.
+      window.webgl.examine_array(this, trace, this._examine_trace_object, [rt_id, ctx_id, i], true);
+    }
+  };
+
+  this._examine_trace_object = function(data, rt_id, ctx_id, trace_num)
+  {
+    var trace = {
+      calls: data[0].map(function(x){return x[2];}),
+      objects: data[1],
+      snapshots: data[2]
+    };
+    trace.calls.pop();
+
+    window.webgl.examine_array(this, trace.objects, this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], true);
+  };
+
+  this._finalize_trace_object = function(trace_objs, rt_id, ctx_id, trace_num, trace)
+  {
+    var data = [];
+    var arg_obj_re = /@([0-9]+)/;
+    for (var i = 0; i < trace.calls.length; i++) {
+      var call = trace.calls[i];
+
+      // WebGL Function call
+      var parts = call.split("|");
+      if (parts.length < 3)
       {
-        // TODO better error handling
         opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "failed to recieve a trace.");
+            "A trace entry had incorrect data: [" + parts.join(", ") + "]");
+        continue;
       }
-      else {
-        var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._examine_trace_complete, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
+      var function_name = parts[0];
+      var error_code = Number(parts[1]);
+      var result = parts[2];
+      var args = parts.slice(3);
+
+      for (var j = 0; j < args.length; j++) {
+        var arg = args[j];
+        if (arg_obj_re.test(arg))
+        {
+          var index = arg_obj_re.exec(arg)[1];
+          args[j] = this._format_trace_object(trace_objs[index]);
+        }
+        else if (!isNaN(arg))
+        {
+          args[j] = Number(arg);
+        }
       }
+
+      data.push(new TraceEntry(function_name, error_code, result, args));
     }
-    else if (message[OBJECT_VALUE][4] === "Error")
-    {
-      var obj_id = message[OBJECT_VALUE][OBJECT_ID];
-      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
-      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _handle_trace_query in WebGLTrace");
-    }
+
+    window.webgl.examine_array(this, trace.snapshots, this._examine_snapshots_complete, [rt_id, ctx_id], false);
+
+    window.webgl.data[ctx_id].add_trace(data);
+    messages.post("webgl-new-trace", data);
   };
 
-  this._examine_trace_complete = function(status, message, rt_id, ctx_id)
+  this._format_trace_object = function(obj)
+  {
+    return new TraceArg(obj[0][3][4]); // TODO Temporary
+  };
+
+  this._examine_snapshots_complete = function(status, message, rt_id, ctx_id)
   {
     var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
+      NAME  = 0,
+      TYPE  = 1,
+      VALUE = 2;
 
-    if (status === 0)
-    {
-      var msg_vars = message[0][0][0][0][1];
-
-      var len = msg_vars.length - 1;
-
-      var object_ids = [];
-      for (var i = 0; i < len; i++)
-      {
-        var id = msg_vars[i][OBJECT_VALUE][OBJECT_ID];
-        object_ids.push(id);
-      }
-
-      if (object_ids.length > 0)
-      {
-        var tag = tagManager.set_callback(this, this._finalize_trace_complete, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _finalize_buffer_created in WebGLTrace");
-    }
-  };
-
-  this._finalize_trace_complete = function(status, message, rt_id, ctx_id)
-  {
     if (status === 0)
     {
       if (message.length === 0) return;
@@ -108,62 +111,6 @@ cls.WebGLTrace = function()
       for (var i = 0; i < message[0].length; i++)
       {
         var msg_vars = message[0][i][0][0][1];
-        var data = [];
-        var fbo_ids = [];
-        for (var j = 0; j < msg_vars.length - 1; j++)
-        {
-          if (msg_vars[j][1] == "object")
-          {
-            // FBO snapshot object
-            fbo_ids.push(msg_vars[j][3][0]);
-          }
-          else
-          {
-            // WebGL Function call
-            var parts = msg_vars[j][2].split("|");
-            if (parts.length < 3)
-            {
-              opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-                "A trace entry had incorrect data: [" + parts.join(", ") + "]");
-              continue;
-            }
-            var function_name = parts[0];
-            var error_code = Number(parts[1]);
-            var result = parts[2];
-            var args = parts.slice(3);
-
-            data.push(new TraceEntry(function_name, error_code, result, args));
-          }
-        }
-
-        // Send a request to retrieve the FBO snapshot objects
-        var tag = tagManager.set_callback(this, this._examine_snapshots_complete, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, fbo_ids]);
-
-        window.webgl.data[ctx_id].add_trace(data);
-        messages.post('webgl-new-trace', data);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _finalize_trace_query in WebGLTrace");
-    }
-  };
-
-  this._examine_snapshots_complete = function(status, message, rt_id, ctx_id)
-  {
-    var 
-      NAME  = 0,
-      TYPE  = 1,
-      VALUE = 2;
-    if (status === 0)
-    { 
-      if (message.length == 0) return;
-
-      for (var i = 0; i < message[0].length; i++)
-      {
-        var msg_vars = message[0][i][0][0][1]; 
         var snapshot = {};
         for (var j in msg_vars)
         {
@@ -175,7 +122,7 @@ cls.WebGLTrace = function()
           }
           else if (field[TYPE] === "object")
           {
-            snapshot["pixels_object"] =  field[3][0];
+            snapshot.pixels_object = field[3][0];
           }
         }
         snapshot.pixels = null;
@@ -184,7 +131,6 @@ cls.WebGLTrace = function()
         window.webgl.data[ctx_id].add_snapshot(snapshot);
       }
     }
-    
   };
   // ---------------------------------------------------------------------------
 
@@ -203,4 +149,17 @@ cls.WebGLTrace = function()
     this.have_result = result !== "";
     this.args = args;
   }
+
+  function TraceArg(display, link)
+  {
+    this.display = display;
+  }
+
+  /**
+   * @param {Boolean} html true if html tags should be included in the string.
+   */
+  TraceArg.prototype.generate_string = function(html)
+  {
+    return this.display;
+  };
 };
