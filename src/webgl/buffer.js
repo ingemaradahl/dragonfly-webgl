@@ -10,223 +10,46 @@ cls.WebGLBuffer = function()
     // TODO: figure out which context the event originates from, or poll all of them.
     var ctx_id = window.webgl.contexts[0];
 
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers_new);
-    var tag = tagManager.set_callback(this, this._handle_buffer_created, [rt_id, ctx_id]);
+    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_new_buffers);
+    var tag = tagManager.set_callback(this, window.webgl.examine_array_objects_eval_callback(this._finalize_buffer_created, null, window.webgl.EXTRACT_ARRAY.EXTRACT_REVIVE, true), [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag,
         [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
-  this._handle_buffer_created = function(status, message, rt_id, ctx_id)
+  this._finalize_buffer_created = function(buffers, rt_id, ctx_id)
   {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
-
-    if (message[STATUS] === 'completed')
+    if (buffers.length > 0)
     {
-      if (message[TYPE] == 'null')
+      for (var i = 0; i < buffers.length; i++)
       {
-        // TODO better error handling
-        opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "failed to recieve buffers.");
-      }
-      else
-      {
-        var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._finalize_buffer_created, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
-      }
-    }
-    else if (message[OBJECT_VALUE][4] === "Error")
-    {
-      var obj_id = message[OBJECT_VALUE][OBJECT_ID];
-      var tag_error = tagManager.set_callback(this, window.webgl.handle_error, [rt_id, ctx_id]);
-      window.services["ecmascript-debugger"].requestExamineObjects(tag_error, [rt_id, [obj_id]]);
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _handle_buffer_created in WebGLBuffer");
-    }
-  };
-
-  this._finalize_buffer_created = function(status, message, rt_id, ctx_id)
-  {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
-
-    if (status === 0)
-    {
-      var msg_vars = message[0][0][0][0][1];
-
-      var len = msg_vars.length - 1;
-
-      var object_ids = [];
-      for (var i = 0; i < len; i++)
-      {
-        var id = msg_vars[i][OBJECT_VALUE][OBJECT_ID];
-        object_ids.push(id);
-        window.webgl.data[ctx_id].create_buffer();
-      }
-
-      if (object_ids.length > 0)
-      {
-        var tag = tagManager.set_callback(this, this._finalize_buffers_data, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
+        window.webgl.data[ctx_id].add_buffer(buffers[i]);
       }
 
       messages.post('webgl-new-buffers', ctx_id);
     }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _finalize_buffer_created in WebGLTrace");
-    }
   };
 
-  /*
-   * @param buffer_indices should be an array with indices of buffers.
-   */
-  this.get_buffers_data = function(rt_id, ctx_id, buffer_indices)
+  this.get_buffer_data = function(rt_id, ctx_id, buffer_index, buffer_id)
   {
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers_indices).replace(/__INDICES__/g, buffer_indices.join(","));
-    var tag = tagManager.set_callback(this, this._handle_buffers_data, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag,
-        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
+    var tag = tagManager.set_callback(this, window.webgl.extract_array_callback(this._handle_buffer_data, null, true), [rt_id, ctx_id, buffer_index]);
+    window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [buffer_id]]);
   };
 
-  this.get_buffers_data_all = function(rt_id, ctx_id)
+  this._handle_buffer_data = function(buffers, rt_id, ctx_id, buffer_index)
   {
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_buffers);
-    var tag = tagManager.set_callback(this, this._handle_buffers_data, [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag,
-        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
+    var buffer = buffers[0];
+    window.webgl.data[ctx_id].buffers[buffer_index].update(buffer);
+
+    var tag = tagManager.set_callback(this, window.webgl.extract_array_callback(this._finalize_buffer_data, null, true), [rt_id, ctx_id, buffer.index]);
+    window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [buffer.data.object_id]]);
   };
 
-  this._handle_buffers_data = function(status, message, rt_id, ctx_id)
+  this._finalize_buffer_data = function(buffer_data, rt_id, ctx_id, buffer_index)
   {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
-
-    if (message[STATUS] === 'completed')
-    {
-      if (message[TYPE] == 'null')
-      {
-        // TODO better error handling
-        opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "failed to recieve buffers.");
-      }
-      else
-      {
-        var return_arr = message[OBJECT_VALUE][OBJECT_ID];
-        var tag = tagManager.set_callback(this, this._examine_buffers_data, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [return_arr]]);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _handle_buffer_data in WebGLbuffer");
-    }
-  };
-
-  this._examine_buffers_data = function(status, message, rt_id, ctx_id)
-  {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
-
-    if (status === 0)
-    {
-      var msg_vars = message[0][0][0][0][1];
-
-      var len = msg_vars.length - 1;
-
-      var object_ids = [];
-      for (var i = 0; i < len; i++)
-      {
-        var id = msg_vars[i][OBJECT_VALUE][OBJECT_ID];
-        object_ids.push(id);
-      }
-
-      if (object_ids.length > 0)
-      {
-        var tag = tagManager.set_callback(this, this._finalize_buffers_data, [rt_id, ctx_id]);
-        window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, object_ids]);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _finalize_buffer_created in WebGLTrace");
-    }
-  };
-
-  this._finalize_buffers_data = function(status, message, rt_id, ctx_id)
-  {
-    if (status === 0)
-    {
-      if (message.length === 0) return;
-
-      for (var i = 0; i < message[0].length; i++)
-      {
-        var msg_vars = message[0][i][0][0][1];
-
-        var buffer = {};
-        var values = [];
-        var len = msg_vars.length;
-        for (var j = 0; j < len; j++)
-        {
-          var key = msg_vars[j][0];
-          var type = msg_vars[j][1];
-          var value = msg_vars[j][2];
-          if (isNaN(key))
-          {
-            if (key === "buffer") buffer[key] = msg_vars[j][3][0];
-            else buffer[key] = type === "number" ? Number(value) : value;
-          }
-          else
-          {
-            values.push(Number(value));
-          }
-          // Assumes that the keys are in the correct order.
-        }
-
-        buffer.values = values;
-        delete buffer.length;
-
-        if (!("nodata" in buffer))
-        {
-          window.webgl.data[ctx_id].update_buffer_data(buffer);
-        }
-
-        // TODO: only send one message?
-        messages.post('webgl-buffer-data-changed', ctx_id);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _finalize_buffer_data in WebGLTrace");
-    }
+    var data = buffer_data[0];
+    var buffer = window.webgl.data[ctx_id].buffers[buffer_index];
+    buffer.set_data(data);
+    messages.post('webgl-buffer-data', buffer);
   };
 
   window.host_tabs.activeTab.addEventListener("webgl-buffer-created",
