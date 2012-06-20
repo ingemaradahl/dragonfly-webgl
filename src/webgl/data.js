@@ -66,18 +66,45 @@ cls.WebGLData = function (context_id)
     {
       var snapshot = snapshots[s];
 
-      this.snapshots[snapshot.trace_idx] || (this.snapshots[snapshot.trace_idx] = []);
-      this.snapshots[snapshot.trace_idx].push(snapshot);
-
       if (!snapshot.pixels && !snapshot.downloading)
       {
         to_download.push(snapshot.pixels_object);
         snapshot.downloading = true;
       }
+
+      this.add_snapshot(snapshot);
     }
 
     var tag = tagManager.set_callback(this, this._received_pixels, [snapshot]);
     window.services["ecmascript-debugger"].requestExamineObjects(tag, [webgl.runtime_id, to_download]);
+  };
+
+  /*
+   * Since it's (for now) impossible to transfer typed arrays via scope, the
+   * entire fbo data has to be casted from an array of strings (scopes message
+   * system) to a native typed array
+   */
+  this._received_pixels = function(status, message, snapshot)
+  {
+    if (status === 0)
+    { 
+      if (message.length == 0) return;
+
+      for (var i=0; i<message[0].length; i++)
+      {
+        var pixels = message[0][i][0][0][1];
+
+        var array_buffer = new ArrayBuffer(snapshot.size);
+        snapshot.pixels = new Uint8Array(array_buffer);
+
+        for (var i=0; i<snapshot.size; i++)
+        {
+          snapshot.pixels[i] = pixels[i][2];
+        }
+
+        snapshot.downloading = false;
+      }
+    }
   };
 
   /*
@@ -113,34 +140,6 @@ cls.WebGLData = function (context_id)
   this.add_test_data = function(data)
   {
     this.test_data = data;
-  };
-
-  /*
-   * Since it's (for now) impossible to transfer typed arrays via scope, the
-   * entire fbo data has to be casted from an array of strings (scopes message
-   * system) to a native typed array
-   */
-  this._received_pixels = function(status, message, snapshot)
-  {
-    if (status === 0)
-    { 
-      if (message.length == 0) return;
-
-      for (var i=0; i<message[0].length; i++)
-      {
-        var pixels = message[0][i][0][0][1];
-
-        var array_buffer = new ArrayBuffer(snapshot.size);
-        snapshot.pixels = new Uint8Array(array_buffer);
-
-        for (var i=0; i<snapshot.size; i++)
-        {
-          snapshot.pixels[i] = pixels[i][2];
-        }
-
-        snapshot.downloading = false;
-      }
-    }
   };
 
   // Gets the latest test data for speed test of data transmission

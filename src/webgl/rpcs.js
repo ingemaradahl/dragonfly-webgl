@@ -583,6 +583,9 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
+      //width = 16;
+      //height = 16;
+
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
       var arr = new ArrayBuffer(size);
@@ -625,6 +628,7 @@ cls.WebGL.RPCs.injection = function () {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
         handler.events["trace-completed"].post(handler.trace);
+        handler.trace = null;
       }
 
       if (handler.capture_next_frame)
