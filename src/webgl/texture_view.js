@@ -60,17 +60,19 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
-  this._on_new_nexture_names = function()
+  this._on_new_texture_list = function()
   {
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
     var tbl_data = [];
-    var names = window.webgl.data.texture_names;
+    var ids = window.webgl.data[ctx].texture_container;
     var i = 0;
-    for (; i < (names.length-1); i++)
+   
+    for (i=0; i < (ids.length-1); i++)
     {
-      tbl_data.push({"texture" : names[i][2]});
+      tbl_data.push({"texture" : "Texture" + i});
     }
     this._table.set_data(tbl_data);
-    this._container.clearAndRender(this._table.render());
+    this._container.clearAndRender(this._table.render()); 
   };
 
   this._on_refresh = function()
@@ -93,12 +95,36 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._render();
   };
 
-  // Draw picture data inside a <img>.
   this._on_new_texture_data = function(msg)
   {
+    var texture_index = msg["id"]; //TODO ugly
+    var ctx = 
+        window['cst-selects']['context-select'].get_selected_context();
+    var texture_wrap_s = 
+        window.webgl.data[ctx].texture_data[texture_index].texture_wrap_s;
+    var texture_wrap_t =
+        window.webgl.data[ctx].texture_data[texture_index].texture_wrap_t;
+    var img = 
+        window.webgl.data[ctx].texture_data[texture_index].img;    
+    var texture_min_filter =
+        window.webgl.data[ctx].texture_data[texture_index].texture_min_filter;
+    var texture_mag_filter =  
+        window.webgl.data[ctx].texture_data[texture_index].texture_mag_filter;  
+    var source =
+        window.webgl.data[ctx].texture_data[texture_index].source;
+
     this._container.clearAndRender(
       ['div',
-        ['img', 'src', msg["texture-data"]],
+        ['p',"Texture" + texture_index ],
+        ['p', "texture_wrap_s: " +
+window.webgl.api.function_argument_to_string("getTexParameter", "pname",
+texture_wrap_s) ],
+        ['p', "texture_wrap_t: " + texture_wrap_t],
+        ['p', "texture_min_filter: " + texture_min_filter],
+        ['p', "texture_mag_filter: " + texture_mag_filter],
+        ['p', "Source : " + source],
+        ['img', 'src',  img ],
+        'class', 'info-box'
       ]
     );
   };
@@ -120,7 +146,7 @@ cls.WebGLTextureView = function(id, name, container_class)
   eh.click["refresh-webgl-texture"] = this._on_refresh.bind(this);
   eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
 
-  messages.addListener('webgl-new-texture-names', this._on_new_nexture_names.bind(this));
+  messages.addListener('webgl-new-texture-list', this._on_new_texture_list.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
   messages.addListener('webgl-new-texture-data',

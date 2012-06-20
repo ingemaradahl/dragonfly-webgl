@@ -146,83 +146,68 @@ cls.WebGL.RPCs.get_trace = function()
 
 cls.WebGL.RPCs.get_texture_names = function()
 {
-  var names = [];
-  var i = 0;
-  var j = 0;
-  var exists = false;
-  var text = "random canvas";
-
-  for (; i < (gl.textures.length); i++)
-  {
-    switch(gl.textures[i].toString())
-    {
-      case "[object ArrayBufferView]":
-        console.log("ArrayBufferView, not implemented"); //TODO
-        break;
-      case "[object ImageData]":
-        console.log("ImageData, not implemented"); //TODO
-        break;
-      case "[object HTMLImageElement]":
-        names.push(gl.textures[i].src);
-        break;
-      case "[object HTMLCanvasElement]":  // Expensive!?
-        //names.push(gl.textures[i].id);
-        for (j=0; (j<names.length && !exists); j++)
-        {
-          if (names[j] === text)
-          {
-            exists = true;
-          }
-        }
-        if (!exists)
-        {
-          names.push(text);
-          console.log(text + " pushed");
-        }
-      break;
-      case "[object HTMLVideoElement]":
-        console.log("HTMLVideoElement, not implemented"); //TODO
-        break;
-      default: console.log("ERROR in WebGLDebugger, couldn't resolve " +
-                           "texture object type: " + gl.textures[i].toString());
-    }
-  }
-  return names;
+  return gl.texture_list; 
 };
 
-// Return texture as string image data.
-cls.WebGL.RPCs.get_texture_as_data = function()
+cls.WebGL.RPCs.get_texture_as_data2 = function()
 {
   var texture_url = "URL";
   var i = 0;
-  var target_texture_index = undefined;
+  var target_texture_index = undefined;  
+  var return_vars = {};
 
-  for(; i < gl.textures.length; i++)
+  for (i=0; i<gl.texture_list.length; i++)
   {
-    if (gl.textures[i].src === texture_url)
+    if(("Texture"+i) === texture_url)
     {
       target_texture_index = i;
     }
   }
+  if (target_texture_index === undefined)
+  {     
+    return "undefined";
+  }
+  obj = gl.texture_list[target_texture_index];
+  element = obj.object;
 
-  if (target_texture_index !== undefined)
+  if (element instanceof HTMLImageElement)
   {
-    var img = gl.textures[target_texture_index];
     var canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    var ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-
-    var dataURL = canvas.toDataURL("image/png");
-
-    return (dataURL);
+    canvas.height = element.height;
+   
+    var canvas_ctx = canvas.getContext("2d");
+    canvas_ctx.drawImage(element, 0, 0);
+    obj.img = canvas.toDataURL("image/png");
+    obj.source = element.src;
+  }
+  else if (obj instanceof HTMLCanvasElement)
+  {
+    ct = obj.getContext('2d');
+    ct.fillStyle = 'red';
+    ct.strokeStyle = 'black';
+    ct.font = '20pt Verdana';
+    ct.fillText('some', 50, 50);
+    ct.strokeText('some', 50, 50);
+    ct.fill();
+    ct.stroke();
+    obj.img = obj.toDataURL("image/png");
   }
   else
   {
-    console.log("ERROR IN WEBGL, couldn't get texture");
+    console.log("WebGLDebugger ERROR, unknown texture type"); 
   }
+
+  return_vars.id = obj.id;
+  return_vars.object = obj.object;
+  return_vars.type = obj.type;
+  return_vars.texture_wrap_s = obj.texture_wrap_s;
+  return_vars.texture_wrap_t = obj.texture_wrap_t;
+  return_vars.img = obj.img;
+  return_vars.texture_min_filter = obj.texture_min_filter;
+  return_vars.texture_mag_filter = obj.texture_mag_filter;
+  return_vars.source = obj.source; 
+
+  return return_vars;
 };
 
 cls.WebGL.RPCs.injection = function () {
@@ -249,7 +234,6 @@ cls.WebGL.RPCs.injection = function () {
     var handler = new Handler(this, gl);
     // Temporarly expose the handler so we can get it with Dragonfly.
     canvas.____handler = handler;
-
     handler.get_state = function()
     {
       var pnames = [
@@ -548,16 +532,56 @@ cls.WebGL.RPCs.injection = function () {
     {
 
     };
+
+    innerFuns.createTexture = function(result, args)
+    {
+      //this.created_textures.push(result);
+      var texture_map_unit = {};
+      texture_map_unit.texture = result;
+      this.texture_list.push(texture_map_unit);
+
+    };
+  
+    innerFuns.deleteTexture = function(result, args)
+    {
+      // TODO delete texture from texture_list[]
+    };
+
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
-      // There are five different calls to texImage2D with different kinds of
-      // arguments. ArrayBufferView, ImageData, HTMLImageElement,
-      // HTMLCanvasElement, and HTMLVideoElement. They are always the last
-      // argument.
-      //var texture_container_object = args[args.length -1];
-      //console.log(texture_container_object.toString());
-      //this.textures.push(texture_container_object);
+      var texture_container_object = args[args.length -1];
+      if (texture_container_object === null)  //TODO improve
+        return;
+      var binded_texture = gl.getParameter(gl["TEXTURE_BINDING_2D"]);
+      var i = 0;    
+      var texture_exist = false; // If false by end, the texture is not
+                                 // created and there is an error.
+
+      for (i=0; i<this.texture_list.length; i++)
+      {
+        if (this.texture_list[i].texture === binded_texture)
+        {
+          this.texture_list[i].id = i;
+          this.texture_list[i].object = texture_container_object;
+          this.texture_list[i].type = texture_container_object.toString();
+          this.texture_list[i].texture_wrap_s =
+              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_S"]);
+          this.texture_list[i].texture_wrap_t =
+              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_T"]);
+          this.texture_list[i].texture_min_filter =
+              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MIN_FILTER"]);
+          this.texture_list[i].texture_mag_filter = 
+              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MAG_FILTER"]);
+          // TODO get real parameters
+          // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
+          texture_exist = true;
+        }
+      }
+      if (!texture_exist)
+      {
+        console.log("ERROR in WebGL, requested texture doesn't exist");
+      }
     };
     innerFuns.texSubImage2D = function(result, args)
     {

@@ -7,8 +7,8 @@ window.cls || (window.cls = {});
  */
 cls.WebGLData = function (context_id)
 {
-  this.context_id = context_id;
-  this.texture_names = [];
+  this.texture_container = [];
+  this.texture_data = [];
 
   this.states = [];
 
