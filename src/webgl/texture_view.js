@@ -83,8 +83,6 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._on_table_click = function(evt, target)
   {
-    // We want to match the request with the id of that row
-    // in the table of textures.
     var rid = target.getAttribute("data-object-id");
     var ctx = window['cst-selects']['context-select'].get_selected_context();
     window.webgl.request_texture_data(ctx, rid);
@@ -97,6 +95,8 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._on_new_texture_data = function(msg)
   {
+    // TODO collecting data from webg.data. Would be nice with
+    // a nice generic solution.
     var texture_index = msg["id"]; //TODO ugly
     var ctx = 
         window['cst-selects']['context-select'].get_selected_context();
@@ -116,9 +116,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._container.clearAndRender(
       ['div',
         ['p',"Texture" + texture_index ],
-        ['p', "texture_wrap_s: " +
-window.webgl.api.function_argument_to_string("getTexParameter", "pname",
-texture_wrap_s) ],
+        ['p', "texture_wrap_s: " + texture_wrap_s],
         ['p', "texture_wrap_t: " + texture_wrap_t],
         ['p', "texture_min_filter: " + texture_min_filter],
         ['p', "texture_mag_filter: " + texture_mag_filter],

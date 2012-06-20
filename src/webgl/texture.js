@@ -68,12 +68,13 @@ cls.WebGLTexture = function ()
  {
     var script =
         cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data2).replace(/URL/,texture_url);
+        // TODO replace is not very nice
     var tag = tagManager.set_callback(this, this._handle_texture_data, [ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag,
         [window.webgl.runtime_id, 0, 0, script, [["gl", ctx_id]]]);
  };
 
-  this._handle_texture_data = function(status, message, rt_id, ctx_id)
+  this._handle_texture_data = function(status, message, ctx_id)
   {
     var
       STATUS = 0,
@@ -121,7 +122,6 @@ cls.WebGLTexture = function ()
 
     if (status === 0)
     {
-      // TODO ugly with array indexing
       var msg_vars = message[0][0][0][0][1];
       for (var i=0; i < msg_vars.length; i++)
       {
@@ -158,7 +158,6 @@ cls.WebGLTexture = function ()
         }
       }
 
-      // TODO texture_data should be assosiative
       window.webgl.data[ctx_id].texture_data[texture_data_unit.id] = texture_data_unit;
       messages.post('webgl-new-texture-data',
           { "id" : texture_data_unit.id });

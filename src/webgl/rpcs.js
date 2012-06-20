@@ -146,7 +146,7 @@ cls.WebGL.RPCs.get_trace = function()
 
 cls.WebGL.RPCs.get_texture_names = function()
 {
-  return gl.texture_list; 
+  return gl.textures; 
 };
 
 cls.WebGL.RPCs.get_texture_as_data2 = function()
@@ -156,7 +156,7 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
   var target_texture_index = undefined;  
   var return_vars = {};
 
-  for (i=0; i<gl.texture_list.length; i++)
+  for (i=0; i<gl.textures.length; i++)
   {
     if(("Texture"+i) === texture_url)
     {
@@ -167,9 +167,10 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
   {     
     return "undefined";
   }
-  obj = gl.texture_list[target_texture_index];
+  obj = gl.textures[target_texture_index];
   element = obj.object;
-
+  
+  // TODO Must handle every type of element.
   if (element instanceof HTMLImageElement)
   {
     var canvas = document.createElement("canvas");
@@ -182,14 +183,6 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
   }
   else if (obj instanceof HTMLCanvasElement)
   {
-    ct = obj.getContext('2d');
-    ct.fillStyle = 'red';
-    ct.strokeStyle = 'black';
-    ct.font = '20pt Verdana';
-    ct.fillText('some', 50, 50);
-    ct.strokeText('some', 50, 50);
-    ct.fill();
-    ct.stroke();
     obj.img = obj.toDataURL("image/png");
   }
   else
@@ -197,6 +190,8 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
     console.log("WebGLDebugger ERROR, unknown texture type"); 
   }
 
+  // TODO these should only be set for elements where the parameter
+  // actually exist.
   return_vars.id = obj.id;
   return_vars.object = obj.object;
   return_vars.type = obj.type;
@@ -538,13 +533,14 @@ cls.WebGL.RPCs.injection = function () {
       //this.created_textures.push(result);
       var texture_map_unit = {};
       texture_map_unit.texture = result;
-      this.texture_list.push(texture_map_unit);
+      //console.log("created");
+      this.textures.push(texture_map_unit);
 
     };
   
     innerFuns.deleteTexture = function(result, args)
     {
-      // TODO delete texture from texture_list[]
+      // TODO delete texture from textures[]
     };
 
     // TODO All texImage functions must be wrapped and handled
@@ -558,21 +554,25 @@ cls.WebGL.RPCs.injection = function () {
       var texture_exist = false; // If false by end, the texture is not
                                  // created and there is an error.
 
-      for (i=0; i<this.texture_list.length; i++)
+      for (i=0; i<this.textures.length; i++)
       {
-        if (this.texture_list[i].texture === binded_texture)
+        if (this.textures[i].texture === binded_texture)
         {
-          this.texture_list[i].id = i;
-          this.texture_list[i].object = texture_container_object;
-          this.texture_list[i].type = texture_container_object.toString();
-          this.texture_list[i].texture_wrap_s =
+          this.textures[i].id = i;
+          this.textures[i].object = texture_container_object;
+          this.textures[i].type = texture_container_object.toString();
+          this.textures[i].texture_wrap_s =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_S"]);
-          this.texture_list[i].texture_wrap_t =
+              // TODO this is wrong parameter! FIX!
+          this.textures[i].texture_wrap_t =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_T"]);
-          this.texture_list[i].texture_min_filter =
+              // TODO this is wrong parameter! FIX!
+          this.textures[i].texture_min_filter =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MIN_FILTER"]);
-          this.texture_list[i].texture_mag_filter = 
+              // TODO this is wrong parameter! FIX!
+          this.textures[i].texture_mag_filter = 
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MAG_FILTER"]);
+          // TODO this is wrong parameter! FIX!
           // TODO get real parameters
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
           texture_exist = true;
@@ -707,13 +707,13 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers = [];
     // Index of the currently bound buffer
     this.bound_buffer = null;
+    
 
     this.trace = null;
     this.fbo_snapshots = [];
     this.capture_next_frame = false;
     this.capturing_frame = false;
 
-    // Container of all HTML DOM Image Objects from the textures.
     this.textures = [];
 
     this.events = {
