@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
@@ -23,6 +23,7 @@ cls.WebGLTestView = function(id, name, container_class)
 
   this.ondestroy = function() 
   {
+    this._container = null;
     // TODO remove listeners
 
   };

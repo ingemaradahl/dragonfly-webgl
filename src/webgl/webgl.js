@@ -18,7 +18,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
-	this.test = new cls.WebGLTest();
+  this.test = new cls.WebGLTest();
   this.texture = new cls.WebGLTexture();
 
   /* Contains shader used when displaying textures and buffers in the debugger */
@@ -91,7 +91,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.state._send_state_query(ctx);
+      this.state.send_state_query(this.runtime_id, ctx);
     }
   };
 
@@ -446,7 +446,10 @@ cls.WebGL.WebGLDebugger = function ()
    */
   this.examine_array_objects_eval_callback = function(callback, error_callback, extract, release_objects)
   {
-    return this.eval_examine_callback(this.examine_array_callback(callback, error_callback, extract, release_objects), error_callback, false);
+    return this.eval_examine_callback(
+        this.examine_array_callback(callback, error_callback, extract, release_objects),
+        error_callback,
+        false);
   };
 
   /**
