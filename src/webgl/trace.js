@@ -23,7 +23,7 @@ cls.WebGLTrace = function()
     var ctx_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
     var tag = tagManager.set_callback(this,
-        window.webgl.examine_array_objects_eval_callback(this._examine_trace_complete, null, true),
+        window.webgl.examine_array_objects_eval_callback(this._examine_trace_complete, null, window.webgl.EXTRACT_ARRAY.EXTRACT),
         [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
@@ -34,7 +34,7 @@ cls.WebGLTrace = function()
       var trace = data[i];
 
       // TODO release the root object when all traces have been recieved.
-      window.webgl.examine_array(this, trace, this._examine_trace_object, [rt_id, ctx_id, i], true);
+      window.webgl.examine_array(this, trace, this._examine_trace_object, [rt_id, ctx_id, i], window.webgl.EXTRACT_ARRAY.EXTRACT);
     }
   };
 
@@ -47,7 +47,7 @@ cls.WebGLTrace = function()
     };
     trace.calls.pop();
 
-    window.webgl.examine_array(this, trace.objects, this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], true);
+    window.webgl.examine_array(this, trace.objects, this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], window.webgl.EXTRACT_ARRAY.EXTRACT);
   };
 
   this._finalize_trace_object = function(trace_objs, rt_id, ctx_id, trace_num, trace)

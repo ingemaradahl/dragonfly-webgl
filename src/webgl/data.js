@@ -27,7 +27,7 @@ cls.WebGLData = function (context_id)
   this.snapshots = [];
 
   /*
-   * Buffers are stored as Buffer objects where they are ordered in the same 
+   * Buffers are stored as Buffer objects where they are ordered in the same
    * order as they are created on the remote side.
    */
   this.buffers = [];
@@ -38,7 +38,7 @@ cls.WebGLData = function (context_id)
   this.get_latest_trace = function()
   {
     return this.traces[this.traces.length-1];
-  }
+  };
 
   this.add_trace = function(trace)
   {
@@ -83,7 +83,7 @@ cls.WebGLData = function (context_id)
   this.get_test_data = function()
   {
     var data = this.test_data;
-    if (typeof(data) != "number") return null;
+    if (typeof(data) !== "number") return null;
     return data;
   };
 
@@ -101,8 +101,8 @@ cls.WebGLData = function (context_id)
   this._received_pixels = function(status, message, snapshot)
   {
     if (status === 0)
-    { 
-      if (message.length == 0) return;
+    {
+      if (message.length === 0) return;
 
       var array_buffer = new ArrayBuffer(snapshot.size);
       snapshot.pixels = new Uint8Array(array_buffer);
@@ -117,23 +117,9 @@ cls.WebGLData = function (context_id)
     }
   };
 
-  // Gets the latest test data for speed test of data transmission
-  this.get_test_data = function()
+  this.add_buffer = function(buffer)
   {
-    var data = this.test_data;
-    if (typeof(data) != "number") return null;
-    return data;
-  };
-
-  // Put speed test results in the data stack
-  this.add_test_data = function(data)
-  {
-    this.test_data = data;
-  };
-
-  this.create_buffer = function()
-  {
-    this.buffers.push(new Buffer(this.buffers.length));
+    this.buffers[buffer.index] = new Buffer(buffer);
   };
 
   /*
@@ -157,29 +143,39 @@ cls.WebGLData = function (context_id)
     buffer.set_data(buffer_data);
   };
 
-  function Buffer(index)
+  function Buffer(buf)
   {
-    this.index = index;
+    this.index = buf.index;
+    this.target = buf.target;
+    this.usage = buf.usage;
+    this.size = buf.size;
+    this.buffer = buf.buffer;
+    this.object_id = buf.object_id;
   }
 
-  Buffer.prototype.available = function ()
+  Buffer.prototype.available = function()
   {
     return this.values !== undefined;
   };
 
-  Buffer.prototype.set_data = function (data)
+  Buffer.prototype.update = function(buf)
   {
-    this.target = data.target;
-    this.values = data.values;
-    this.usage = data.usage;
+    this.target = buf.target;
+    this.usage = buf.usage;
+    this.size = buf.size;
   };
 
-  Buffer.prototype.usage_string = function ()
+  Buffer.prototype.set_data = function(data)
+  {
+    this.values = data;
+  };
+
+  Buffer.prototype.usage_string = function()
   {
     return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
   };
 
-  Buffer.prototype.target_string = function ()
+  Buffer.prototype.target_string = function()
   {
     return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
   };

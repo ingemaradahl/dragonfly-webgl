@@ -105,6 +105,12 @@ cls.WebGL.WebGLDebugger = function ()
     this.trace._send_trace_request(this.runtime_id, context_object_id);
   };
 
+  this.request_buffer_data = function(context_object_id, buffer_index)
+  {
+    var buffer = this.data[context_object_id].buffers[buffer_index];
+    this.buffer.get_buffer_data(this.runtime_id, context_object_id, buffer_index, buffer.object_id);
+  };
+
   this._send_injection = function (rt_id, cont_callback)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
@@ -311,32 +317,17 @@ cls.WebGL.WebGLDebugger = function ()
       if (message[STATUS] === "completed")
       {
         var args = Array.prototype.slice.call(arguments, 2);
-        if (message[TYPE] === "object")
+
+        var value = window.webgl.revive_value(message);
+        if (typeof(value) === "object")
         {
-          obj_id = message[OBJECT][OBJECT_ID];
-          args.push(obj_id);
+          args.push(value.object_id);
           var next_callback = release_objects === true ? release_objects_callback : callback;
           var tag = tagManager.set_callback(this, next_callback, args);
-          window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [obj_id]]);
+          window.services["ecmascript-debugger"].requestExamineObjects(tag, [rt_id, [value.object_id]]);
         }
         else
         {
-          var value = message[VALUE];
-          switch (message[TYPE])
-          {
-            case "number":
-              value = Number(value);
-              break;
-            case "boolean":
-              value = Boolean(value);
-              break;
-            case "null":
-              value = null;
-              break;
-            case "undefined":
-              value = undefined;
-              break;
-          }
           callback.apply(this, [0, value].concat(args)); // 0 is the status
         }
       }
@@ -365,7 +356,7 @@ cls.WebGL.WebGLDebugger = function ()
    *   Arguments: [status, list of objects, runtime id, ..., root object id]
    *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
    * @param {Function} error_callback optional, is called when an error occurs.
-   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Number} extract optional, see enum EXTRACT_ARRAY.
    * @param {Boolean} release_object optional, iff true then the object id in
    *   the last argument will be released when all array elements have been examined.
    */
@@ -411,9 +402,9 @@ cls.WebGL.WebGLDebugger = function ()
             next_callback = release_objects_callback;
             root_object_id = arguments[arguments.length - 1];
           }
-          if (extract === true)
+          if (extract >= window.webgl.EXTRACT_ARRAY.EXTRACT)
           {
-            next_callback = window.webgl.extract_array_callback.call(this, next_callback, error_callback);
+            next_callback = window.webgl.extract_array_callback.call(this, next_callback, error_callback, extract === window.webgl.EXTRACT_ARRAY.EXTRACT_REVIVE);
           }
           var tag = tagManager.set_callback(this, next_callback, args);
           window.services["ecmascript-debugger"].requestExamineObjects(tag,
@@ -428,7 +419,7 @@ cls.WebGL.WebGLDebugger = function ()
       {
         if (error_callback != null) error_callback.apply(this, arguments);
         else opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "failed examine_array_callback in WebGLDebugger");
+            "failed examine_array_callback in WebGLDebugger: " + message[0]);
       }
     };
   };
@@ -440,13 +431,14 @@ cls.WebGL.WebGLDebugger = function ()
    *   Arguments: [status, list of objects, runtime id, ..., root object id]
    *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
    * @param {Function} error_callback optional, is called when an error occurs.
-   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Number} extract optional, see enum EXTRACT_ARRAY.
    * @param {Boolean} release_object optional, iff true then the object id in
    *   the last argument will be released when all array elements have been examined.
    */
-  this.examine_array_objects_eval_callback = function(callback, error_callback, extract, release_objects)
+  this.examine_array_objects_eval_callback = function(callback, error_callback, extract, release_object)
   {
-    return this.eval_examine_callback(this.examine_array_callback(callback, error_callback, extract, release_objects), error_callback, false);
+    return this.eval_examine_callback(this.examine_array_callback(callback,
+          error_callback, extract, release_object), error_callback, false);
   };
 
   /**
@@ -457,14 +449,15 @@ cls.WebGL.WebGLDebugger = function ()
    *   Arguments: [status, list of objects, runtime id, ..., root object id]
    *   Arguments with extract: [simplified list of objects, runtime id, ..., root object id]
    * @param {Array} args arguments that should be passed to the callback.
-   * @param {Boolean} extract optional, iff true then the array is extracted.
+   * @param {Number} extract optional, see enum EXTRACT_ARRAY.
    * @param {Function} error_callback optional, is called when an error occurs.
    */
   this.examine_array = function(that, array, callback, args, extract, error_callback)
   {
-    if (extract === true)
+    if (extract >= window.webgl.EXTRACT_ARRAY.EXTRACT)
     {
-      callback = window.webgl.extract_array_callback.call(this, callback, error_callback);
+      callback = window.webgl.extract_array_callback.call(this, callback,
+          error_callback, extract === window.webgl.EXTRACT_ARRAY.EXTRACT_REVIVE);
     }
     var ids = [];
     for (var j = 0; j < array.length; j++) {
@@ -482,8 +475,11 @@ cls.WebGL.WebGLDebugger = function ()
    * @param {Function} callback this is called when the array have been examined.
    *   Arguments: [list of objects, runtime id, ..., root object id]
    * @param {Function} error_callback optional, is called when an error occurs.
+   * @param {Boolean} revive optional, iff true the array elements are revived.
+   * @param {Boolean} release_object optional, iff true then the object id in
+   *   the last argument will be released before the callback is called.
    */
-  this.extract_array_callback = function(callback, error_callback, revive)
+  this.extract_array_callback = function(callback, error_callback, revive, release_object)
   {
     return function(status, message)
     {
@@ -491,67 +487,93 @@ cls.WebGL.WebGLDebugger = function ()
       {
         if (error_callback != null) error_callback.apply(this, arguments);
         else opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "failed extract_array in WebGLDebugger");
+            "failed extract_array in WebGLDebugger: " + message[0]);
         return;
       }
 
-       var data = [];
-       if (message.length !== 0)
-       {
-         var i, msg_vars;
-         if (revive)
-         {
-           for (i = 0; i < message[0].length; i++)
-           {
-             var obj;
-             if (message[0][i][0][0][0][4] === "Array") obj = [];
-             else obj = {};
+      if (release_object === true)
+      {
+        window.services["ecmascript-debugger"].requestReleaseObjects(0, arguments[arguments.length - 1]);
+      }
 
-             msg_vars = message[0][i][0][0][1];
-             for (var j = 0; j < msg_vars.length; j++) {
-               var key = msg_vars[j][0];
-               var type = msg_vars[j][1];
-               var value = msg_vars[j][2];
+      var data = [];
+      if (message.length !== 0)
+      {
+        var i, msg_vars;
+        if (revive === true)
+        {
+          for (i = 0; i < message[0].length; i++)
+          {
+            var obj;
+            if (message[0][i][0][0][0][4] === "Array")
+            {
+              obj = [];
+            }
+            else
+            {
+              obj = {
+                object_id: message[0][i][0][0][0][0],
+                type: message[0][i][0][0][0][2],
+                class_name: message[0][i][0][0][0][4]
+              };
+            }
 
-               switch (type)
-               {
-                 case "number":
-                   value = Number(value);
-                   break;
-                 case "boolean":
-                   value = Boolean(value);
-                   break;
-                 case "null":
-                   value = null;
-                   break;
-                 case "undefined":
-                   value = undefined;
-                   break;
-                 case "object":
-                   value = {
-                     object_id: msg_vars[j][3][0],
-                     type: msg_vars[j][3][2],
-                     class_name: msg_vars[j][3][4],
-                   };
-                   break;
-               }
+            msg_vars = message[0][i][0][0][1];
+            for (var j = 0; j < msg_vars.length; j++) {
+              var key = msg_vars[j][0];
 
-               obj[key] = value;
-             }
-             data.push(obj);
-           }
-         }
-         else
-         {
-           for (i = 0; i < message[0].length; i++)
-           {
-             msg_vars = message[0][i][0][0][1];
-             data.push(msg_vars);
-           }
-         }
-       }
-       callback.apply(this, [data].concat(Array.prototype.slice.call(arguments, 2)));
+              obj[key] = window.webgl.revive_value(msg_vars[j]);
+            }
+            data.push(obj);
+          }
+        }
+        else
+        {
+          for (i = 0; i < message[0].length; i++)
+          {
+            msg_vars = message[0][i][0][0][1];
+            data.push(msg_vars);
+          }
+        }
+      }
+      callback.apply(this, [data].concat(Array.prototype.slice.call(arguments, 2)));
     };
+  };
+
+  this.EXTRACT_ARRAY = {
+    OFF: 0,
+    EXTRACT: 1,
+    EXTRACT_REVIVE: 2
+  };
+
+  this.revive_value = function(msg_vars)
+  {
+    var type = msg_vars[1];
+    var value = msg_vars[2];
+
+    switch (type)
+    {
+      case "number":
+        value = Number(value);
+        break;
+      case "boolean":
+        value = Boolean(value);
+        break;
+      case "null":
+        value = null;
+        break;
+      case "undefined":
+        value = undefined;
+        break;
+      case "object":
+        value = {
+          object_id: msg_vars[3][0],
+          type: msg_vars[3][2],
+          class_name: msg_vars[3][4],
+        };
+        break;
+    }
+    return value;
   };
 
   this._load_shaders();
