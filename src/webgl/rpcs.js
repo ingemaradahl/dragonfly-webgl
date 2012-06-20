@@ -584,8 +584,8 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      //height = Math.min(height, 200);
-      //width = Math.min(width, 200);
+      height = Math.min(height, 16);
+      width = Math.min(width, 16);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
