@@ -91,7 +91,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.state._send_state_query(ctx);
+      this.state.send_state_query(this.runtime_id, ctx);
     }
   };
 

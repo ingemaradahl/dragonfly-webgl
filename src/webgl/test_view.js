@@ -23,6 +23,7 @@ cls.WebGLTestView = function(id, name, container_class)
 
   this.ondestroy = function() 
   {
+    this._container = null;
     // TODO remove listeners
 
   };
