@@ -5,18 +5,20 @@ window.cls || (window.cls = {});
 cls.WebGLState = function ()
 {
   // Retrieves the state of a WebGL context denoted by it's runtime & object id
-  this._send_state_query = function(ctx_id)
+  this.send_state_query = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_state);
-    // TODO: have runtime_id as a parameter
-    var rt_id = window.webgl.runtime_id;
-    var tag = tagManager.set_callback(this,
-        window.webgl.eval_examine_callback(window.webgl.extract_array_callback(this._finalize_state_query), null, true), [rt_id, ctx_id]);
-    // TODO add a error callback that informs the view.
+    var cb = window.webgl.extract_array_callback(this._finalize_state_query);
+    var tag = tagManager.set_callback(
+        this,
+        window.webgl.eval_examine_callback(cb, this._error.bind(this), true),
+        [rt_id, ctx_id]
+    );
+
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
 
-  this._finalize_state_query = function(data, ctx_id)
+  this._finalize_state_query = function(data, rt_id, ctx_id)
   {
     data = data[0];
     var state = {};
@@ -28,5 +30,10 @@ cls.WebGLState = function ()
     }
 
     messages.post('webgl-new-state', {"object_id" : ctx_id, "state" : state });
+  };
+
+  this._error = function(status, message)
+  {
+    messages.post('webgl-error', {"origin": "state", status : status, message :message});
   };
 };

@@ -23,7 +23,7 @@ cls.WebGLTrace = function()
     var ctx_id = this._current_context;
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
     var tag = tagManager.set_callback(this,
-        window.webgl.examine_array_objects_eval_callback(this._examine_trace_complete, null, true),
+        window.webgl.examine_array_objects_eval_callback(this._examine_trace_complete, null, true, true),
         [rt_id, ctx_id]);
     window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
   };
@@ -47,7 +47,8 @@ cls.WebGLTrace = function()
     };
     trace.calls.pop();
 
-    window.webgl.examine_array(this, trace.objects, this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], true);
+    window.webgl.examine_array(this, trace.objects, 
+        this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], true);
   };
 
   this._finalize_trace_object = function(trace_objs, rt_id, ctx_id, trace_num, trace)
@@ -86,7 +87,9 @@ cls.WebGLTrace = function()
       data.push(new TraceEntry(function_name, error_code, result, args));
     }
 
-    window.webgl.examine_array(this, trace.snapshots, window.webgl.extract_array_callback(this._examine_snapshots_complete, null, true), [rt_id, ctx_id], false);
+    window.webgl.examine_array(this, trace.snapshots,
+        window.webgl.extract_array_callback(this._examine_snapshots_complete, null, true), 
+        [rt_id, ctx_id], false);
 
     window.webgl.data[ctx_id].add_trace(data);
     messages.post("webgl-new-trace", data);

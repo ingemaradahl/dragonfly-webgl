@@ -653,6 +653,7 @@ cls.WebGL.RPCs.injection = function () {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
         handler.events["trace-completed"].post(handler.trace);
+        handler.trace = null;
       }
 
       if (handler.capture_next_frame)
