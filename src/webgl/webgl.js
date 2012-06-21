@@ -72,7 +72,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.texture._send_texture_query(ctx);
+      this.texture._send_texture_query(this.runtime_id, ctx);
     }
   };
 
@@ -82,7 +82,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.texture._get_texture_data(ctx, texture_url);
+      this.texture._get_texture_data(this.runtime_id, ctx, texture_url);
     }
   };
 

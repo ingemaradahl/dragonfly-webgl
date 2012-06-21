@@ -146,19 +146,19 @@ cls.WebGL.RPCs.get_trace = function()
 
 cls.WebGL.RPCs.get_texture_names = function()
 {
-  return gl.textures; 
+  return handler.textures; 
 };
 
-cls.WebGL.RPCs.get_texture_as_data2 = function()
+cls.WebGL.RPCs.get_texture_as_data = function()
 {
-  var texture_url = "URL";
+  var texture_identifier = "URL";
   var i = 0;
   var target_texture_index = undefined;  
   var return_vars = {};
 
-  for (i=0; i<gl.textures.length; i++)
+  for (i=0; i<handler.textures.length; i++)
   {
-    if(("Texture"+i) === texture_url)
+    if(("Texture"+i) === texture_identifier)
     {
       target_texture_index = i;
     }
@@ -167,7 +167,7 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
   {     
     return "undefined";
   }
-  obj = gl.textures[target_texture_index];
+  obj = handler.textures[target_texture_index];
   element = obj.object;
   
   // TODO Must handle every type of element.
@@ -175,7 +175,8 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
   {
     var canvas = document.createElement("canvas");
     canvas.height = element.height;
-   
+    canvas.width = element.width;  
+ 
     var canvas_ctx = canvas.getContext("2d");
     canvas_ctx.drawImage(element, 0, 0);
     obj.img = canvas.toDataURL("image/png");
