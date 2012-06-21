@@ -86,6 +86,7 @@ cls.WebGLStateView = function(id, name, container_class)
   this._on_refresh = function()
   {
     delete this._state[this._context];
+    this._table.set_data(null);
     window.webgl.request_state(this._context);
     this._render();
   };

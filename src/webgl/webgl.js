@@ -50,6 +50,7 @@ cls.WebGL.WebGLDebugger = function ()
     this.injected = false;
     this.runtime_id = -1;
     this.contexts = [];
+    this.data = {};
 
     messages.post('webgl-clear');
   };

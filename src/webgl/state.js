@@ -8,10 +8,10 @@ cls.WebGLState = function ()
   this.send_state_query = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_state);
-    var cb = window.webgl.extract_array_callback(this._finalize_state_query);
+    var cb = window.webgl.extract_array_callback(this._finalize_state_query, null, false, true);
     var tag = tagManager.set_callback(
         this,
-        window.webgl.eval_examine_callback(cb, this._error.bind(this), true),
+        window.webgl.eval_examine_callback(cb, this._error.bind(this), false),
         [rt_id, ctx_id]
     );
 
