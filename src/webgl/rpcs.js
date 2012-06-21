@@ -114,7 +114,7 @@ cls.WebGL.RPCs.get_texture_as_data2 = function()
 {
   var texture_url = "URL";
   var i = 0;
-  var target_texture_index = undefined;  
+  var target_texture_index = undefined;
   var return_vars = {};
 
   for (i=0; i<gl.textures.length; i++)
@@ -564,8 +564,8 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      height = Math.min(height, 200);
-      width = Math.min(width, 200);
+      height = Math.min(height, 128);
+      width = Math.min(width, 128);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
@@ -664,7 +664,6 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers = [];
     // The currently bound buffer
     this.bound_buffer = null;
-    
 
     this.trace = null;
     this.fbo_snapshots = [];

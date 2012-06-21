@@ -18,8 +18,13 @@ cls.WebGL.WebGLDebugger = function ()
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.trace = new cls.WebGLTrace();
-	this.test = new cls.WebGLTest();
+  this.test = new cls.WebGLTest();
   this.texture = new cls.WebGLTexture();
+
+  /* Keep an own WebGL instance used when displaying buffer contents and such */
+  var canvas = document.createElement("canvas");
+  this.gl = canvas.getContext("experimental-webgl");
+  this.gl ? this.gl.canvas = canvas : null;
 
   /* Contains shader used when displaying textures and buffers in the debugger */
   this.shaders = {};
@@ -204,85 +209,40 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
-  this._load_shaders = function()
+  this.init_gl = function()
   {
-    var _request_shader = (function(shader_id, src, type)
+    var gl = this.gl;
+    if (!gl)
     {
-      var request = new XMLHttpRequest();
-      request.open("GET", src, true);
-      request.overrideMimeType('text/plain');
-      request.onreadystatechange = (function()
-      {
-        if (request.status == 404)
-        {
-          opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-              "failed downloading shaders, 404 " + src + " not found");
-        }
-        else if (request.status == 200 && request.readyState == 4)
-        {
-          this.shaders[shader_id] = {"src": request.responseText, "type": type };
-        }
-      }).bind(this);
-      request.send();
-    }).bind(this);
-
-    var scripts = document.getElementsByTagName("script");
-
-    for (var i=0; i<scripts.length; i++)
-    {
-      var type = scripts[i].type.match(/vertex|fragment/);
-      if (!type)
-      {
-        continue;
-      }
-
-      var t = type[0]
-
-      var shader = scripts[i].id;
-      var src = scripts[i].src;
-
-      _request_shader(shader, src, t);
+      return;
     }
-  };
 
-  // TODO: Move this
-  //  this.quad.Add(-1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0);
-  this.quad = [ -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0 ];
-  this.uv = [ 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0 ];
+    gl.programs = {};
+    var shaders = this.shaders;
 
-  // TODO: And this
-  this.compileProgram = function (vs_src, fs_src, gl)
-  {
-    var _compile = function (src, type)
+    var compile_texture_program = function ()
     {
-      var shader = gl.createShader(type);
-      gl.shaderSource(shader, src);
-      gl.compileShader(shader);
+      var program = WebGLUtils.compile_program(
+        shaders["texture-vs"],
+        shaders["texture-fs"]
+      );
 
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "An error occurred compiling shader: " + gl.getShaderInfoLog(shader));
-        return null;
-      }
+      gl.useProgram(program)
 
-      return shader;
+      program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
+      gl.enableVertexAttribArray(program.positionAttrib);
+
+      program.uvAttrib = gl.getAttribLocation(program, "aTexturePosition");
+      gl.enableVertexAttribArray(program.uvAttrib);
+
+      program.samplerUniform = gl.getUniformLocation(program, "uTexture");
+      
+      gl.useProgram(null);
+
+      return program;
     };
 
-    var vs = _compile(vs_src, gl.VERTEX_SHADER);
-    var fs = _compile(fs_src, gl.FRAGMENT_SHADER);
-
-    var prg = gl.createProgram();
-    gl.attachShader(prg, vs);
-    gl.attachShader(prg, fs);
-    gl.linkProgram(prg);
-
-    if (!gl.getProgramParameter(prg, gl.LINK_STATUS)) {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "An error occured while linking shaders.");
-      return null;
-    }
-
-    return prg;
+    gl.programs["texture"] = compile_texture_program();
   };
 
   /**
@@ -477,9 +437,6 @@ cls.WebGL.WebGLDebugger = function ()
    * @param {Function} callback this is called when the array have been examined.
    *   Arguments: [list of objects, runtime id, ..., root object id]
    * @param {Function} error_callback optional, is called when an error occurs.
-   * @param {Boolean} revive optional, iff true the array elements are revived.
-   * @param {Boolean} release_object optional, iff true then the object id in
-   *   the last argument will be released before the callback is called.
    */
   this.extract_array_callback = function(callback, error_callback, revive, release_object)
   {
@@ -578,7 +535,63 @@ cls.WebGL.WebGLDebugger = function ()
     return value;
   };
 
-  this._load_shaders();
+
+  var load_shaders = (function(callback)
+  {
+    var num_shaders = 0;
+    var loaded_shaders = 0;
+
+    var request_shader = (function(shader_id, src, type)
+    {
+      var request = new XMLHttpRequest();
+      request.open("GET", src, true);
+      request.overrideMimeType('text/plain');
+      request.onreadystatechange = (function()
+      {
+        if (request.status == 404)
+        {
+          opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+              "failed downloading shaders, 404 " + src + " not found");
+        }
+        else if (request.status == 200 && request.readyState == 4)
+        {
+          this.shaders[shader_id] = {
+            "src": request.responseText, 
+            "type": type,
+            "id" : shader_id
+          };
+
+          loaded_shaders++;
+          if (loaded_shaders == num_shaders)
+          {
+            callback();
+          }
+        }
+      }).bind(this);
+      request.send();
+    }).bind(this);
+
+    var scripts = document.getElementsByTagName("script");
+    var requests = [];
+
+    for (var i=0; i<scripts.length; i++)
+    {
+      var type = scripts[i].type.match(/vertex|fragment/);
+      if (!type)
+      {
+        continue;
+      }
+
+      num_shaders++;
+
+      requests.push({ type: type[0], shader_id: scripts[i].id, src: scripts[i].src });
+    }
+
+    requests.map(function(s) { request_shader(s.shader_id, s.src, s.type); });
+
+  }).bind(this);
+
+  load_shaders(this.init_gl.bind(this));
 
   messages.addListener('runtime-selected', this.clear.bind(this));
 };
