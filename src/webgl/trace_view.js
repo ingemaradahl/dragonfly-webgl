@@ -123,56 +123,43 @@ cls.WebGLTraceView = function(id, name, container_class)
       return;
     }
 
-
     // TODO: Only temporary of course
-    this._container.innerHTML = "<canvas id=\"gl-canvas\" width=\"400\" height=\"400\"></canvas>";
-    var cnv = document.getElementById("gl-canvas");
-    var gl = cnv.getContext("experimental-webgl");
-    gl.clearColor(0.2, 0.5, 0.3, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    this._container.innerHTML = "";
+    this._container.appendChild(window.webgl.gl.canvas);
+    var gl;
+    if (!(gl = window.webgl.gl))
+    {
+      this._container.innerHTML = "WebGLContext unavailable, try using Opera Next";
+      return;
+    }
 
+    gl.canvas.width = snapshot.width;
+    gl.canvas.height = snapshot.height;
+    gl.viewport(0, 0, snapshot.width, snapshot.height);
 
-    var prg = webgl.compileProgram(webgl.shaders["texture-vs"].src, 
-                                   webgl.shaders["texture-fs"].src,
-                                   gl);
-    
-    gl.useProgram(prg)
-    prg.positionAttrib = gl.getAttribLocation(prg, "aVertexPosition");
-    gl.enableVertexAttribArray(prg.positionAttrib);
+    var program = gl.programs["texture"];
 
-    prg.uvAttrib = gl.getAttribLocation(prg, "aTexturePosition");
-    gl.enableVertexAttribArray(prg.uvAttrib);
+    // Make sure we don't upload texture to GPU unnecessarily
+    if (!snapshot.texture || snapshot.texture.gl !== gl)
+    {
+      snapshot.texture = {};
+      snapshot.texture.gl = gl;
+      snapshot.texture.tex = gl.createTexture();
 
-    prg.samplerUniform = gl.getUniformLocation(prg, "uSampler");
+      gl.bindTexture(gl.TEXTURE_2D, snapshot.texture.tex);
 
-    var tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
+      // WebGL has limited NPOT texturing support
+      // http://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    // WebGL has limited NPOT texturing support
-    // http://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, snapshot.width, snapshot.height,
+                    0, gl.RGBA, gl.UNSIGNED_BYTE, snapshot.pixels);
+    }
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, snapshot.width, snapshot.height, 0,
-                  gl.RGBA, gl.UNSIGNED_BYTE, snapshot.pixels);
-
-    var positions = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positions);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(webgl.quad), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(prg.positionAttrib, 2, gl.FLOAT, false, 0, 0);
-
-    var uv = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uv);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(webgl.uv), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(prg.uvAttrib, 2, gl.FLOAT, false, 0, 0);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.uniform1i(prg.samplerUniform, 0);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    WebGLUtils.draw_texture(program, snapshot.texture.tex);
   };
 
   this.tabledef = {

@@ -62,7 +62,7 @@ cls.WebGL.RPCs.get_snapshots = function ()
   return ctx.get_snapshots();
 };
 
-cls.WebGL.RPCs.get_buffers_new = function ()
+cls.WebGL.RPCs.get_new_buffers = function ()
 {
   var buffers = handler.events["buffer-created"].get();
   var out = [];
@@ -70,22 +70,7 @@ cls.WebGL.RPCs.get_buffers_new = function ()
   {
     var buffer = buffers[i];
     if (buffer === undefined) continue;
-    var arr;
-    if (buffer.data === undefined)
-    {
-      arr = {};
-      arr.nodata = true;
-    }
-    else
-    {
-      /* TODO: clone the data to a new array or make a second request to examine the array*/
-      arr = buffer.data;
-      arr.target = buffer.target;
-      arr.usage = buffer.usage;
-    }
-    arr.index = buffer.buffer._index;
-    arr.buffer = buffer.buffer;
-    out.push(arr);
+    out.push(buffer);
   }
   return out;
 };
@@ -98,31 +83,7 @@ cls.WebGL.RPCs.get_buffers = function ()
   {
     var buffer = buffers[i];
     if (buffer === undefined || buffer.data === undefined) continue;
-      /* TODO: clone the data to a new array or make a second request to examine the array*/
-    var arr = buffer.data;
-    arr.target = buffer.target;
-    arr.usage = buffer.usage;
-    arr.index = buffer.buffer._index;
-    out.push(arr);
-  }
-  return out;
-};
-
-cls.WebGL.RPCs.get_buffers_indices = function ()
-{
-  var buffers_indices = [__INDICES__];
-  var out = [];
-  for(var i = 0; i < buffers.length; i++)
-  {
-    var idx = buffer_ids[i];
-    var buffer = handler.buffers[i];
-    if (buffer === undefined) continue;
-    /* TODO: clone the data to a new array or make a second request to examine the array*/
-    var arr = buffer.data;
-    arr.target = buffer.target;
-    arr.usage = buffer.usage;
-    arr.index = i;
-    out.push(arr);
+    out.push(buffer);
   }
   return out;
 };
@@ -153,7 +114,7 @@ cls.WebGL.RPCs.get_texture_as_data = function()
 {
   var texture_identifier = "URL";
   var i = 0;
-  var target_texture_index = undefined;  
+  var target_texture_index = undefined;
   var return_vars = {};
 
   for (i=0; i<handler.textures.length; i++)
@@ -464,26 +425,25 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     var innerFuns = {};
-    innerFuns.createBuffer = function(result, args)
+    innerFuns.createBuffer = function(buffer, args)
     {
-      if (this.buffers.length < 1000)
-      {
-        var buf = {};
-        buf.buffer = result;
-        var i = this.buffers.push(buf);
-        result._index = i - 1;
+      var buf = {};
+      buf.buffer = buffer;
+      var i = this.buffers.push(buf);
+      buf.index = i - 1;
 
-        this.events["buffer-created"].post(buf);
-      }
+      this.events["buffer-created"].post(buf);
     };
     innerFuns.bindBuffer = function(result, args)
     {
-      if (args[1] == null) return;
-      this.bound_buffer = args[1]._index;
+      var buffer = args[1];
+      if (buffer == null) return;
+      this.bound_buffer = this.lookup_buffer(buffer);
     };
     innerFuns.bufferData = function(result, args)
     {
-      var buffer = this.buffers[this.bound_buffer];
+      if (this.bound_buffer == null) return;
+      var buffer = this.bound_buffer;
       buffer.target = args[0];
       if (typeof(args[1]) === "number")
       {
@@ -499,7 +459,8 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.bufferSubData = function(result, args)
     {
-      var buffer = this.buffers[this.bound_buffer];
+      if (this.bound_buffer == null) return;
+      var buffer = this.bound_buffer;
       buffer.target = args[0];
 
       var offset = args[1];
@@ -511,16 +472,11 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.deleteBuffer = function(result, args)
     {
-      for (var i = 0; i < this.buffers.length; i++)
-      {
-        var buffer = this.buffers[i];
-        if (buffer != null && buffer.buffer === args[0])
-        {
-          // TODO: should notify dragonfly about the deletion.
-          buffer.buffer = null;
-          break;
-        }
-      }
+      var buf = args[0];
+      var buffer = this.lookup_buffer(buf);
+      this.buffers[buffer.index] = null;
+      if (this.bound_buffer === buffer) this.bound_buffer = null;
+      // TODO: should notify dragonfly about the deletion.
     };
 
     // Texture code
@@ -609,8 +565,8 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      //height = Math.min(height, 200);
-      //width = Math.min(width, 200);
+      height = Math.min(height, 128);
+      width = Math.min(width, 128);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
@@ -707,9 +663,8 @@ cls.WebGL.RPCs.injection = function () {
     this.context = context;
 
     this.buffers = [];
-    // Index of the currently bound buffer
+    // The currently bound buffer
     this.bound_buffer = null;
-    
 
     this.trace = null;
     this.fbo_snapshots = [];
