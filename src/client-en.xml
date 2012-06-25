@@ -197,6 +197,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <link rel="stylesheet" href="./screenshot/style.css"/>
 <link rel="stylesheet" href="./ui-scripts/tooltip/tooltip.css"/>
 <link rel="stylesheet" href="./webgl/style.css"/>
+<link rel="stylesheet" href="./webgl/sh_nedit.css"/>
 
 
 
@@ -418,18 +419,22 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/data.js"/>
 <script src="./webgl/utils.js"/>
 <script src="./webgl/api.js"/>
+<script src="./webgl/program.js"/>
 <script src="./webgl/buffer.js"/>
 <script src="./webgl/trace.js"/>
 <script src="./webgl/state.js"/>
 <script src="./webgl/views.js"/>
 <script src="./webgl/test.js"/>
 <script src="./webgl/texture.js"/>
+<script src="./webgl/program_view.js"/>
 <script src="./webgl/texture_view.js"/>
 <script src="./webgl/test_view.js"/>
 <script src="./webgl/trace_view.js"/>
 <script src="./webgl/state_view.js"/>
 <script src="./webgl/buffer_view.js"/>
 <script src="./webgl/rpcs.js"/>
+<script src="./webgl/sh_main.js"/>
+<script src="./webgl/sh_glsl.js"/>
 
 <script src="./webgl/shaders/texture.vs" id="texture-vs" type="x-shader/x-vertex"/>
 <script src="./webgl/shaders/texture.fs" id="texture-fs" type="x-shader/x-fragment"/>

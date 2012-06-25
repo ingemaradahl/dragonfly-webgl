@@ -346,6 +346,7 @@ cls.WebGL.RPCs.injection = function () {
         // Execute original function and save result.
         // TODO catch exceptions
         var result = original_function.apply(this, arguments);
+        var redundant = false;
 
         var error = gl.getError();
         if (error !== gl.NO_ERROR)
@@ -356,7 +357,7 @@ cls.WebGL.RPCs.injection = function () {
         }
         else if (innerFunction)
         {
-          innerFunction.call(handler, result, arguments);
+          redundant = innerFunction.call(handler, result, arguments);
         }
 
         if (handler.capturing_frame)
@@ -544,6 +545,93 @@ cls.WebGL.RPCs.injection = function () {
     {
       //TODO
     };
+    innerFuns.createProgram = function(result, args)
+    {
+      this.programs.push({
+        program : result,
+        index : this.programs.length, 
+        shaders : [], 
+        attributes : {}, 
+        uniforms : []
+      });
+    };
+    innerFuns.useProgram = function(result, args)
+    {
+      var program = args[0];
+      var redundant = this.bound_program === program;
+      this.bound_program = program;
+
+      return redundant;
+    };
+    innerFuns.createShader = function(result, args)
+    {
+      this.shaders.push({ 
+        shader : result, 
+        index : this.shaders.length,
+        type : args[0], 
+        src : ""
+      });
+    };
+    // TODO
+    //innerFuns.deleteShader = function(result, args)
+    //{
+    //  var shader = this.lookup_shader(args[0]);
+    //};
+    innerFuns.shaderSource = function(result, args)
+    {
+      var shader = this.lookup_shader(args[0]);
+      var src = args[1];
+
+      shader.src = src;
+    };
+    //innerFuns.compileShader = function(result, args)
+    //{
+    //};
+    innerFuns.attachShader = function(result, args)
+    {
+      var program = this.lookup_program(args[0]);
+      var shader = this.lookup_shader(args[1]);
+      program.shaders.push(shader);
+    };
+    innerFuns.linkProgram = function(result, args)
+    {
+      var program_obj = this.lookup_program(args[0]);
+      var program = program_obj.program;
+
+      var gl = this.gl;
+
+      var uniforms = [];
+      var num_uniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+      for (var i=0; i<num_uniforms; i++)
+      {
+        var active_uniform = gl.getActiveUniform(program, i);
+        var loc = gl.getUniformLocation(program, active_uniform.name);
+        uniforms.push({
+          name : active_uniform.name,
+          index : i,
+          loc  : loc,
+          type : active_uniform.type, 
+          size : active_uniform.size
+        });
+      }
+
+      program_obj.uniforms = uniforms;
+
+      var attributes = [];
+      var num_attributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+      for (var a=0; a<num_attributes; a++)
+      {
+        var active_attribute = gl.getActiveAttrib(program, a);
+        var loc = gl.getAttribLocation(program, active_attribute.name);
+        attributes.push({ 
+          name : active_attribute.name,
+          loc  : loc,
+          type : active_attribute.type, 
+          size : active_attribute.size
+        });
+      }
+      program_obj.attributes = attributes;
+    };
 
     var postCaptureFuns = {};
     postCaptureFuns.drawArrays = function(trace_idx, call_idx)
@@ -586,7 +674,13 @@ cls.WebGL.RPCs.injection = function () {
 
       this.trace.fbo_snapshots.push(snapshot);
 
-      return snapshot;
+      var program_state = {
+        trace_idx : trace_idx,
+        call_idx : call_idx,
+        state : this.get_program_state()
+      };
+
+      this.trace.program_states.push(program_state);
     };
     postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
 
@@ -662,6 +756,10 @@ cls.WebGL.RPCs.injection = function () {
     this.gl = gl;
     this.context = context;
 
+    this.programs = [];
+    this.shaders = [];
+    this.bound_program = null;
+
     this.buffers = [];
     // The currently bound buffer
     this.bound_buffer = null;
@@ -693,7 +791,97 @@ cls.WebGL.RPCs.injection = function () {
       }
       return null;
     };
-  }
+
+    this.lookup_program = function(program)
+    {
+      for (var i=0; i<this.programs.length; i++)
+      {
+        if (this.programs[i].program === program)
+        {
+          return this.programs[i];
+        }
+      }
+      return null;
+    };
+
+    this.lookup_shader = function(shader)
+    {
+      for (var i=0; i<this.shaders.length; i++)
+      {
+        if (this.shaders[i].shader === shader)
+        {
+          return this.shaders[i];
+        }
+      }
+      return null;
+    };
+
+    /* Get non-state specific program information
+     * @param {WebGLProgram} program Program from which to get information
+     */
+    this.get_program_info = function (program)
+    {
+      var program_info = this.lookup_program(program);
+      return {
+        index : program_info.index,
+        shaders : program_info.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
+        attributes : program_info.attributes,
+        uniforms : program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type}; })
+      };
+    };
+
+    this.get_program_state = function()
+    {
+      var gl = this.gl;
+      var program = gl.getParameter(gl.CURRENT_PROGRAM);
+
+      if (!program)
+      {
+        return null;
+      }
+
+      var program_obj = this.lookup_program(program);
+
+      var state = 
+      {
+        program : program_obj.index,
+        attributes : [],
+        uniforms : []
+      };
+
+      for (var a in program_obj.attributes)
+      {
+        var attribute = program_obj.attributes[a];
+        var binding = gl.getVertexAttrib(attribute.loc, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
+        var buffer_binding = binding ? this.lookup_buffer(binding) : null;
+        state.attributes.push({
+          name : attribute.name,
+          loc  : attribute.loc,
+          type : attribute.type,
+          size : attribute.size,
+          binding : buffer_binding ? buffer_binding.index : null
+        });
+      }
+
+
+      for (var idx=0; idx<program_obj.uniforms.length; idx++)
+      {
+        var uniform = program_obj.uniforms[idx];
+        var value = gl.getUniform(program, uniform.loc);
+        state.uniforms.push({
+          name : uniform.name,
+          idx  : idx,
+          //loc  : uniform.loc,
+          type : uniform.type,
+          size : uniform.size,
+          value : value
+        });
+
+      }
+
+      return state;
+    };
+  };
 
   /**
    * Queues messages for pickup by Dragonfly.
@@ -736,6 +924,7 @@ cls.WebGL.RPCs.injection = function () {
     this.calls = [];
     this.objects = [];
     this.fbo_snapshots = [];
+    this.program_states = [];
   }
 
   function TraceObject(target, type, display)

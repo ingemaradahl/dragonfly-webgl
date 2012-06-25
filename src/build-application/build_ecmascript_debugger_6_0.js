@@ -238,11 +238,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLContextSelect.prototype = new CstSelect();
     new cls.WebGLContextSelect('context-select', 'context-options');
 
-    new cls.WebGLBufferView("webgl_buffer",
-                           "Buffers", // TODO
-                           "scroll webgl_view buffer");
-    cls.WebGLBufferView.create_ui_widgets();
-
     new cls.WebGLTraceView("webgl_trace",
                            "Trace", // TODO
                            "scroll webgl_view trace");
@@ -252,6 +247,16 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "State", // TODO
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
+
+    new cls.WebGLBufferView("webgl_buffer",
+                           "Buffers", // TODO
+                           "scroll webgl_view buffer");
+    cls.WebGLBufferView.create_ui_widgets();
+
+    new cls.WebGLProgramView("webgl_program",
+                             "Programs", // TODO
+                             "scroll webgl_view program");
+    cls.WebGLProgramView.create_ui_widgets();
 
     new cls.WebGLTestView("webgl_test",
                            "Payload Test",

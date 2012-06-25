@@ -121,7 +121,7 @@ cls.WebGL.WebGLDebugger = function ()
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
     var tag = tagManager.set_callback(this, this._handle_injection, [rt_id, cont_callback]);
-    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, []]);
+    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [], 1]);
   };
 
   this._handle_injection = function (status, message, rt_id, cont_callback)
