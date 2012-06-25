@@ -113,9 +113,11 @@ cls.WebGL.RPCs.get_texture_names = function()
 cls.WebGL.RPCs.get_texture_as_data = function()
 {
   var texture_identifier = "URL";
-  var i = 0;
+  var i;
   var target_texture_index = undefined;
-  var return_vars = {};
+  var element;
+  var canvas;
+  var canvas_ctx;
 
   for (i=0; i<handler.textures.length; i++)
   {
@@ -126,7 +128,7 @@ cls.WebGL.RPCs.get_texture_as_data = function()
   }
   if (target_texture_index === undefined)
   {     
-    return "undefined";
+    return;
   }
   obj = handler.textures[target_texture_index];
   element = obj.object;
@@ -134,26 +136,40 @@ cls.WebGL.RPCs.get_texture_as_data = function()
   // TODO Must handle every type of element.
   if (element instanceof HTMLImageElement)
   {
-    var canvas = document.createElement("canvas");
+    canvas = document.createElement("canvas");
     canvas.height = element.height;
     canvas.width = element.width;  
  
-    var canvas_ctx = canvas.getContext("2d");
+    canvas_ctx = canvas.getContext("2d");
     canvas_ctx.drawImage(element, 0, 0);
     obj.img = canvas.toDataURL("image/png");
     obj.source = element.src;
   }
-  else if (obj instanceof HTMLCanvasElement)
+  else if (element instanceof HTMLCanvasElement)
   {
-    obj.img = obj.toDataURL("image/png");
+    console.log("canvas");
+    obj.img = element.toDataURL("image/png");
+  }
+  else if (element instanceof HTMLVideoElement)
+  {
+    console.log("WebGLDebugger has no support for Video Textures");
+    //obj.img = "No support for HTMLVideoElements";
+  }
+  else if (element instanceof ImageData)
+  {
+    canvas = document.createElement("canvas");
+    canvas.height = element.height;
+    canvas.width = element.width;
+
+    canvas_ctx = canvas.getContext("2d");
+    canvas_ctx.putImageData(element, 0, 0);
+    
+    obj.img = canvas.toDataURL("image/png");
   }
   else
   {
-    console.log("WebGLDebugger ERROR, unknown texture type"); 
+    console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
   }
-
-  // TODO these should only be set for elements where the parameter
-  // actually exist.
 
   return obj;
 };

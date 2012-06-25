@@ -84,8 +84,12 @@ cls.WebGLTextureView = function(id, name, container_class)
   this._on_table_click = function(evt, target)
   {
     var rid = target.getAttribute("data-object-id");
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    window.webgl.request_texture_data(ctx, rid);
+    // TODO fix this and make nice
+    if (rid !== "Textureundefined")
+    {
+      var ctx = window['cst-selects']['context-select'].get_selected_context();
+      window.webgl.request_texture_data(ctx, rid);
+    }
   };
 
   this._on_context_change = function(ctx)
