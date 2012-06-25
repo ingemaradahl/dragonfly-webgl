@@ -32,13 +32,19 @@ cls.WebGL.RPCs.query_test = function()
 
 /**
  * Retrieves the handler from a canvas after a WebGL context have been created.
- * canvas should be defined by Dragonfly.
+ * canvas and canvas_map should be defined by Dragonfly.
  */
 cls.WebGL.RPCs.get_handler = function()
 {
-  var handler = canvas.____handler;
-  delete canvas.____handler;
-  return handler;
+  for (var c in canvas_map)
+  {
+    if (canvas_map[c].canvas === canvas)
+    {
+      return canvas_map[c].handler;
+    }
+  }
+
+  return null;
 };
 
 cls.WebGL.RPCs.debugger_ready = function()
@@ -168,6 +174,10 @@ cls.WebGL.RPCs.get_texture_as_data = function()
 };
 
 cls.WebGL.RPCs.injection = function () {
+  // Used to determine which canvas maps to which handler.
+  var canvas_map = [];
+
+  // TODO Temporary,
   var contexts = [];
 
   // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
@@ -189,8 +199,8 @@ cls.WebGL.RPCs.injection = function () {
     var gl = {};
 
     var handler = new Handler(this, gl);
-    // Temporarly expose the handler so we can get it with Dragonfly.
-    canvas.____handler = handler;
+    canvas_map.push({canvas:canvas, handler:handler});
+
     handler.get_state = function()
     {
       var pnames = [
@@ -933,4 +943,6 @@ cls.WebGL.RPCs.injection = function () {
     this.type = type;
     if (display !== undefined) this.display = display;
   }
+
+  return canvas_map;
 };

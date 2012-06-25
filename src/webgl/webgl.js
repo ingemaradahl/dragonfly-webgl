@@ -129,6 +129,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (message[0] === 'completed')
     {
       this.injected = true;
+      this.canvas_map = message[3][0]; // Object id of canvas_map
     }
     else
     {
@@ -146,7 +147,7 @@ cls.WebGL.WebGLDebugger = function ()
       var canvas_id = message.object_id;
       var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
       var tag = tagManager.set_callback(this, this._handle_context_handler);
-      window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, [["canvas", canvas_id]]]);
+      window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]]]);
     }
   };
 
