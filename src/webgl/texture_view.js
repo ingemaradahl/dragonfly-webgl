@@ -66,10 +66,10 @@ cls.WebGLTextureView = function(id, name, container_class)
     var tbl_data = [];
     var ids = window.webgl.data[ctx].texture_container;
     var i = 0;
-   
+ 
     for (i=0; i < ids.length; i++)
     {
-      tbl_data.push({"texture" : "Texture" + i});
+      tbl_data.push({"texture" : "Texture" + ids[i].id});
     }
     this._table.set_data(tbl_data);
     this._container.clearAndRender(this._table.render()); 

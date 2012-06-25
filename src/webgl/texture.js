@@ -4,7 +4,6 @@ window.cls || (window.cls = {});
 
 cls.WebGLTexture = function ()
 {
-  // Retrieves all the texture names in a WebGL context
   this._send_texture_query = function(rt_id, ctx_id)
   {
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_names);
@@ -34,7 +33,7 @@ cls.WebGLTexture = function ()
   {
     var script =
       cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data).replace(/URL/,texture_identifier);
-    // todo replace is not very nice
+    // TODO replace is not very nice
     var callback = window.WebGLUtils.extract_array_callback(
         this._finalize_texture_data_query,
         null,
@@ -42,8 +41,7 @@ cls.WebGLTexture = function ()
     var tag = tagManager.set_callback(
         this,
         window.WebGLUtils.examine_eval_callback(callback, null),
-        [rt_id, ctx_id]
-        );
+        [rt_id, ctx_id]);
 
     window.services["ecmascript-debugger"].requestEval(tag,
         [rt_id, 0, 0, script, [["handler", ctx_id]]]);

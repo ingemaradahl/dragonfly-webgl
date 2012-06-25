@@ -101,15 +101,15 @@ cls.WebGL.RPCs.get_trace = function()
 
 // RPCs related to the texture tab.
 
-// Return all texture "names || ids". There are five different types of
-// objects that can be used as textures: ArrayBufferView, ImageData,
-// HTMLImageElement, HTMLCanvasElement and HTMLVideoElement.
-
 cls.WebGL.RPCs.get_texture_names = function()
 {
-  return handler.textures; 
+  var i=0;
+  var returnvars;
+
+  return handler.textures;
 };
 
+// TODO review this! Mapping on just a string? loose.
 cls.WebGL.RPCs.get_texture_as_data = function()
 {
   var texture_identifier = "URL";
@@ -154,17 +154,8 @@ cls.WebGL.RPCs.get_texture_as_data = function()
 
   // TODO these should only be set for elements where the parameter
   // actually exist.
-  return_vars.id = obj.id;
-  return_vars.object = obj.object;
-  return_vars.type = obj.type;
-  return_vars.texture_wrap_s = obj.texture_wrap_s;
-  return_vars.texture_wrap_t = obj.texture_wrap_t;
-  return_vars.img = obj.img;
-  return_vars.texture_min_filter = obj.texture_min_filter;
-  return_vars.texture_mag_filter = obj.texture_mag_filter;
-  return_vars.source = obj.source; 
 
-  return return_vars;
+  return obj;
 };
 
 cls.WebGL.RPCs.injection = function () {
