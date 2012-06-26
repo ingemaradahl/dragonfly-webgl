@@ -31,8 +31,8 @@ cls.WebGL.RPCs.query_test = function()
 };
 
 /**
- * Retrieves the handler from a canvas after a WebGL context have been created.
- * canvas and canvas_map should be defined by Dragonfly.
+ * Retrieves the handler interface from a canvas after a WebGL context have been 
+ * created. canvas and canvas_map should be defined by Dragonfly.
  */
 cls.WebGL.RPCs.get_handler = function()
 {
@@ -40,64 +40,11 @@ cls.WebGL.RPCs.get_handler = function()
   {
     if (canvas_map[c].canvas === canvas)
     {
-      return canvas_map[c].handler;
+      return canvas_map[c].handler.get_interface();
     }
   }
 
   return null;
-};
-
-cls.WebGL.RPCs.debugger_ready = function()
-{
-  for (var key in handler.events)
-  {
-    if (handler.events.hasOwnProperty(key))
-    {
-      handler.events[key].set_ready();
-    }
-  }
-};
-
-cls.WebGL.RPCs.get_state = function ()
-{
-  return handler.get_state();
-};
-
-cls.WebGL.RPCs.get_new_buffers = function ()
-{
-  var buffers = handler.events["buffer-created"].get();
-  var out = [];
-  for(var i = 0; i < buffers.length; i++)
-  {
-    var buffer = buffers[i];
-    if (buffer === undefined) continue;
-    out.push(buffer);
-  }
-  return out;
-};
-
-cls.WebGL.RPCs.get_buffers = function ()
-{
-  var buffers = handler.buffers;
-  var out = [];
-  for(var i = 0; i < buffers.length; i++)
-  {
-    var buffer = buffers[i];
-    if (buffer === undefined || buffer.data === undefined) continue;
-    out.push(buffer);
-  }
-  return out;
-};
-
-cls.WebGL.RPCs.request_trace = function()
-{
-  console.log("Capturing next frame.");
-  handler.capture_next_frame = true;
-};
-
-cls.WebGL.RPCs.get_trace = function()
-{
-  return handler.events["trace-completed"].get();
 };
 
 // RPCs related to the texture tab.
@@ -650,11 +597,26 @@ cls.WebGL.RPCs.injection = function () {
       "trace-completed": new MessageQueue("webgl-trace-completed")
     };
 
+    /* Interface definition between DF and the Context Handler, only the
+     * functions included in the interface object will be accessible from DF */
     this._interface = {};
 
     this.get_interface = function ()
     {
+      return this._interface;
     };
+
+    this.request_trace = function()
+    {
+      this.capturing_frame = true;
+    };
+    this._interface.request_trace = this.request_trace.bind(this);
+
+    this.get_trace = function()
+    {
+      return this.events["trace-completed"].get();
+    };
+    this._interface.get_trace = this.request_trace.bind(this);
 
     this.get_state = function()
     {
@@ -797,7 +759,47 @@ cls.WebGL.RPCs.injection = function () {
           }
       });
     };
-    this._interface[ get_state : this.get_state.bind(this) ];
+    this._interface.get_state = this.get_state.bind(this);
+
+    this.debugger_ready = function()
+    {
+      for (var key in this.events)
+      {
+        if (this.events.hasOwnProperty(key))
+        {
+          this.events[key].set_ready();
+        }
+      }
+    };
+    this._interface.debugger_ready = this.debugger_ready.bind(this);
+
+    this.get_new_buffers = function()
+    {
+      var buffers = this.events["buffer-created"].get();
+      var out = [];
+      for(var i = 0; i < buffers.length; i++)
+      {
+        var buffer = buffers[i];
+        if (buffer === undefined) continue;
+        out.push(buffer);
+      }
+      return out;
+    };
+    this._interface.get_new_buffers = this.get_new_buffers.bind(this);
+
+    this.get_buffers = function()
+    {
+      var buffers = this.buffers;
+      var out = [];
+      for(var i = 0; i < buffers.length; i++)
+      {
+        var buffer = buffers[i];
+        if (buffer === undefined || buffer.data === undefined) continue;
+        out.push(buffer);
+      }
+      return out;
+    };
+    this._interface.get_buffers = this.get_buffers.bind(this);
 
 
     this.lookup_buffer = function(buffer)
