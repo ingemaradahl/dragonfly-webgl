@@ -4,6 +4,16 @@ window.cls || (window.cls = {});
 
 cls.WebGLBuffer = function()
 {
+  // Activate automatic updating of buffer information from the host
+  this.activate = function()
+  {
+  };
+
+  // Deactivate automatic updating
+  this.deactivate = function()
+  {
+  };
+
   this._on_buffer_created = function(msg)
   {
     var rt_id = msg.runtime_id;

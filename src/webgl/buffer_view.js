@@ -18,15 +18,16 @@ cls.WebGLBufferView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table ||
-                           new SortableTable(this.tabledef, null, null, null, null, false, "buffer-table");
+    this._table = this._table || new SortableTable(this.tabledef, null, null, null, null, false, "buffer-table");
 
     this._render();
+    window.webgl.buffer.activate();
   };
 
   this.ondestroy = function()
   {
-    // TODO remove listeners
+    window.webgl.buffer.deactivate();
+    this._container = null;
   };
 
   this._render = function()
