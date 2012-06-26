@@ -106,7 +106,7 @@ window.WebGLUtils.examine_eval_callback = function(callback, error_callback, rel
 
   function release_objects_callback()
   {
-    window.services["ecmascript-debugger"].requestReleaseObjects(0, [obj_id]);
+    window.services["ecmascript-debugger"].requestReleaseObjects(0, [[obj_id]]);
     callback.apply(this, arguments);
   }
 
@@ -172,7 +172,7 @@ window.WebGLUtils.examine_array_callback = function(callback, error_callback, ex
 
   function release_objects_callback()
   {
-    window.services["ecmascript-debugger"].requestReleaseObjects(0, root_object_id);
+    window.services["ecmascript-debugger"].requestReleaseObjects(0, [[root_object_id]]);
     callback.apply(this, arguments);
   }
 
