@@ -54,6 +54,24 @@ cls.Scoper.prototype.set_max_depth = function(max_depth)
   return this;
 };
 
+/**
+ * @param {Function} reviver Reviver to be used.
+ */
+cls.Scoper.prototype.set_reviver = function(reviver)
+{
+  this.reviver = reviver;
+  return this;
+};
+
+/**
+ * Evaluates a script and examies the result if its an object.
+ *
+ * @param {String} script Script to be executed on the specified runtime.
+ * @param {Array} objects Objects that should be available for the script.
+ *   Use the following format: [["object_name", object_id]]
+ * @param {Boolean} release optional, if the root object should be released or not.
+ *   Defaults to true.
+ */
 cls.Scoper.prototype.eval_script = function(script, objects, release)
 {
   typeof(release) === "boolean" || (release = true);
@@ -99,10 +117,10 @@ cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
       message[OBJECT][OBJECT_TYPE] === "Error")
   {
     var error_id = message[OBJECT][OBJECT_ID];
-    if (this.have_error_callback())
+    if (this._have_error_callback())
     {
       this.release_objects([error_id]);
-      this.error();
+      this._error();
     }
     else
     {
@@ -115,7 +133,7 @@ cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
   }
   else
   {
-    this.error();
+    this._error();
   }
 };
 
@@ -180,7 +198,7 @@ cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, 
 {
   if (status !== 0)
   {
-    this.error();
+    this._error();
     return;
   }
 
@@ -476,7 +494,7 @@ cls.Scoper.prototype.release_objects = function(object_ids)
       [object_ids]);
 };
 
-cls.Scoper.prototype.have_error_callback = function()
+cls.Scoper.prototype._have_error_callback = function()
 {
   return this.error_callback != null;
 };
@@ -484,9 +502,9 @@ cls.Scoper.prototype.have_error_callback = function()
 /**
  * Trigger an error, which will call the error callback if set.
  */
-cls.Scoper.prototype.error = function()
+cls.Scoper.prototype._error = function()
 {
-  if (this.have_error_callback())
+  if (this._have_error_callback())
   {
     this.error_callback.apply(this.error_callback_that,
         this.error_callback_arguments);
