@@ -49,21 +49,23 @@ cls.WebGL.RPCs.get_handler = function()
 
 // RPCs related to the texture tab.
 
-// Return all texture "names || ids". There are five different types of
-// objects that can be used as textures: ArrayBufferView, ImageData,
-// HTMLImageElement, HTMLCanvasElement and HTMLVideoElement.
-
 cls.WebGL.RPCs.get_texture_names = function()
 {
-  return handler.textures; 
+  var i=0;
+  var returnvars;
+
+  return handler.textures;
 };
 
+// TODO review this! Mapping on just a string? loose.
 cls.WebGL.RPCs.get_texture_as_data = function()
 {
   var texture_identifier = "URL";
-  var i = 0;
+  var i;
   var target_texture_index = undefined;
-  var return_vars = {};
+  var element;
+  var canvas;
+  var canvas_ctx;
 
   for (i=0; i<handler.textures.length; i++)
   {
@@ -74,7 +76,7 @@ cls.WebGL.RPCs.get_texture_as_data = function()
   }
   if (target_texture_index === undefined)
   {     
-    return "undefined";
+    return;
   }
   obj = handler.textures[target_texture_index];
   element = obj.object;
@@ -82,37 +84,42 @@ cls.WebGL.RPCs.get_texture_as_data = function()
   // TODO Must handle every type of element.
   if (element instanceof HTMLImageElement)
   {
-    var canvas = document.createElement("canvas");
+    canvas = document.createElement("canvas");
     canvas.height = element.height;
     canvas.width = element.width;  
  
-    var canvas_ctx = canvas.getContext("2d");
+    canvas_ctx = canvas.getContext("2d");
     canvas_ctx.drawImage(element, 0, 0);
     obj.img = canvas.toDataURL("image/png");
     obj.source = element.src;
   }
-  else if (obj instanceof HTMLCanvasElement)
+  else if (element instanceof HTMLCanvasElement)
   {
-    obj.img = obj.toDataURL("image/png");
+    console.log("canvas");
+    obj.img = element.toDataURL("image/png");
+  }
+  else if (element instanceof HTMLVideoElement)
+  {
+    console.log("WebGLDebugger has no support for Video Textures");
+    //obj.img = "No support for HTMLVideoElements";
+  }
+  else if (element instanceof ImageData)
+  {
+    canvas = document.createElement("canvas");
+    canvas.height = element.height;
+    canvas.width = element.width;
+
+    canvas_ctx = canvas.getContext("2d");
+    canvas_ctx.putImageData(element, 0, 0);
+    
+    obj.img = canvas.toDataURL("image/png");
   }
   else
   {
-    console.log("WebGLDebugger ERROR, unknown texture type"); 
+    console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
   }
 
-  // TODO these should only be set for elements where the parameter
-  // actually exist.
-  return_vars.id = obj.id;
-  return_vars.object = obj.object;
-  return_vars.type = obj.type;
-  return_vars.texture_wrap_s = obj.texture_wrap_s;
-  return_vars.texture_wrap_t = obj.texture_wrap_t;
-  return_vars.img = obj.img;
-  return_vars.texture_min_filter = obj.texture_min_filter;
-  return_vars.texture_mag_filter = obj.texture_mag_filter;
-  return_vars.source = obj.source; 
-
-  return return_vars;
+  return obj;
 };
 
 
