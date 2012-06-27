@@ -71,8 +71,10 @@ cls.Scoper.prototype.set_reviver = function(reviver)
  *   Use the following format: [["object_name", object_id]]
  * @param {Boolean} release optional, if the root object should be released or not.
  *   Defaults to true.
+ * @param {Boolean} debugging optional, if debugging should be enabled for
+ *   script evaluation. Defaults to false
  */
-cls.Scoper.prototype.eval_script = function(script, objects, release)
+cls.Scoper.prototype.eval_script = function(script, objects, release, debugging)
 {
   typeof(release) === "boolean" || (release = true);
   this.current_depth = 0;
@@ -81,11 +83,12 @@ cls.Scoper.prototype.eval_script = function(script, objects, release)
       this._eval_callback,
       [this.runtime_id, release]);
   window.services["ecmascript-debugger"].requestEval(tag,
-      [this.runtime_id, 0, 0, script, objects]);
+      [this.runtime_id, 0, 0, script, objects, debugging ? 1 : 0]);
 };
 
 /**
  * Callback to Scopes requestEval.
+ * TODO: Add support for _not_ examining the result, just returning the object id
  */
 cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
 {

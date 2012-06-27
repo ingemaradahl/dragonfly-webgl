@@ -92,6 +92,35 @@ window.WebGLUtils.draw_texture = function(program, texture, gl)
 };
 
 /**
+ * Helper class to manage context interface calls
+ * @param {Object} interface_function The interface function to call
+ *
+ * @extends cls.Scoper
+ * TODO: Fancy a better name maybehaps??
+ */
+window.WebGLUtils.Scoperer = function(interface_function, callback, callback_that, callback_arguments)
+{
+  if (typeof interface_function === "function")
+  {
+    throw "Illegal interface function call, use direct calling instead."
+  }
+
+  this.interface_function = interface_function;
+  var runtime_id = interface_function.runtime_id;
+  cls.Scoper.call(this, runtime_id, callback, callback_that, callback_arguments);
+};
+
+window.WebGLUtils.Scoperer.prototype = new cls.Scoper;
+window.WebGLUtils.Scoperer.prototype.constructor = window.WebGLUtils.Scoperer;
+
+window.WebGLUtils.Scoperer.prototype.exec = function(release)
+{
+  var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
+  var object_id = this.interface_function.object_id;
+  this.eval_script(script, [["f", object_id]], release);
+};
+
+/**
  * Extracts the result from requestEval call. If its a object then its examined.
  * The runtime id must be set as first element in the argument list.
  * Last argument must be the object id of the result from the eval request.

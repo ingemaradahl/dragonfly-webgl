@@ -47,6 +47,14 @@ cls.WebGL.RPCs.get_handler = function()
   return null;
 };
 
+/**
+ * Calls a function bound by scope to the variable name f
+ */
+cls.WebGL.RPCs.call_function = function()
+{
+  return f();
+};
+
 // RPCs related to the texture tab.
 
 cls.WebGL.RPCs.get_texture_names = function()

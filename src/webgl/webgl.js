@@ -8,8 +8,11 @@ cls.WebGL.WebGLDebugger = function ()
   this.injected = false;
   this.runtime_id = -1;
 
-  /* Object IDs for Handler objects from Wrapped contexts. */
+  /* Context IDs for wrapped contexts. NOT an object id */
   this.contexts = [];
+
+  /* Interface functions to the context handler */
+  this.interfaces = {};
 
   /* Each context have its own data object, the context id is used as a key. */
   this.data = {};
@@ -55,12 +58,6 @@ cls.WebGL.WebGLDebugger = function ()
     messages.post('webgl-clear');
   };
 
-  this.add_context = function (context_id)
-  {
-    this.contexts.push(context_id);
-    this.data[context_id] = new cls.WebGLData(context_id);
-  };
-
   this.request_test = function (ctx)
   {
     if (this.available())
@@ -97,7 +94,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.state.send_state_query(this.runtime_id, ctx);
+      this.state.send_state_query(ctx);
     }
   };
 
@@ -119,73 +116,79 @@ cls.WebGL.WebGLDebugger = function ()
 
   this._send_injection = function (rt_id, cont_callback)
   {
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
-    var tag = tagManager.set_callback(this, this._handle_injection, [rt_id, cont_callback]);
-    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [], 1]);
-  };
-
-  this._handle_injection = function (status, message, rt_id, cont_callback)
-  {
-    if (message[0] === 'completed')
+    var finalize = function (canvas_map)
     {
       this.injected = true;
-      this.canvas_map = message[3][0]; // Object id of canvas_map
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed to inject WebGL wrapping script");
-    }
+      this.canvas_map = canvas_map.object_id;
 
-    cont_callback();
+      cont_callback();
+    };
+
+    var scoper = new cls.Scoper(rt_id, finalize, this);
+    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+    scoper.eval_script(script, [], false, true);
   };
 
   this._on_new_context = function (message)
   {
+    var finalize = (function (handler_interface, context_id)
+    {
+      this.contexts.push(context_id);
+      this.interfaces[context_id] = handler_interface;
+      this.data[context_id] = new cls.WebGLData(context_id);
+
+      // Tell the target context that the debugger is ready.
+      this.interfaces[context_id].debugger_ready()
+
+      messages.post('webgl-new-context', context_id);
+    }).bind(this);
+
+    // Revives a "simple" function (a function where the return value if of no
+    // interest)
+    var revive_function = function (runtime_id, context_id, function_id)
+    {
+      return function ()
+        {
+          var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
+          window.services["ecmascript-debugger"].requestEval(
+              cls.TagManager.IGNORE_RESPONSE,
+              [runtime_id, 0, 0, script, [["f", function_id]]]
+          );
+        };
+    }
+
+    var revive_interface = function (handler_interface, runtime_id)
+    {
+      var context_id = handler_interface.object_id;
+      delete handler_interface.object_id;
+
+      for (var fun_name in handler_interface)
+      {
+        var fun = handler_interface[fun_name];
+        // # of arguments
+        var argc = fun.length;
+        switch (fun_name)
+        {
+          case "debugger_ready":
+          case "request_trace":
+            handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
+            break;
+          default:
+            handler_interface[fun_name] = { object_id : fun.object_id, runtime_id: runtime_id };
+        }
+      }
+
+      finalize(handler_interface, context_id);
+    };
+
     if (message.runtime_id === this.runtime_id)
     {
       var canvas_id = message.object_id;
+
+      var scoper = new cls.Scoper(this.runtime_id, revive_interface, this, [this.runtime_id]);
       var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
-      var tag = tagManager.set_callback(this, this._handle_context_handler);
-      window.services["ecmascript-debugger"].requestEval(tag, [this.runtime_id, 0, 0, script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]]]);
-    }
-  };
-
-  this._handle_context_handler = function(status, message)
-  {
-    var
-      STATUS = 0,
-      TYPE = 1,
-      VALUE = 2,
-      OBJECT_VALUE = 3,
-      // sub message ObjectValue
-      OBJECT_ID = 0;
-
-    if (message[STATUS] === 'completed')
-    {
-      if (message[TYPE] !== 'object')
-      {
-        opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "WebGL context handler could not be recieved");
-      }
-      else
-      {
-        var handler_id = message[OBJECT_VALUE][OBJECT_ID];
-
-        this.add_context(handler_id);
-
-        // Tell the target context that the debugger is ready.
-        var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.debugger_ready);
-        window.services["ecmascript-debugger"].requestEval(0,
-            [this.runtime_id, 0, 0, script, [["handler", handler_id]]]);
-
-        messages.post('webgl-new-context', handler_id);
-      }
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-          "failed _handle_context_query in WebGLDebugger");
+      scoper.set_object_action(function(key, type) { return cls.Scoper.ACTIONS.EXAMINE; });
+      scoper.eval_script(script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]], false);
     }
   };
 
