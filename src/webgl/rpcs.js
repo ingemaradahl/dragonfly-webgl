@@ -55,16 +55,6 @@ cls.WebGL.RPCs.call_function = function()
   return f();
 };
 
-// RPCs related to the texture tab.
-
-cls.WebGL.RPCs.get_texture_names = function()
-{
-  var i=0;
-  var returnvars;
-
-  return handler.textures;
-};
-
 // TODO review this! Mapping on just a string? loose.
 cls.WebGL.RPCs.get_texture_as_data = function()
 {
@@ -835,6 +825,12 @@ cls.WebGL.RPCs.injection = function () {
       return out;
     };
     this._interface.get_buffers = this.get_buffers.bind(this);
+
+    this.get_texture_names = function()
+    {
+      return this.textures;
+    };
+    this._interface.get_texture_names = this.get_texture_names.bind(this);
 
 
     this.lookup_buffer = function(buffer)

@@ -75,7 +75,7 @@ cls.WebGL.WebGLDebugger = function ()
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.texture._send_texture_query(this.runtime_id, ctx);
+      this.texture._send_texture_query(ctx);
     }
   };
 

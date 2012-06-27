@@ -16,6 +16,7 @@ cls.WebGLTextureView = function(id, name, container_class)
 
     if (window.webgl.available())
     {
+      // TODO: request from correct context
       window.webgl.request_textures();
     }
 
