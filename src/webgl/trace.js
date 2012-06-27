@@ -9,12 +9,10 @@ cls.WebGLTrace = function()
 {
   this._current_context = null;
 
-  // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
-  this._send_trace_request = function(rt_id, ctx_id)
+  // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's id
+  this.send_trace_request = function(ctx_id)
   {
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.request_trace);
-    this._current_context = ctx_id;
-    window.services["ecmascript-debugger"].requestEval(0, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
+    window.webgl.interfaces[ctx_id].request_trace();
   };
 
   this._on_trace_complete = function(msg)

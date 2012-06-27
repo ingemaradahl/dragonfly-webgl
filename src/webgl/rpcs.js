@@ -268,7 +268,10 @@ cls.WebGL.RPCs.injection = function () {
       var i = this.buffers.push(buf);
       buf.index = i - 1;
 
-      this.events["buffer-created"].post(buf);
+      if (this.buffers_update)
+      {
+        this.events["buffer-created"].post(buf);
+      }
     };
     innerFuns.bindBuffer = function(result, args)
     {
@@ -312,7 +315,11 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = this.lookup_buffer(buf);
       this.buffers[buffer.index] = null;
       if (this.bound_buffer === buffer) this.bound_buffer = null;
-      // TODO: should notify dragonfly about the deletion.
+
+      if (this.buffers_update)
+      {
+        // TODO: should notify dragonfly about the deletion.
+      }
     };
 
     // Texture code
@@ -599,6 +606,7 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers = [];
     // The currently bound buffer
     this.bound_buffer = null;
+    this.buffers_update = true;
 
     this.trace = null;
     this.fbo_snapshots = [];
@@ -787,6 +795,18 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
+
+    this.enable_buffers_update = function()
+    {
+      this.buffers_update = true;
+    };
+    this._interface.enable_buffers_update = this.enable_buffers_update.bind(this);
+
+    this.disable_buffers_update = function()
+    {
+      this.buffers_update = false;
+    };
+    this._interface.disable_buffers_update = this.disable_buffers_update.bind(this);
 
     this.get_new_buffers = function()
     {

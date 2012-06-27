@@ -101,11 +101,11 @@ cls.WebGL.WebGLDebugger = function ()
   /**
    * Gets a trace of all WebGL calls from the current frame.
    * TODO: Temporary requires that the script runs gl.new_frame() before each new frame is drawn.
-   * @param context_object_id Id of the context object which should be traced.
+   * @param context_id Id of the context which should be traced.
    */
-  this.request_trace = function(context_object_id)
+  this.request_trace = function(context_id)
   {
-    this.trace._send_trace_request(this.runtime_id, context_object_id);
+    this.interfaces[context_id].request_trace();
   };
 
   this.request_buffer_data = function(context_object_id, buffer_index)
@@ -171,6 +171,8 @@ cls.WebGL.WebGLDebugger = function ()
         {
           case "debugger_ready":
           case "request_trace":
+          case "enable_buffers_update":
+          case "disable_buffers_update":
             handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
             break;
           default:
