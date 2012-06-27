@@ -4,7 +4,8 @@ window.cls || (window.cls = {});
 
 /**
  * Class that handles communication with Scope. Gives easy control of examination
- * of objects and takes care of the releasing of them as well.
+ * of objects and takes care of the releasing of them as well. The default behavior
+ * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
  */
 cls.Scoper = function(runtime_id, callback, callback_that, callback_arguments)
 {
@@ -76,10 +77,19 @@ cls.Scoper.prototype.eval_script = function(script, objects, release)
 {
   typeof(release) === "boolean" || (release = true);
   this.current_depth = 0;
-  var tag = tagManager.set_callback(
-      this,
-      this._eval_callback,
-      [this.runtime_id, release]);
+
+  var tag;
+  if (this.callback == null)
+  {
+    tag = cls.TagManager.IGNORE_RESPONSE;
+  }
+  else
+  {
+    tag = tagManager.set_callback(
+        this,
+        this._eval_callback,
+        [release]);
+  }
   window.services["ecmascript-debugger"].requestEval(tag,
       [this.runtime_id, 0, 0, script, objects]);
 };
@@ -87,7 +97,7 @@ cls.Scoper.prototype.eval_script = function(script, objects, release)
 /**
  * Callback to Scopes requestEval.
  */
-cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
+cls.Scoper.prototype._eval_callback = function(status, message, release)
 {
   var STATUS = 0,
       TYPE = 1,
@@ -105,7 +115,16 @@ cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
       var targets = {};
       targets[object_id] = this._object_reviver(this, "result", release);
 
-      this._examine_level([object_id], targets);
+      if (this.max_depth > 0)
+      {
+        this._examine_level([object_id], targets);
+      }
+      else
+      {
+        var object = message[OBJECT][OBJECT_TYPE].indexOf("Array") !== -1 ? [] : {};
+        object.object_id = object_id;
+        this.callback.apply(this, [object].concat(this.callback_arguments));
+      }
     }
     else
     {
