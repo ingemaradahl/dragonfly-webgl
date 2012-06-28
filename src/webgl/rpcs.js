@@ -81,7 +81,7 @@ cls.WebGL.RPCs.injection = function () {
     // We will keep all native functions and enumerators in this object
     var gl = {};
 
-    var handler = new Handler(this, gl);
+    var handler = new Handler(this, gl, canvas);
     canvas_map.push({canvas:canvas, handler:handler});
 
     // Stores the oldest error that have occured since last call to getError
@@ -548,7 +548,7 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Handles communication between the wrapped context and Dragonfly.
    */
-  function Handler(context, gl)
+  function Handler(context, gl, canvas)
   {
     this.gl = gl;
     this.context = context;
@@ -570,8 +570,8 @@ cls.WebGL.RPCs.injection = function () {
     this.textures_update = true;
 
     this.events = {
-      "buffer-created": new MessageQueue("webgl-buffer-created"),
-      "trace-completed": new MessageQueue("webgl-trace-completed")
+      "buffer-created": new MessageQueue("webgl-buffer-created", canvas),
+      "trace-completed": new MessageQueue("webgl-trace-completed", canvas)
     };
 
     /* Interface definition between DF and the Context Handler, only the
@@ -1017,14 +1017,15 @@ cls.WebGL.RPCs.injection = function () {
 
       return state;
     };
-  };
+  }
 
   /**
    * Queues messages for pickup by Dragonfly.
    */
-  function MessageQueue(name, ready)
+  function MessageQueue(name, source, ready)
   {
     this.name = name;
+    this.source = source;
     this.ready = Boolean(ready);
     this.running = false;
     this.messages = [];
@@ -1034,7 +1035,7 @@ cls.WebGL.RPCs.injection = function () {
     this.messages.push(message);
     if (!this.running && this.ready)
     {
-      document.dispatchEvent(new Event(this.name));
+      this.source.dispatchEvent(new Event(this.name));
       this.running = true;
     }
   };
