@@ -546,7 +546,6 @@ cls.WebGL.RPCs.injection = function () {
     this.bound_program = null;
 
     this.buffers = [];
-    // The currently bound buffer
     this.bound_buffer = null;
     this.buffers_update = true;
 
@@ -556,6 +555,7 @@ cls.WebGL.RPCs.injection = function () {
     this.capturing_frame = false;
 
     this.textures = [];
+    this.textures_update = true;
 
     this.events = {
       "buffer-created": new MessageQueue("webgl-buffer-created"),
@@ -844,7 +844,6 @@ cls.WebGL.RPCs.injection = function () {
     {
       var element = this.object;
 
-      // TODO Must handle every type of element.
       if (element instanceof HTMLImageElement)
       {
         var canvas = document.createElement("canvas");
@@ -855,15 +854,17 @@ cls.WebGL.RPCs.injection = function () {
         canvas_ctx.drawImage(element, 0, 0);
         this.img = canvas.toDataURL("image/png");
         this.source = element.src;
+        this.element_type = "HTMLImageElement";
       }
       else if (element instanceof HTMLCanvasElement)
       {
         this.img = element.toDataURL("image/png");
+        this.element_type = "HTMLCanvasElement";
       }
       else if (element instanceof HTMLVideoElement)
       {
+        this.element_type = "HTMLVideoElement";
         console.log("WebGLDebugger has no support for Video Textures");
-        //obj.img = "No support for HTMLVideoElements";
       }
       else if (element instanceof ImageData)
       {
@@ -875,10 +876,54 @@ cls.WebGL.RPCs.injection = function () {
         canvas_ctx.putImageData(element, 0, 0);
         
         this.img = canvas.toDataURL("image/png");
+        this.element_type = "ImageData";
+      }
+      else if (element instanceof Uint8Array ||
+           element instanceof Uint16Array ||
+           element instanceof Uint32Array)
+      {
+        var canvas = document.createElement("canvas");
+        var canvas_ctx = canvas.getContext("2d");
+
+        var imgData = canvas_ctx.createImageData(this.width, this.height);
+        
+        var pix = imgData.data;
+        var format;
+
+        if (this.format === gl.RGB)
+        {
+          var j=0;
+          for (var i=0; i<pix.length; i+=4)
+          {
+            pix[i] = element[j];
+            pix[i+1] = element[j+1];
+            pix[i+2] = element[j+2];
+            pix[i+3] = 255; // Set alpha channel to opaque
+            j+=3;
+          }
+        }    
+        else if (this.format === gl.RGBA)
+        {
+          for (var i=0; i<pix.length; i+=4)
+          {
+            pix[i] = element[j];
+            pix[i+1] = element[j+1];
+            pix[i+2] = element[j+2];
+            pix[i+3] = element[j+3];
+          }
+        }
+        else
+        {
+          console.log("WebGLDebugger: Unknown texture format");
+        }
+
+        canvas_ctx.putImageData(imgData, 0, 0);
+        this.img = canvas.toDataURL("image/png"); 
+        this.element_type = "ArrayBufferView";
       }
       else
       {
-        console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
+        console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + this.toString());
       }
 
       return this;
