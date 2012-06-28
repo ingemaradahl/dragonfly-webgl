@@ -53,7 +53,6 @@ cls.WebGL.WebGLDebugger = function ()
     this.injected = false;
     this.runtime_id = -1;
     this.contexts = [];
-    this.data = {};
 
     messages.post('webgl-clear');
   };
@@ -105,7 +104,7 @@ cls.WebGL.WebGLDebugger = function ()
    */
   this.request_trace = function(context_id)
   {
-    this.interfaces[context_id].request_trace();
+    this.trace._send_trace_request(context_id);
   };
 
   this.request_buffer_data = function(context_object_id, buffer_index)
@@ -138,9 +137,10 @@ cls.WebGL.WebGLDebugger = function ()
       this.data[context_id] = new cls.WebGLData(context_id);
 
       // Tell the target context that the debugger is ready.
-      this.interfaces[context_id].debugger_ready()
+      this.interfaces[context_id].debugger_ready();
 
       messages.post('webgl-new-context', context_id);
+      this.trace._send_trace_request(context_id);
     }).bind(this);
 
     // Revives a "simple" function (a function where the return value if of no
@@ -155,7 +155,7 @@ cls.WebGL.WebGLDebugger = function ()
               [runtime_id, 0, 0, script, [["f", function_id]]]
           );
         };
-    }
+    };
 
     var revive_interface = function (handler_interface, runtime_id)
     {

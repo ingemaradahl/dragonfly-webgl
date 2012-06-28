@@ -4,7 +4,8 @@ window.cls || (window.cls = {});
 
 /**
  * Class that handles communication with Scope. Gives easy control of examination
- * of objects and takes care of the releasing of them as well.
+ * of objects and takes care of the releasing of them as well. The default behavior
+ * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
  */
 cls.Scoper = function(runtime_id, callback, callback_that, callback_arguments)
 {
@@ -78,10 +79,19 @@ cls.Scoper.prototype.eval_script = function(script, objects, release, debugging)
 {
   typeof(release) === "boolean" || (release = true);
   this.current_depth = 0;
-  var tag = tagManager.set_callback(
-      this,
-      this._eval_callback,
-      [this.runtime_id, release]);
+
+  var tag;
+  if (this.callback == null)
+  {
+    tag = cls.TagManager.IGNORE_RESPONSE;
+  }
+  else
+  {
+    tag = tagManager.set_callback(
+        this,
+        this._eval_callback,
+        [release]);
+  }
   window.services["ecmascript-debugger"].requestEval(tag,
       [this.runtime_id, 0, 0, script, objects, debugging ? 1 : 0]);
 };
@@ -90,7 +100,7 @@ cls.Scoper.prototype.eval_script = function(script, objects, release, debugging)
  * Callback to Scopes requestEval.
  * TODO: Add support for _not_ examining the result, just returning the object id
  */
-cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
+cls.Scoper.prototype._eval_callback = function(status, message, release)
 {
   var STATUS = 0,
       TYPE = 1,
@@ -108,7 +118,16 @@ cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
       var targets = {};
       targets[object_id] = this._object_reviver(this, "result", release);
 
-      this._examine_level([object_id], targets);
+      if (this.max_depth > 0)
+      {
+        this._examine_level([object_id], targets);
+      }
+      else
+      {
+        var object = message[OBJECT][OBJECT_TYPE].indexOf("Array") !== -1 ? [] : {};
+        object.object_id = object_id;
+        this.callback.apply(this, [object].concat(this.callback_arguments));
+      }
     }
     else
     {
@@ -127,11 +146,7 @@ cls.Scoper.prototype._eval_callback = function(status, message, rt_id, release)
     }
     else
     {
-      var tag_error = tagManager.set_callback(
-          this, window.WebGLUtils.handle_error, [error_id]);
-      window.services["ecmascript-debugger"].requestExamineObjects(
-          tag_error, [this.runtime_id, [error_id]], true, true);
-      // TODO remove handle_error ?
+      this._retrive_stacktrace(error_id);
     }
   }
   else
@@ -517,6 +532,26 @@ cls.Scoper.prototype._error = function()
     opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
         "cls.Scoper failed!");
   }
+};
+
+/**
+ * Retreives a stacktrace when an error have occurred.
+ */
+cls.Scoper.prototype._retrive_stacktrace = function(error_id)
+{
+  var callback = function(error)
+  {
+    console.log("Remote error:");
+    console.log(error);
+  };
+  var error_callback = function()
+  {
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "Scoper failed to retreive a stacktrace.");
+  };
+  var scoper = new cls.Scoper(this.runtime_id);
+  scoper.set_callback(callback, null, null, error_callback);
+  scoper.examine_object(error_id);
 };
 
 /*

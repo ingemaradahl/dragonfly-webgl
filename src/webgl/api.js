@@ -51,6 +51,17 @@ cls.WebGLAPI = function ()
     return fn.generate_string(args);
   };
 
+  this.function_arguments_to_objects = function(function_name, args)
+  {
+    if (!(function_name in this.functions))
+    {
+      return []; // TODO not ideal
+    }
+
+    var fn = this.functions[function_name];
+    return fn.get_argument_objects(args);
+  };
+
   this.function_argument_to_string = function(function_name, parameter_name, value)
   {
     if (!(function_name in this.functions)) return value;
@@ -58,6 +69,15 @@ cls.WebGLAPI = function ()
     var param = this.functions[function_name].get_parameter(parameter_name);
     if (param == null) return value;
     return param.generate_string(value);
+  };
+
+  this.function_argument_to_object = function(function_name, parameter_name, value)
+  {
+    if (!(function_name in this.functions)) return value;
+
+    var param = this.functions[function_name].get_parameter(parameter_name);
+    if (param == null) return value;
+    return param.get_object(value);
   };
 
   // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
@@ -359,6 +379,19 @@ cls.WebGLAPI = function ()
     VIEWPORT: 2978,
     ZERO: 0
   };
+
+  var webgl_constants_back = {};
+  for (var key in webgl_constants)
+  {
+    if (!webgl_constants.hasOwnProperty(key)) continue;
+    webgl_constants_back[webgl_constants[key]] = key;
+  }
+
+  this.constant_value_to_string = function(value)
+  {
+    return webgl_constants_back[value];
+  };
+
   // --------------------------
 
   function GLFunction(name, returnType, args, draw)
@@ -387,6 +420,20 @@ cls.WebGLAPI = function ()
     }
 
     return text + arrs.join(", ") + ")";
+  };
+
+  GLFunction.prototype.get_argument_objects = function(args)
+  {
+    var arrs = [];
+    for (var i = 0; i < args.length; i++)
+    {
+      var arr = this.args[i];
+      var value = args[i];
+
+      arrs.push(arr.get_object(value));
+    }
+
+    return arrs;
   };
 
   GLFunction.prototype.get_parameter = function(parameter_name)
@@ -449,6 +496,16 @@ cls.WebGLAPI = function ()
     return String(value);
   };
 
+  GLParam.prototype.get_object = function(value)
+  {
+    if (typeof(value) === "object")
+    {
+      return value;
+    }
+
+    return {text: this.generate_string(value)};
+  };
+
   // --------------------------
 
   function GLParamEnum(name, type, values)
@@ -470,8 +527,12 @@ cls.WebGLAPI = function ()
         return this.values[key];
       }
     }
-    // TODO: better error handling
-    return value + " (enum not found)";
+
+    if (value in webgl_constants_back)
+    {
+      return webgl_constants_back[value];
+    }
+    return String(value);
   };
 
   // --------------------------
@@ -495,6 +556,15 @@ cls.WebGLAPI = function ()
       {
         bits.push(this.values[key]);
       }
+    }
+
+    if (bits.length === 0)
+    {
+      if (value in webgl_constants_back)
+      {
+        return webgl_constants_back[value];
+      }
+      return String(value);
     }
     // TODO: better error handling, perhaps check that all bits that are set in value also is in the bits array.
     return bits.join(" | ");
