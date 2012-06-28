@@ -61,7 +61,7 @@ cls.WebGLBuffer = function()
       var interface_call = window.webgl.interfaces[ctx_id].get_new_buffers;
       var scoper = new WebGLUtils.Scoperer(interface_call, finalize, this, [ctx_id]);
       scoper.set_max_depth(2);
-      scoper.set_object_action(function() { return cls.Scoper.ACTIONS.EXAMINE; });
+      scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
       scoper.exec();
     }
   };

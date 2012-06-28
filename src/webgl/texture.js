@@ -13,7 +13,7 @@ cls.WebGLTexture = function ()
       if (texture_data.length > 0)
       {
         window.webgl.data[ctx_id].texture_container = texture_data.map(function (t) {
-          t.get_data = { object_id : t.get_data.object_id, runtime_id : runtime_id }
+          t.get_data = { object_id : t.get_data.object_id, runtime_id : runtime_id };
           return t;
         });
         messages.post('webgl-new-texture-list');
@@ -23,7 +23,7 @@ cls.WebGLTexture = function ()
     var scoper = new WebGLUtils.Scoperer(webgl.interfaces[ctx_id].get_texture_names, finalize, this);
     runtime_id = scoper.runtime_id;
     scoper.set_max_depth(2);
-    scoper.set_object_action(function () { return cls.Scoper.ACTIONS.EXAMINE; });
+    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
     scoper.exec();
   };
 
@@ -55,7 +55,7 @@ cls.WebGLTexture = function ()
 
     var scoper = new WebGLUtils.Scoperer(texture.get_data, finalize, this);
     scoper.set_max_depth(2);
-    scoper.set_object_action(function () { return cls.Scoper.ACTIONS.EXAMINE; });
+    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
     scoper.exec();
   };
 };

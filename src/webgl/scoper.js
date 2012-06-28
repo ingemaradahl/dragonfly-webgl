@@ -10,15 +10,20 @@ window.cls || (window.cls = {});
 cls.Scoper = function(runtime_id, callback, callback_that, callback_arguments)
 {
   this.runtime_id = runtime_id;
+
   this.callback = callback;
   this.callback_that = callback_that;
   this.callback_arguments = callback_arguments || [];
   this.error_callback;
   this.error_callback_that;
   this.callback_arguments;
+
+  this.default_object_action = cls.Scoper.ACTIONS.EXAMINE_RELEASE;
   this.object_action;
+
   this.max_depth = 20;
   this.current_depth = 0;
+
   this.reviver = this.reviver_basic;
 };
 
@@ -38,11 +43,27 @@ cls.Scoper.prototype.set_callback = function(callback, callback_that, callback_a
 };
 
 /**
- * Sets a function that determines what action to take on an object based on the property name and object type.
+ * Sets an action to take on an object when examined or a function that
+ * determines what action to take on an object based on the property name and object type.
+ *
+ * @param {Function, Number} object_action either a default action or a
+ * function that will determine the action based on the property name and type
+ * of the object.
  */
 cls.Scoper.prototype.set_object_action = function(object_action)
 {
-  this.object_action = object_action;
+  switch (typeof(object_action))
+  {
+    case "number":
+      this.default_object_action = object_action;
+      this.object_action = null;
+      break;
+    case "function":
+      this.object_action = object_action;
+      break;
+    default:
+      throw "Type must be a function or a number from the enum cls.Scoper.ACTIONS";
+  }
   return this;
 };
 
@@ -470,7 +491,7 @@ cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
   }
   else if (this.object_action == null)
   {
-    action = cls.Scoper.ACTIONS.EXAMINE_RELEASE;
+    action = this.default_object_action;
   }
   else
   {
