@@ -114,10 +114,12 @@ cls.WebGL.RPCs.get_texture_as_data = function()
 {
   var texture_identifier = "URL";
   var i;
+  var j;
   var target_texture_index = undefined;
   var element;
   var canvas;
   var canvas_ctx;
+  var imgData;
 
   for (i=0; i<handler.textures.length; i++)
   {
@@ -133,7 +135,7 @@ cls.WebGL.RPCs.get_texture_as_data = function()
   obj = handler.textures[target_texture_index];
   element = obj.object;
   
-  // TODO Must handle every type of element.
+  // HTMLImageElement
   if (element instanceof HTMLImageElement)
   {
     canvas = document.createElement("canvas");
@@ -144,17 +146,21 @@ cls.WebGL.RPCs.get_texture_as_data = function()
     canvas_ctx.drawImage(element, 0, 0);
     obj.img = canvas.toDataURL("image/png");
     obj.source = element.src;
+    obj.element_type = "HTMLImageElement";
   }
+  // HTMLCanvasElement
   else if (element instanceof HTMLCanvasElement)
   {
-    console.log("canvas");
     obj.img = element.toDataURL("image/png");
+    obj.element_type = "HTMLCanvasElement";
   }
+  // HTMLVideoElement
   else if (element instanceof HTMLVideoElement)
   {
+    obj.element_type = "HTMLVideoElement";
     console.log("WebGLDebugger has no support for Video Textures");
-    //obj.img = "No support for HTMLVideoElements";
   }
+  // ImageData
   else if (element instanceof ImageData)
   {
     canvas = document.createElement("canvas");
@@ -165,6 +171,53 @@ cls.WebGL.RPCs.get_texture_as_data = function()
     canvas_ctx.putImageData(element, 0, 0);
     
     obj.img = canvas.toDataURL("image/png");
+    obj.element_type = "ImageData";
+  }
+  // ArrayBufferView
+  else if (element instanceof Uint8Array ||
+           element instanceof Uint16Array ||
+           element instanceof Uint32Array)
+  {
+    canvas = document.createElement("canvas");
+    canvas_ctx = canvas.getContext("2d");
+
+    imgData = canvas_ctx.createImageData(obj.width, obj.height);
+    
+    var pix = imgData.data;
+    var format;
+    var len = 0;
+
+    if (obj.format === gl.RGB)
+    {
+      var j=0;
+      for (var i=0; i<(pix.length); i+=4)
+      {
+        pix[i] = element[j];
+        pix[i+1] = element[j+1];
+        pix[i+2] = element[j+2];
+        pix[i+3] = 255; // Set alpha channel to opaque
+        j+=3;
+      }
+    }    
+    else if (obj.format === gl.RGBA)
+    {
+      for (var i=0; i<(pix.length); i+=4)
+      {
+        pix[i] = element[j];
+        pix[i+1] = element[j+1];
+        pix[i+2] = element[j+2];
+        pix[i+3] = element[j+3];
+      }
+    }
+    // Unknown type
+    else
+    {
+      console.log("WebGLDebugger: Unknown texture format");
+    }
+
+    canvas_ctx.putImageData(imgData, 0, 0);
+    obj.img = canvas.toDataURL("image/png"); 
+    obj.element_type = "ArrayBufferView";
   }
   else
   {
@@ -510,13 +563,14 @@ cls.WebGL.RPCs.injection = function () {
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
+      // Last argument is the one containing the texture data.
       var texture_container_object = args[args.length -1];
-      if (texture_container_object === null)  //TODO improve
-        return;
       var binded_texture = gl.getParameter(gl["TEXTURE_BINDING_2D"]);
-      var i = 0;    
+      var i;    
       var texture_exist = false; // If false by end, the texture is not
                                  // created and there is an error.
+      if (texture_container_object === null)
+        return;
 
       for (i=0; i<this.textures.length; i++)
       {
@@ -527,18 +581,24 @@ cls.WebGL.RPCs.injection = function () {
           this.textures[i].type = texture_container_object.toString();
           this.textures[i].texture_wrap_s =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_S"]);
-              // TODO this is wrong parameter! FIX!
           this.textures[i].texture_wrap_t =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_T"]);
-              // TODO this is wrong parameter! FIX!
           this.textures[i].texture_min_filter =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MIN_FILTER"]);
-              // TODO this is wrong parameter! FIX!
           this.textures[i].texture_mag_filter = 
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MAG_FILTER"]);
-          // TODO this is wrong parameter! FIX!
-          // TODO get real parameters
+          // TODO Translate to ENUMs
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
+          // We need to save some extra information about the call when an
+          // ArrayBufferView is used.  
+          if (args.length === 9)
+          {
+            this.textures[i].internalFormat = args[2];
+            this.textures[i].width = args[3];
+            this.textures[i].height = args[4];
+            this.textures[i].format = args[6];
+          }
+
           texture_exist = true;
         }
       }
