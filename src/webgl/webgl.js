@@ -140,7 +140,6 @@ cls.WebGL.WebGLDebugger = function ()
       this.interfaces[context_id].debugger_ready();
 
       messages.post('webgl-new-context', context_id);
-      this.trace._send_trace_request(context_id);
     }).bind(this);
 
     // Revives a "simple" function (a function where the return value if of no
@@ -234,7 +233,7 @@ cls.WebGL.WebGLDebugger = function ()
         shaders["texture-fs"]
       );
 
-      gl.useProgram(program)
+      gl.useProgram(program);
 
       program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
       gl.enableVertexAttribArray(program.positionAttrib);
@@ -264,12 +263,12 @@ cls.WebGL.WebGLDebugger = function ()
       request.overrideMimeType('text/plain');
       request.onreadystatechange = (function()
       {
-        if (request.status == 404)
+        if (request.status === 404)
         {
           opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
               "failed downloading shaders, 404 " + src + " not found");
         }
-        else if (request.status == 200 && request.readyState == 4)
+        else if (request.status === 200 && request.readyState === 4)
         {
           this.shaders[shader_id] = {
             "src": request.responseText,
@@ -278,7 +277,7 @@ cls.WebGL.WebGLDebugger = function ()
           };
 
           loaded_shaders++;
-          if (loaded_shaders == num_shaders)
+          if (loaded_shaders === num_shaders)
           {
             callback();
           }

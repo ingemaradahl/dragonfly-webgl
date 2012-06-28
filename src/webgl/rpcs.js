@@ -591,7 +591,6 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_trace = function()
     {
-      console.log(this.events);
       return this.events["trace-completed"].get();
     };
     this._interface.get_trace = this.get_trace.bind(this);
