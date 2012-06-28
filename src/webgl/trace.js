@@ -22,7 +22,7 @@ cls.WebGLTrace = function()
     var scoper = new cls.Scoper(msg.runtime_id, this._finalize_trace, this, [rt_id, ctx_id]);
     scoper.set_object_action(function(key)
         {
-          return cls.Scoper.ACTIONS[key === "fbo_snapshots" ? "NOTHING" : "EXAMINE_RELEASE"];
+          return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
         });
     scoper.set_max_depth(5);
     scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
@@ -67,32 +67,22 @@ cls.WebGLTrace = function()
         data.push(new TraceEntry(function_name, error_code, result, args));
       }
 
-      var scoper = new cls.Scoper(rt_id, this._examine_snapshots_complete, this, [rt_id, ctx_id]);
-      scoper.set_object_action(function(key)
-          {
-            return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
-          });
-      scoper.set_max_depth(3);
-      scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
-      scoper.examine_object(trace.fbo_snapshots.object_id);
-
       window.webgl.data[ctx_id].add_trace(data);
+
+      for (var l = 0; l < trace.fbo_snapshots.length; l++)
+      {
+        var snapshot = trace.fbo_snapshots[l];
+        snapshot.pixels_object = snapshot.pixels.object_id;
+        snapshot.pixels = null;
+        snapshot.downloading = false;
+
+        window.webgl.data[ctx_id].add_snapshot(snapshot);
+      }
+
       messages.post("webgl-new-trace", data);
     }
   };
 
-  this._examine_snapshots_complete = function(data, rt_id, ctx_id)
-  {
-    for (var i = 0; i < data.length; i++)
-    {
-      var snapshot = data[i];
-      snapshot.pixels_object = snapshot.pixels.object_id;
-      snapshot.pixels = null;
-      snapshot.downloading = false;
-
-      window.webgl.data[ctx_id].add_snapshot(snapshot);
-    }
-  };
   // ---------------------------------------------------------------------------
 
   window.host_tabs.activeTab.addEventListener("webgl-trace-completed",
