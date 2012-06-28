@@ -143,11 +143,7 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
     }
     else
     {
-      var tag_error = tagManager.set_callback(
-          this, window.WebGLUtils.handle_error, [error_id]);
-      window.services["ecmascript-debugger"].requestExamineObjects(
-          tag_error, [this.runtime_id, [error_id]], true, true);
-      // TODO remove handle_error ?
+      this._retrive_stacktrace(error_id);
     }
   }
   else
@@ -533,6 +529,26 @@ cls.Scoper.prototype._error = function()
     opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
         "cls.Scoper failed!");
   }
+};
+
+/**
+ * Retreives a stacktrace when an error have occurred.
+ */
+cls.Scoper.prototype._retrive_stacktrace = function(error_id)
+{
+  var callback = function(error)
+  {
+    console.log("Remote error:");
+    console.log(error);
+  };
+  var error_callback = function()
+  {
+      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+          "Scoper failed to retreive a stacktrace.");
+  };
+  var scoper = new cls.Scoper(this.runtime_id);
+  scoper.set_callback(callback, null, null, error_callback);
+  scoper.examine_object(error_id);
 };
 
 /*

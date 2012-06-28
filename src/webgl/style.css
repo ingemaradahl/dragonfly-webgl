@@ -3,3 +3,12 @@
   width: 40%;
 }
 
+.trace-table span.link
+{
+  color: blue;
+}
+
+.trace-table tr.trace-error
+{
+  background: rgba(255,0,0, 0.4);
+}

@@ -127,19 +127,19 @@ cls.WebGL.RPCs.get_texture_as_data = function()
     }
   }
   if (target_texture_index === undefined)
-  {     
+  {
     return;
   }
   obj = handler.textures[target_texture_index];
   element = obj.object;
-  
+
   // TODO Must handle every type of element.
   if (element instanceof HTMLImageElement)
   {
     canvas = document.createElement("canvas");
     canvas.height = element.height;
-    canvas.width = element.width;  
- 
+    canvas.width = element.width;
+
     canvas_ctx = canvas.getContext("2d");
     canvas_ctx.drawImage(element, 0, 0);
     obj.img = canvas.toDataURL("image/png");
@@ -163,12 +163,12 @@ cls.WebGL.RPCs.get_texture_as_data = function()
 
     canvas_ctx = canvas.getContext("2d");
     canvas_ctx.putImageData(element, 0, 0);
-    
+
     obj.img = canvas.toDataURL("image/png");
   }
   else
   {
-    console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
+    console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString());
   }
 
   return obj;
@@ -378,7 +378,7 @@ cls.WebGL.RPCs.injection = function () {
             if (typeof(arguments[i]) === "object" && arguments[i] !== null)
             {
               var obj = arguments[i];
-              var trace_obj = format_object(obj);
+              var trace_obj = make_trace_argument_object(obj);
               var trace_obj_index = handler.trace.objects.push(trace_obj) - 1;
               args.push("@" + String(trace_obj_index));
             }
@@ -403,32 +403,46 @@ cls.WebGL.RPCs.injection = function () {
       };
     }
 
-    var format_regexp = /^\[object (\w)\]$/;
-    function format_object(obj, args)
+
+    /**
+     * Pairs a trace argument with a WebGL object.
+     * Creates a object for easy pairing on the Dragonfly side.
+     */
+    var object_type_regexp = /^\[object (.*?)\]$/;
+    function make_trace_argument_object(obj, args)
     {
-      var display;
       var type = obj.constructor.name;
-      if (type === "Function.prototype") type = obj.toString().replace(format_regexp, "$1");
+      if (type === "Function.prototype")
+      {
+        var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
+        if (re != null && re[1] != null) type = re[1];
+      }
       var target = obj;
+
+      var arg = {};
+      arg.type = type;
       if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
       {
-        var ls = Array.prototype.concat.call([], obj);
-        var trace_obj = new TraceObject(target, type);
-        trace_obj.data = ls;
-        return trace_obj;
+        arg.data = new (eval(type))(obj);
+        // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
+        //arg.data = obj;
       }
       else if (obj instanceof WebGLUniformLocation)
       {
         // TODO enable below when we gathers info about shaders
-        // display = handler.lookup_uniform(obj).name;
+        //var uniform = handler.lookup_uniform(obj);
       }
       else if (obj instanceof WebGLBuffer)
       {
         var buffer = handler.lookup_buffer(obj);
-        target = buffer.buffer;
+        arg.buffer_index = buffer.index;
       }
-
-      return new TraceObject(target, type, display);
+      else if (obj instanceof WebGLTexture)
+      {
+        var texture = handler.lookup_texture(obj);
+        arg.texture_index = texture.index;
+      }
+      return arg;
     }
 
     var innerFuns = {};
@@ -498,10 +512,10 @@ cls.WebGL.RPCs.injection = function () {
       var texture_map_unit = {};
       texture_map_unit.texture = result;
       //console.log("created");
-      this.textures.push(texture_map_unit);
-
+      var index = this.textures.push(texture_map_unit);
+      texture_map_unit.index = index - 1;
     };
-  
+
     innerFuns.deleteTexture = function(result, args)
     {
       // TODO delete texture from textures[]
@@ -514,7 +528,7 @@ cls.WebGL.RPCs.injection = function () {
       if (texture_container_object === null)  //TODO improve
         return;
       var binded_texture = gl.getParameter(gl["TEXTURE_BINDING_2D"]);
-      var i = 0;    
+      var i = 0;
       var texture_exist = false; // If false by end, the texture is not
                                  // created and there is an error.
 
@@ -534,7 +548,7 @@ cls.WebGL.RPCs.injection = function () {
           this.textures[i].texture_min_filter =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MIN_FILTER"]);
               // TODO this is wrong parameter! FIX!
-          this.textures[i].texture_mag_filter = 
+          this.textures[i].texture_mag_filter =
               gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MAG_FILTER"]);
           // TODO this is wrong parameter! FIX!
           // TODO get real parameters
@@ -700,6 +714,17 @@ cls.WebGL.RPCs.injection = function () {
       }
       return null;
     };
+
+    this.lookup_texture = function(texture)
+    {
+      for (var i = 0; i < this.textures.length; i++) {
+        if (this.textures[i].texture === texture)
+        {
+          return this.textures[i];
+        }
+      }
+      return null;
+    };
   }
 
   /**
@@ -743,12 +768,5 @@ cls.WebGL.RPCs.injection = function () {
     this.calls = [];
     this.objects = [];
     this.fbo_snapshots = [];
-  }
-
-  function TraceObject(target, type, display)
-  {
-    this.target = target;
-    this.type = type;
-    if (display !== undefined) this.display = display;
   }
 };
