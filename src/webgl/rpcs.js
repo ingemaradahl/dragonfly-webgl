@@ -270,6 +270,7 @@ cls.WebGL.RPCs.injection = function () {
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
+      // Last argument is the one containing the texture data.
       var texture_container_object = args[args.length -1];
       if (texture_container_object === null)  //TODO improve
         return;
@@ -291,10 +292,23 @@ cls.WebGL.RPCs.injection = function () {
             texture_mag_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER),
           };
 
+		  // Add data getter function
           texture.get_data = this.get_texture_data.bind(texture);
+
+          // TODO Translate to ENUMs
           // TODO this is wrong parameter! FIX!
           // TODO get real parameters
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
+
+          // We need to save some extra information about the call when an
+          // ArrayBufferView is used.  
+          if (args.length === 9)
+          {
+            texture.internalFormat = args[2];
+            texture.width = args[3];
+            texture.height = args[4];
+            texture.format = args[6];
+          }
 
           this.textures[i] = texture;
           return;

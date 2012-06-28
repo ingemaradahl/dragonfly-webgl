@@ -100,30 +100,19 @@ cls.WebGLTextureView = function(id, name, container_class)
     // TODO collecting data from webg.data. Would be nice with
     // a nice generic solution.
     var texture_index = msg["id"]; //TODO ugly
-    var ctx = 
-        window['cst-selects']['context-select'].get_selected_context();
-    var texture_wrap_s = 
-        window.webgl.data[ctx].texture_data[texture_index].texture_wrap_s;
-    var texture_wrap_t =
-        window.webgl.data[ctx].texture_data[texture_index].texture_wrap_t;
-    var img = 
-        window.webgl.data[ctx].texture_data[texture_index].img;    
-    var texture_min_filter =
-        window.webgl.data[ctx].texture_data[texture_index].texture_min_filter;
-    var texture_mag_filter =  
-        window.webgl.data[ctx].texture_data[texture_index].texture_mag_filter;  
-    var source =
-        window.webgl.data[ctx].texture_data[texture_index].source;
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var obj = window.webgl.data[ctx].texture_data[texture_index];
 
     this._container.clearAndRender(
       ['div',
         ['p',"Texture" + texture_index ],
-        ['p', "texture_wrap_s: " + texture_wrap_s],
-        ['p', "texture_wrap_t: " + texture_wrap_t],
-        ['p', "texture_min_filter: " + texture_min_filter],
-        ['p', "texture_mag_filter: " + texture_mag_filter],
-        ['p', "Source : " + source],
-        ['img', 'src',  img ],
+        ['p',"Element Type: " + obj.element_type],
+        ['p', "texture_wrap_s: " + obj.texture_wrap_s],
+        ['p', "texture_wrap_t: " + obj.texture_wrap_t],
+        ['p', "texture_min_filter: " + obj.texture_min_filter],
+        ['p', "texture_mag_filter: " + obj.texture_mag_filter],
+        ['p', "Source : " + obj.source],
+        ['img', 'src',  obj.img ],
         'class', 'info-box'
       ]
     );
