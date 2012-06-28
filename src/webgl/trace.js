@@ -7,19 +7,16 @@ window.cls || (window.cls = {});
  */
 cls.WebGLTrace = function()
 {
-  this._current_context = null;
-
   // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
-  this._send_trace_request = function(ctx_id)
+  this.send_trace_request = function(ctx_id)
   {
-    this._current_context = ctx_id;
     window.webgl.interfaces[ctx_id].request_trace();
   };
 
-  this._on_trace_complete = function(msg)
+  var on_trace_complete = function(msg)
   {
     var rt_id = msg.runtime_id;
-    var ctx_id = this._current_context;
+    var ctx_id = window.webgl.canvas_contexts[msg.object_id];
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
     var func = window.webgl.interfaces[ctx_id].get_trace;
     var scoper = new cls.Scoper(msg.runtime_id, this._finalize_trace, this, [rt_id, ctx_id]);
@@ -99,7 +96,7 @@ cls.WebGLTrace = function()
   // ---------------------------------------------------------------------------
 
   window.host_tabs.activeTab.addEventListener("webgl-trace-completed",
-      this._on_trace_complete.bind(this), false, false);
+      on_trace_complete.bind(this), false, false);
 
   /**
    * Used to store a single function call in a frame trace.
