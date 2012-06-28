@@ -70,7 +70,7 @@ cls.WebGLTextureView = function(id, name, container_class)
  
     for (i=0; i < ids.length; i++)
     {
-      tbl_data.push({"texture" : "Texture" + ids[i].id});
+      tbl_data.push({"texture" : "Texture" + ids[i].id, id : ids[i].id});
     }
     this._table.set_data(tbl_data);
     this._container.clearAndRender(this._table.render()); 
@@ -84,13 +84,10 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._on_table_click = function(evt, target)
   {
-    var rid = target.getAttribute("data-object-id");
-    // TODO fix this and make nice
-    if (rid !== "Textureundefined")
-    {
-      var ctx = window['cst-selects']['context-select'].get_selected_context();
-      window.webgl.request_texture_data(ctx, rid);
-    }
+    var tid = Number(target.getAttribute("data-object-id"));
+
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    window.webgl.request_texture_data(ctx, tid);
   };
 
   this._on_context_change = function(ctx)
@@ -135,7 +132,7 @@ cls.WebGLTextureView = function(id, name, container_class)
   this.tabledef = {
   handler: "webgl-texture-table", 
   column_order: ["texture"],
-  idgetter: function(res) { return String(res.texture) },
+  idgetter: function(res) { return String(res.id); },
     columns: {
       texture: {
         label: "Texture",

@@ -55,72 +55,6 @@ cls.WebGL.RPCs.call_function = function()
   return f();
 };
 
-// TODO review this! Mapping on just a string? loose.
-cls.WebGL.RPCs.get_texture_as_data = function()
-{
-  var texture_identifier = "URL";
-  var i;
-  var target_texture_index = undefined;
-  var element;
-  var canvas;
-  var canvas_ctx;
-
-  for (i=0; i<handler.textures.length; i++)
-  {
-    if(("Texture"+i) === texture_identifier)
-    {
-      target_texture_index = i;
-    }
-  }
-  if (target_texture_index === undefined)
-  {     
-    return;
-  }
-  obj = handler.textures[target_texture_index];
-  element = obj.object;
-  
-  // TODO Must handle every type of element.
-  if (element instanceof HTMLImageElement)
-  {
-    canvas = document.createElement("canvas");
-    canvas.height = element.height;
-    canvas.width = element.width;  
- 
-    canvas_ctx = canvas.getContext("2d");
-    canvas_ctx.drawImage(element, 0, 0);
-    obj.img = canvas.toDataURL("image/png");
-    obj.source = element.src;
-  }
-  else if (element instanceof HTMLCanvasElement)
-  {
-    console.log("canvas");
-    obj.img = element.toDataURL("image/png");
-  }
-  else if (element instanceof HTMLVideoElement)
-  {
-    console.log("WebGLDebugger has no support for Video Textures");
-    //obj.img = "No support for HTMLVideoElements";
-  }
-  else if (element instanceof ImageData)
-  {
-    canvas = document.createElement("canvas");
-    canvas.height = element.height;
-    canvas.width = element.width;
-
-    canvas_ctx = canvas.getContext("2d");
-    canvas_ctx.putImageData(element, 0, 0);
-    
-    obj.img = canvas.toDataURL("image/png");
-  }
-  else
-  {
-    console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
-  }
-
-  return obj;
-};
-
-
 
 cls.WebGL.RPCs.injection = function () {
   // Used to determine which canvas maps to which handler.
@@ -339,43 +273,47 @@ cls.WebGL.RPCs.injection = function () {
       var texture_container_object = args[args.length -1];
       if (texture_container_object === null)  //TODO improve
         return;
-      var binded_texture = gl.getParameter(gl["TEXTURE_BINDING_2D"]);
-      var i = 0;    
-      var texture_exist = false; // If false by end, the texture is not
-                                 // created and there is an error.
+      var bound_texture = gl.getParameter(gl.TEXTURE_BINDING_2D);
 
-      for (i=0; i<this.textures.length; i++)
+      for (var i=0; i<this.textures.length; i++)
       {
-        if (this.textures[i].texture === binded_texture)
+        if (this.textures[i].texture === bound_texture)
         {
-          this.textures[i].id = i;
-          this.textures[i].object = texture_container_object;
-          this.textures[i].type = texture_container_object.toString();
-          this.textures[i].texture_wrap_s =
-              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_S"]);
-              // TODO this is wrong parameter! FIX!
-          this.textures[i].texture_wrap_t =
-              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_WRAP_T"]);
-              // TODO this is wrong parameter! FIX!
-          this.textures[i].texture_min_filter =
-              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MIN_FILTER"]);
-              // TODO this is wrong parameter! FIX!
-          this.textures[i].texture_mag_filter = 
-              gl.getTexParameter(gl["TEXTURE_2D"], gl["TEXTURE_MAG_FILTER"]);
+          var texture = {
+            id : i,
+            texture : bound_texture,
+            object : texture_container_object,
+            type : texture_container_object.toString(),
+            // TODO this is wrong parameter! FIX!
+            texture_wrap_s : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S),
+            texture_wrap_t : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T),
+            texture_min_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER),
+            texture_mag_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER),
+          };
+
+          texture.get_data = this.get_texture_data.bind(texture);
           // TODO this is wrong parameter! FIX!
           // TODO get real parameters
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
-          texture_exist = true;
+
+          this.textures[i] = texture;
+          return;
         }
       }
-      if (!texture_exist)
-      {
-        console.log("ERROR in WebGL, requested texture doesn't exist");
-      }
+
+      console.log("ERROR in WebGL, requested texture doesn't exist");
     };
     innerFuns.texSubImage2D = function(result, args)
     {
       //TODO
+    };
+    innerFuns.texParameteri = function(result, args)
+    {
+      // TODO
+    };
+    innerFuns.texParameterf = function(result, args)
+    {
+      // TODO
     };
     innerFuns.createProgram = function(result, args)
     {
@@ -882,6 +820,54 @@ cls.WebGL.RPCs.injection = function () {
           }
         }
       }
+    };
+
+    /* Calculates texture data in a scope transission friendly way.
+     * This function is never bound to the Handler object, but a texture object,
+     * thus "this" refers to that object.
+     */
+    this.get_texture_data = function ()
+    {
+      var element = this.object;
+
+      // TODO Must handle every type of element.
+      if (element instanceof HTMLImageElement)
+      {
+        var canvas = document.createElement("canvas");
+        canvas.height = element.height;
+        canvas.width = element.width;  
+     
+        var canvas_ctx = canvas.getContext("2d");
+        canvas_ctx.drawImage(element, 0, 0);
+        this.img = canvas.toDataURL("image/png");
+        this.source = element.src;
+      }
+      else if (element instanceof HTMLCanvasElement)
+      {
+        this.img = element.toDataURL("image/png");
+      }
+      else if (element instanceof HTMLVideoElement)
+      {
+        console.log("WebGLDebugger has no support for Video Textures");
+        //obj.img = "No support for HTMLVideoElements";
+      }
+      else if (element instanceof ImageData)
+      {
+        var canvas = document.createElement("canvas");
+        canvas.height = element.height;
+        canvas.width = element.width;
+
+        var canvas_ctx = canvas.getContext("2d");
+        canvas_ctx.putImageData(element, 0, 0);
+        
+        this.img = canvas.toDataURL("image/png");
+      }
+      else
+      {
+        console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + obj.toString()); 
+      }
+
+      return this;
     };
 
     /* Get non-state specific program information

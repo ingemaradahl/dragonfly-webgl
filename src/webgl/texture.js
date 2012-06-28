@@ -6,59 +6,56 @@ cls.WebGLTexture = function ()
 {
   this._send_texture_query = function(ctx_id)
   {
+    var runtime_id;
+
     var finalize = function(texture_data)
     {
       if (texture_data.length > 0)
       {
-        window.webgl.data[ctx_id].texture_container = texture_data;
+        window.webgl.data[ctx_id].texture_container = texture_data.map(function (t) {
+          t.get_data = { object_id : t.get_data.object_id, runtime_id : runtime_id }
+          return t;
+        });
         messages.post('webgl-new-texture-list');
       }
     };
 
     var scoper = new WebGLUtils.Scoperer(webgl.interfaces[ctx_id].get_texture_names, finalize, this);
+    runtime_id = scoper.runtime_id;
     scoper.set_max_depth(2);
     scoper.set_object_action(function () { return cls.Scoper.ACTIONS.EXAMINE; });
     scoper.exec();
   };
 
+  this.resolve_texture = function(ctx_id, texture_identifier)
+  {
+    var textures = window.webgl.data[ctx_id].texture_container;
+    for (var i=0; i<textures.length; i++)
+    {
+      if (textures[i].id === texture_identifier)
+      {
+        return textures[i];
+      }
+    }
+
+    return null;
+  };
+
 
   // Retrieves the image data of a choosen texture.
-
-  this._get_texture_data = function(rt_id, ctx_id, texture_identifier)
+  this._get_texture_data = function(ctx_id, texture_identifier)
   {
-    // TODO: Temporarily disable this function awaiting better data resolving
-    return;
+    var texture = this.resolve_texture(ctx_id, texture_identifier);
 
-    var script =
-      cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_texture_as_data).replace(/URL/,texture_identifier);
-    // TODO replace is not very nice
+    var finalize = function (data)
+    {
+      window.webgl.data[ctx_id].texture_data[data.id] = data;
+      messages.post('webgl-new-texture-data', { id : data.id });
+    };
 
-    var callback = window.WebGLUtils.extract_array_callback(
-        this._finalize_texture_data_query,
-        null,
-        true);
-    var tag = tagManager.set_callback(
-        this,
-        window.WebGLUtils.examine_eval_callback(callback, null),
-        [rt_id, ctx_id]);
-
-    window.services["ecmascript-debugger"].requestEval(tag,
-        [rt_id, 0, 0, script, [["handler", ctx_id]]]);
+    var scoper = new WebGLUtils.Scoperer(texture.get_data, finalize, this);
+    scoper.set_max_depth(2);
+    scoper.set_object_action(function () { return cls.Scoper.ACTIONS.EXAMINE; });
+    scoper.exec();
   };
-
-  this._finalize_texture_data_query = function(data, rt_id, ctx_id)
-  {
-    data = data[0];
-
-    window.webgl.data[ctx_id].texture_data[data.id] = data;
-    messages.post('webgl-new-texture-data',
-        { "id" : data.id });
-  };
-
-  this._error = function(status, message)
-  {
-    messages.post('webgl-error', {"origin": "state", status : status, message
-      :message});
-  };
-
 };

@@ -80,12 +80,12 @@ cls.WebGL.WebGLDebugger = function ()
   };
 
   // Request for one texture image data string.
-  this.request_texture_data = function(ctx, texture_url)
+  this.request_texture_data = function(ctx, texture_id)
   {
     if (this.available())
     {
       ctx = (ctx || this.contexts[0]);
-      this.texture._get_texture_data(this.runtime_id, ctx, texture_url);
+      this.texture._get_texture_data(ctx, texture_id);
     }
   };
 
