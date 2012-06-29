@@ -415,6 +415,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./ecma-debugger/watches/propertyeditor.js"/>
 <script src="./ecma-debugger/jssourcetooltip.js"/>
 
+<script src="./webgl/webgl_templates.js"/>
 <script src="./webgl/webgl.js"/>
 <script src="./webgl/data.js"/>
 <script src="./webgl/scoper.js"/>

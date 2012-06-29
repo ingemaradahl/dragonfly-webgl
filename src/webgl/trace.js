@@ -7,112 +7,86 @@ window.cls || (window.cls = {});
  */
 cls.WebGLTrace = function()
 {
-  this._current_context = null;
-
-  // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's id
+  // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
   this.send_trace_request = function(ctx_id)
   {
     window.webgl.interfaces[ctx_id].request_trace();
   };
 
-  this._on_trace_complete = function(msg)
+  var on_trace_complete = function(msg)
   {
     var rt_id = msg.runtime_id;
-    var ctx_id = this._current_context;
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_trace);
-    var tag = tagManager.set_callback(this,
-        window.WebGLUtils.examine_array_eval_callback(this._examine_trace_complete, null, window.WebGLUtils.EXTRACT_ARRAY.EXTRACT, true),
-        [rt_id, ctx_id]);
-    window.services["ecmascript-debugger"].requestEval(tag, [rt_id, 0, 0, script, [["handler", ctx_id]]]);
+    var ctx_id = window.webgl.canvas_contexts[msg.object_id];
+    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
+    var func = window.webgl.interfaces[ctx_id].get_trace;
+    var scoper = new cls.Scoper(msg.runtime_id, this._finalize_trace, this, [rt_id, ctx_id]);
+    scoper.set_object_action(function(key)
+        {
+          return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
+        });
+    scoper.set_max_depth(5);
+    scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
+    scoper.eval_script(script, [["f", func.object_id]]);
   };
 
-  this._examine_trace_complete = function(data, rt_id, ctx_id, root_object_id)
+  this._finalize_trace = function(traces, rt_id, ctx_id)
   {
-    for (var i = 0; i < data.length; i++) {
-      var trace = data[i];
+    for (var i = 0; i < traces.length; i++) {
+      var trace = traces[i];
+      var data = [];
+      var arg_obj_re = /@([0-9]+)/;
+      for (var j = 0; j < trace.calls.length; j++) {
+        var call = trace.calls[j];
 
-      // TODO release the root object when all traces have been received.
-      window.WebGLUtils.examine_array(this, trace, this._examine_trace_object, [rt_id, ctx_id, i], window.WebGLUtils.EXTRACT_ARRAY.EXTRACT);
-    }
-  };
+        // WebGL Function call
+        var parts = call.split("|");
+        if (parts.length < 3)
+        {
+          opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
+              "A trace entry had incorrect data: [" + parts.join(", ") + "]");
+          continue;
+        }
+        var function_name = parts[0];
+        var error_code = Number(parts[1]);
+        var result = parts[2];
+        var args = parts.slice(3);
 
-  this._examine_trace_object = function(data, rt_id, ctx_id, trace_num)
-  {
-    var trace = {
-      calls: data[0].map(function(x){return x[2];}),
-      objects: data[1],
-      snapshots: data[2]
-    };
-    trace.calls.pop();
+        for (var k = 0; k < args.length; k++) {
+          var arg = args[k];
+          if (arg_obj_re.test(arg))
+          {
+            var index = arg_obj_re.exec(arg)[1];
+            args[k] = new TraceArgument(trace.objects[index], ctx_id);
+          }
+          else if (!isNaN(arg))
+          {
+            args[k] = Number(arg);
+          }
+        }
 
-    window.WebGLUtils.examine_array(this, trace.objects,
-        this._finalize_trace_object, [rt_id, ctx_id, trace_num, trace], window.WebGLUtils.EXTRACT_ARRAY.EXTRACT);
-  };
+        data.push(new TraceEntry(function_name, error_code, result, args));
+      }
 
-  this._finalize_trace_object = function(trace_objs, rt_id, ctx_id, trace_num, trace)
-  {
-    var data = [];
-    var arg_obj_re = /@([0-9]+)/;
-    for (var i = 0; i < trace.calls.length; i++) {
-      var call = trace.calls[i];
+      window.webgl.data[ctx_id].add_trace(data);
 
-      // WebGL Function call
-      var parts = call.split("|");
-      if (parts.length < 3)
+      for (var l = 0; l < trace.fbo_snapshots.length; l++)
       {
-        opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-            "A trace entry had incorrect data: [" + parts.join(", ") + "]");
-        continue;
-      }
-      var function_name = parts[0];
-      var error_code = Number(parts[1]);
-      var result = parts[2];
-      var args = parts.slice(3);
+        var snapshot = trace.fbo_snapshots[l];
+        snapshot.pixels_object = snapshot.pixels.object_id;
+        snapshot.pixels = null;
+        snapshot.downloading = false;
 
-      for (var j = 0; j < args.length; j++) {
-        var arg = args[j];
-        if (arg_obj_re.test(arg))
-        {
-          var index = arg_obj_re.exec(arg)[1];
-          args[j] = this._format_trace_object(trace_objs[index]);
-        }
-        else if (!isNaN(arg))
-        {
-          args[j] = Number(arg);
-        }
+        window.webgl.data[ctx_id].add_snapshot(snapshot);
       }
 
-      data.push(new TraceEntry(function_name, error_code, result, args));
-    }
-
-    window.WebGLUtils.examine_array(this, trace.snapshots,
-        window.WebGLUtils.extract_array_callback(this._examine_snapshots_complete, null, true), [rt_id, ctx_id], false);
-
-    window.webgl.data[ctx_id].add_trace(data);
-    messages.post("webgl-new-trace", data);
-  };
-
-  this._format_trace_object = function(obj)
-  {
-    return new TraceArg(obj[0][3][4]); // TODO Temporary
-  };
-
-  this._examine_snapshots_complete = function(data, rt_id, ctx_id)
-  {
-    for (var i = 0; i < data.length; i++)
-    {
-      var snapshot = data[i];
-      snapshot.pixels_object = snapshot.pixels.object_id;
-      snapshot.pixels = null;
-      snapshot.downloading = false;
-
-      window.webgl.data[ctx_id].add_snapshot(snapshot);
+      messages.post("webgl-new-trace", data);
     }
   };
+
   // ---------------------------------------------------------------------------
 
   window.host_tabs.activeTab.addEventListener("webgl-trace-completed",
-      this._on_trace_complete.bind(this), false, false);
+      on_trace_complete.bind(this), false, false);
 
   /**
    * Used to store a single function call in a frame trace.
@@ -127,16 +101,50 @@ cls.WebGLTrace = function()
     this.args = args;
   }
 
-  function TraceArg(display, link)
-  {
-    this.display = display;
-  }
-
   /**
-   * @param {Boolean} html true if html tags should be included in the string.
+   * An argument to a trace call that is an object.
+   * Sets properties that is used when the argument is displayed.
    */
-  TraceArg.prototype.generate_string = function(html)
+  function TraceArgument(object, ctx_id)
   {
-    return this.display;
-  };
+    for (var key in object)
+    {
+      if (object.hasOwnProperty(key)) this[key] = object[key];
+    }
+
+    switch (this.type)
+    {
+      case "WebGLBuffer":
+        this.buffer = window.webgl.data[ctx_id].buffers[this.buffer_index];
+        this.text = "Buffer " + String(this.buffer.index);
+        this.action = function()
+        {
+          window.webgl.buffer.get_buffer_data(window.webgl.runtime_id, ctx_id, this.buffer_index, this.buffer.object_id);
+        };
+        this.tab = "buffer";
+        break;
+      case "WebGLTexture":
+        this.texture = window.webgl.data[ctx_id].texture_container[this.texture_index];
+        if (this.texture == null){ // TODO temporary until texture is rebuilt
+          this.text = "Texture " + String(this.texture_index) + " (not loaded)";
+          return;
+        }
+        this.text = "Texture " + String(this.texture.index);
+        this.action = function()
+        {
+          window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
+        };
+        this.tab = "texture";
+        break;
+      default:
+        if (this.data && typeof(this.data) !== "function")
+        {
+          this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
+        }
+        else
+        {
+          this.text = this.type;
+        }
+    }
+  }
 };

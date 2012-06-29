@@ -31,7 +31,7 @@ cls.WebGL.RPCs.query_test = function()
 };
 
 /**
- * Retrieves the handler interface from a canvas after a WebGL context have been 
+ * Retrieves the handler interface from a canvas after a WebGL context have been
  * created. canvas and canvas_map should be defined by Dragonfly.
  */
 cls.WebGL.RPCs.get_handler = function()
@@ -81,7 +81,7 @@ cls.WebGL.RPCs.injection = function () {
     // We will keep all native functions and enumerators in this object
     var gl = {};
 
-    var handler = new Handler(this, gl);
+    var handler = new Handler(this, gl, canvas);
     canvas_map.push({canvas:canvas, handler:handler});
 
     // Stores the oldest error that have occured since last call to getError
@@ -125,7 +125,7 @@ cls.WebGL.RPCs.injection = function () {
             if (typeof(arguments[i]) === "object" && arguments[i] !== null)
             {
               var obj = arguments[i];
-              var trace_obj = format_object(obj);
+              var trace_obj = make_trace_argument_object(obj);
               var trace_obj_index = handler.trace.objects.push(trace_obj) - 1;
               args.push("@" + String(trace_obj_index));
             }
@@ -150,38 +150,50 @@ cls.WebGL.RPCs.injection = function () {
       };
     }
 
-    var format_regexp = /^\[object (\w)\]$/;
-    function format_object(obj, args)
+
+    /**
+     * Pairs a trace argument with a WebGL object.
+     * Creates a object for easy pairing on the Dragonfly side.
+     */
+    var object_type_regexp = /^\[object (.*?)\]$/;
+    function make_trace_argument_object(obj, args)
     {
-      var display;
       var type = obj.constructor.name;
-      if (type === "Function.prototype") type = obj.toString().replace(format_regexp, "$1");
+      if (type === "Function.prototype")
+      {
+        var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
+        if (re != null && re[1] != null) type = re[1];
+      }
       var target = obj;
+
+      var arg = {};
+      arg.type = type;
       if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
       {
-        var ls = Array.prototype.concat.call([], obj);
-        var trace_obj = new TraceObject(target, type);
-        trace_obj.data = ls;
-        return trace_obj;
+        arg.data = new (eval(type))(obj);
+        // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
+        //arg.data = obj;
       }
       else if (obj instanceof WebGLUniformLocation)
       {
-        var program = handler.lookup_uniform(obj);
-        // TODO enable below when we gathers info about shaders
-        // display = handler.lookup_uniform(obj).name;
+        var uniform = handler.lookup_uniform(obj);
       }
       else if (obj instanceof WebGLBuffer)
       {
         var buffer = handler.lookup_buffer(obj);
-        target = buffer.buffer;
+        arg.buffer_index = buffer.index;
       }
       else if (obj instanceof WebGLProgram)
       {
         var program = handler.lookup_program(obj);
         target = program.index;
       }
-
-      return new TraceObject(target, type, display);
+      else if (obj instanceof WebGLTexture)
+      {
+        var texture = handler.lookup_texture(obj);
+        arg.texture_index = texture.index;
+      }
+      return arg;
     }
 
     var innerFuns = {};
@@ -258,10 +270,10 @@ cls.WebGL.RPCs.injection = function () {
       var texture_map_unit = {};
       texture_map_unit.texture = result;
       //console.log("created");
-      this.textures.push(texture_map_unit);
-
+      var index = this.textures.push(texture_map_unit);
+      texture_map_unit.index = index - 1;
     };
-  
+
     innerFuns.deleteTexture = function(result, args)
     {
       // TODO delete texture from textures[]
@@ -301,7 +313,7 @@ cls.WebGL.RPCs.injection = function () {
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
 
           // We need to save some extra information about the call when an
-          // ArrayBufferView is used.  
+          // ArrayBufferView is used.
           if (args.length === 9)
           {
             texture.internalFormat = args[2];
@@ -333,9 +345,9 @@ cls.WebGL.RPCs.injection = function () {
     {
       this.programs.push({
         program : result,
-        index : this.programs.length, 
-        shaders : [], 
-        attributes : {}, 
+        index : this.programs.length,
+        shaders : [],
+        attributes : {},
         uniforms : []
       });
     };
@@ -349,10 +361,10 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.createShader = function(result, args)
     {
-      this.shaders.push({ 
-        shader : result, 
+      this.shaders.push({
+        shader : result,
         index : this.shaders.length,
-        type : args[0], 
+        type : args[0],
         src : ""
       });
     };
@@ -394,7 +406,7 @@ cls.WebGL.RPCs.injection = function () {
           name : active_uniform.name,
           index : i,
           loc  : loc,
-          type : active_uniform.type, 
+          type : active_uniform.type,
           size : active_uniform.size,
           program_idx : program_obj.index
         });
@@ -408,10 +420,10 @@ cls.WebGL.RPCs.injection = function () {
       {
         var active_attribute = gl.getActiveAttrib(program, a);
         var loc = gl.getAttribLocation(program, active_attribute.name);
-        attributes.push({ 
+        attributes.push({
           name : active_attribute.name,
           loc  : loc,
-          type : active_attribute.type, 
+          type : active_attribute.type,
           size : active_attribute.size
         });
       }
@@ -438,8 +450,8 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      height = Math.min(height, 128);
-      width = Math.min(width, 128);
+      height = Math.min(height, 200);
+      width = Math.min(width, 200);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
@@ -536,7 +548,7 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Handles communication between the wrapped context and Dragonfly.
    */
-  function Handler(context, gl)
+  function Handler(context, gl, canvas)
   {
     this.gl = gl;
     this.context = context;
@@ -558,8 +570,8 @@ cls.WebGL.RPCs.injection = function () {
     this.textures_update = true;
 
     this.events = {
-      "buffer-created": new MessageQueue("webgl-buffer-created"),
-      "trace-completed": new MessageQueue("webgl-trace-completed")
+      "buffer-created": new MessageQueue("webgl-buffer-created", canvas),
+      "trace-completed": new MessageQueue("webgl-trace-completed", canvas)
     };
 
     /* Interface definition between DF and the Context Handler, only the
@@ -573,7 +585,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.request_trace = function()
     {
-      this.capturing_frame = true;
+      this.capture_next_frame = true;
     };
     this._interface.request_trace = this.request_trace.bind(this);
 
@@ -581,7 +593,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       return this.events["trace-completed"].get();
     };
-    this._interface.get_trace = this.request_trace.bind(this);
+    this._interface.get_trace = this.get_trace.bind(this);
 
     this.get_state = function()
     {
@@ -796,6 +808,17 @@ cls.WebGL.RPCs.injection = function () {
       return null;
     };
 
+    this.lookup_texture = function(texture)
+    {
+      for (var i = 0; i < this.textures.length; i++) {
+        if (this.textures[i].texture === texture)
+        {
+          return this.textures[i];
+        }
+      }
+      return null;
+    };
+
     this.lookup_program = function(program)
     {
       for (var i=0; i<this.programs.length; i++)
@@ -848,8 +871,8 @@ cls.WebGL.RPCs.injection = function () {
       {
         var canvas = document.createElement("canvas");
         canvas.height = element.height;
-        canvas.width = element.width;  
-     
+        canvas.width = element.width;
+
         var canvas_ctx = canvas.getContext("2d");
         canvas_ctx.drawImage(element, 0, 0);
         this.img = canvas.toDataURL("image/png");
@@ -874,7 +897,7 @@ cls.WebGL.RPCs.injection = function () {
 
         var canvas_ctx = canvas.getContext("2d");
         canvas_ctx.putImageData(element, 0, 0);
-        
+
         this.img = canvas.toDataURL("image/png");
         this.element_type = "ImageData";
       }
@@ -886,7 +909,7 @@ cls.WebGL.RPCs.injection = function () {
         var canvas_ctx = canvas.getContext("2d");
 
         var imgData = canvas_ctx.createImageData(this.width, this.height);
-        
+
         var pix = imgData.data;
         var format;
 
@@ -901,7 +924,7 @@ cls.WebGL.RPCs.injection = function () {
             pix[i+3] = 255; // Set alpha channel to opaque
             j+=3;
           }
-        }    
+        }
         else if (this.format === gl.RGBA)
         {
           for (var i=0; i<pix.length; i+=4)
@@ -918,7 +941,7 @@ cls.WebGL.RPCs.injection = function () {
         }
 
         canvas_ctx.putImageData(imgData, 0, 0);
-        this.img = canvas.toDataURL("image/png"); 
+        this.img = canvas.toDataURL("image/png");
         this.element_type = "ArrayBufferView";
       }
       else
@@ -955,7 +978,7 @@ cls.WebGL.RPCs.injection = function () {
 
       var program_obj = this.lookup_program(program);
 
-      var state = 
+      var state =
       {
         program : program_obj.index,
         attributes : [],
@@ -994,14 +1017,15 @@ cls.WebGL.RPCs.injection = function () {
 
       return state;
     };
-  };
+  }
 
   /**
    * Queues messages for pickup by Dragonfly.
    */
-  function MessageQueue(name, ready)
+  function MessageQueue(name, source, ready)
   {
     this.name = name;
+    this.source = source;
     this.ready = Boolean(ready);
     this.running = false;
     this.messages = [];
@@ -1011,7 +1035,7 @@ cls.WebGL.RPCs.injection = function () {
     this.messages.push(message);
     if (!this.running && this.ready)
     {
-      document.dispatchEvent(new Event(this.name));
+      this.source.dispatchEvent(new Event(this.name));
       this.running = true;
     }
   };
@@ -1038,13 +1062,6 @@ cls.WebGL.RPCs.injection = function () {
     this.objects = [];
     this.fbo_snapshots = [];
     this.program_states = [];
-  }
-
-  function TraceObject(target, type, display)
-  {
-    this.target = target;
-    this.type = type;
-    if (display !== undefined) this.display = display;
   }
 
   return canvas_map;

@@ -11,6 +11,9 @@ cls.WebGL.WebGLDebugger = function ()
   /* Context IDs for wrapped contexts. NOT an object id */
   this.contexts = [];
 
+  /* Map from canvas object ids to their context (handler) object id */
+  this.canvas_contexts = {};
+
   /* Interface functions to the context handler */
   this.interfaces = {};
 
@@ -53,7 +56,6 @@ cls.WebGL.WebGLDebugger = function ()
     this.injected = false;
     this.runtime_id = -1;
     this.contexts = [];
-    this.data = {};
 
     messages.post('webgl-clear');
   };
@@ -105,7 +107,7 @@ cls.WebGL.WebGLDebugger = function ()
    */
   this.request_trace = function(context_id)
   {
-    this.interfaces[context_id].request_trace();
+    this.trace.send_trace_request(context_id);
   };
 
   this.request_buffer_data = function(context_object_id, buffer_index)
@@ -134,11 +136,12 @@ cls.WebGL.WebGLDebugger = function ()
     var finalize = (function (handler_interface, context_id)
     {
       this.contexts.push(context_id);
+      this.canvas_contexts[message.object_id] = context_id;
       this.interfaces[context_id] = handler_interface;
       this.data[context_id] = new cls.WebGLData(context_id);
 
       // Tell the target context that the debugger is ready.
-      this.interfaces[context_id].debugger_ready()
+      this.interfaces[context_id].debugger_ready();
 
       messages.post('webgl-new-context', context_id);
     }).bind(this);
@@ -155,7 +158,7 @@ cls.WebGL.WebGLDebugger = function ()
               [runtime_id, 0, 0, script, [["f", function_id]]]
           );
         };
-    }
+    };
 
     var revive_interface = function (handler_interface, runtime_id)
     {
@@ -234,7 +237,7 @@ cls.WebGL.WebGLDebugger = function ()
         shaders["texture-fs"]
       );
 
-      gl.useProgram(program)
+      gl.useProgram(program);
 
       program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
       gl.enableVertexAttribArray(program.positionAttrib);
@@ -264,12 +267,12 @@ cls.WebGL.WebGLDebugger = function ()
       request.overrideMimeType('text/plain');
       request.onreadystatechange = (function()
       {
-        if (request.status == 404)
+        if (request.status === 404)
         {
           opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
               "failed downloading shaders, 404 " + src + " not found");
         }
-        else if (request.status == 200 && request.readyState == 4)
+        else if (request.status === 200 && request.readyState === 4)
         {
           this.shaders[shader_id] = {
             "src": request.responseText,
@@ -278,7 +281,7 @@ cls.WebGL.WebGLDebugger = function ()
           };
 
           loaded_shaders++;
-          if (loaded_shaders == num_shaders)
+          if (loaded_shaders === num_shaders)
           {
             callback();
           }

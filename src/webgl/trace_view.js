@@ -12,6 +12,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   this._state = null;
   this._container = null;
   this._current_context = null;
+  this._current_trace = null;
 
   this.createView = function(container)
   {
@@ -33,8 +34,9 @@ cls.WebGLTraceView = function(id, name, container_class)
     var trace;
     if (ctx_id != null && (trace = window.webgl.data[ctx_id].get_latest_trace()) != null)
     {
-      this._table.set_data(this._format_trace_table(trace));
-      this._container.clearAndRender(this._table.render());
+      this._current_trace = trace;
+      var template = window.templates.webgl.trace_table(trace, this.id);
+      this._container.clearAndRender(template);
     }
     else if (window.webgl.available())
     {
@@ -67,9 +69,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_new_trace = function(trace)
   {
-    this._table.set_data(this._format_trace_table(trace));
-    this._trace_data = trace;
-    this._container.clearAndRender(this._table.render());
+    this._render();
   };
 
   this._on_context_change = function(ctx_id)
@@ -98,12 +98,25 @@ cls.WebGLTraceView = function(id, name, container_class)
     return tbl_data;
   };
 
-  this._on_table_click = function(evt, target)
+  this._on_row_click = function(evt, target)
   {
-    var obj_id = target["data-object-id"];
-    var call_no = parseInt(obj_id.number)-1; // Indexing in table starts with 1
+    var call_number = target["data-call-number"];
 
-    this.display_snapshot_by_call(call_no);
+    this.display_snapshot_by_call(call_number);
+  };
+
+  this._on_argument_click = function(evt, target)
+  {
+    var arg = this._current_trace[target["data-call-number"]].args[target["data-argument-number"]];
+    if (arg.tab)
+    {
+      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + arg.tab);
+    }
+
+    if (arg.action)
+    {
+      arg.action();
+    }
   };
 
   this.display_snapshot_by_call = function(call)
@@ -164,7 +177,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this.tabledef = {
     column_order: ["number", "call"],
-    handler: "webgl-trace-table", 
+    handler: "webgl-trace-table",
     idgetter: function(res) { return res; },
     columns: {
       number: {
@@ -180,7 +193,8 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
   eh.click["refresh-webgl-trace"] = this._on_refresh.bind(this);
-  eh.click["webgl-trace-table"] = this._on_table_click.bind(this);
+  eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
+  eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
   messages.addListener('webgl-new-trace', this._on_new_trace.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
@@ -211,7 +225,6 @@ cls.WebGLTraceView.create_ui_widgets = function()
       }
     ]
   );
-}
+};
 
 cls.WebGLTraceView.prototype = ViewBase;
-
