@@ -60,6 +60,49 @@ cls.WebGLProgramView.prototype = ViewBase;
 
 cls.WebGLProgramView.create_ui_widgets = function()
 {
+  new ToolbarConfig(
+    'webgl_program',
+
+  //new CstSelectToolbarSettings
+  //(
+  //  'webgl_program',
+  //  [
+  //    'link',
+  //    'visited',
+  //    'hover',
+  //    'active',
+  //    'focus',
+  //    'selection'
+  //  ],
+  //  'webgl_items'
+  //);
+
+    [
+      {
+        handler: 'refresh-webgl-buffer',
+        title: "Refresh buffers",
+        icon: 'reload-webgl-buffer'
+      }
+    ],
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-context',
+        title: "Select WebGL context", // TODO
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['context-select'].getTemplate()
+      },
+      {
+        handler: 'select-webgl-context',
+        title: "Select trace", // TODO
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['trace-select'].getTemplate()
+      }
+    ]
+  );
 
 };
 
