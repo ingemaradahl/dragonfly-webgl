@@ -909,30 +909,40 @@ cls.WebGL.RPCs.injection = function () {
         var canvas_ctx = canvas.getContext("2d");
 
         var imgData = canvas_ctx.createImageData(this.width, this.height);
-
+        var height = this.height;
+        var width = this.width;
         var pix = imgData.data;
         var format;
+        var alphaOffset=0;
 
+        // Flipping the image on the y-axis because 
+        // imgData is drawn from top left to right. 
+        // The UintArary is bottom left to right.
         if (this.format === gl.RGB)
         {
-          var j=0;
-          for (var i=0; i<pix.length; i+=4)
+          for (var i=0; i<height; i++)
           {
-            pix[i] = element[j];
-            pix[i+1] = element[j+1];
-            pix[i+2] = element[j+2];
-            pix[i+3] = 255; // Set alpha channel to opaque
-            j+=3;
+            for (var j=0; j<width*3; j += 3)
+            {   
+              pix[j+i*width*3+alphaOffset] = element[j+(height-1-i)*width*3];
+              pix[j+i*width*3+1+alphaOffset] = element[j+(height-1-i)*width*3+1];
+              pix[j+i*width*3+2+alphaOffset] = element[j+(height-1-i)*width*3+2];
+              pix[j+i*width*3+3+alphaOffset] = 255; // Set alpha channel to opaque
+              alphaOffset += 1;
+            }
           }
         }
         else if (this.format === gl.RGBA)
         {
-          for (var i=0; i<pix.length; i+=4)
+          for (var i=0; i<height; i++)
           {
-            pix[i] = element[j];
-            pix[i+1] = element[j+1];
-            pix[i+2] = element[j+2];
-            pix[i+3] = element[j+3];
+            for (var j=0; j<width*4; j += 4)
+            {
+              pix[j+i*width*4] = element[j+(height-1-i)*width*4];
+              pix[j+i*width*4+1] = element[j+(height-1-i)*width*4+1];
+              pix[j+i*width*4+2] = element[j+(height-1-i)*width*4+2];
+              pix[j+i*width*4+3] = element[j+(height-1-i)*width*4+3];
+            }
           }
         }
         else
