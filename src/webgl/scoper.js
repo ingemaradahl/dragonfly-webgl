@@ -6,6 +6,7 @@ window.cls || (window.cls = {});
  * Class that handles communication with Scope. Gives easy control of examination
  * of objects and takes care of the releasing of them as well. The default behavior
  * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
+ * TODO rebuild to not take the runtime_id in the constructor and set it in non released objects.
  */
 cls.Scoper = function(runtime_id, callback, callback_that, callback_arguments)
 {

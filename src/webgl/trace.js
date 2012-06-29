@@ -31,10 +31,11 @@ cls.WebGLTrace = function()
 
   this._finalize_trace = function(traces, rt_id, ctx_id)
   {
+    var object_index_regexp = /^@([0-9]+)$/;
     for (var i = 0; i < traces.length; i++) {
       var trace = traces[i];
-      var data = [];
-      var arg_obj_re = /@([0-9]+)/;
+
+      var trace_list = [];
       for (var j = 0; j < trace.calls.length; j++) {
         var call = trace.calls[j];
 
@@ -51,12 +52,13 @@ cls.WebGLTrace = function()
         var result = parts[2];
         var args = parts.slice(3);
 
+        // Revive the arguments
         for (var k = 0; k < args.length; k++) {
           var arg = args[k];
-          if (arg_obj_re.test(arg))
+          if (object_index_regexp.test(arg))
           {
-            var index = arg_obj_re.exec(arg)[1];
-            args[k] = new TraceArgument(trace.objects[index], ctx_id);
+            var index = object_index_regexp.exec(arg)[1];
+            args[k] = new LinkedObject(trace.objects[index], ctx_id);
           }
           else if (!isNaN(arg))
           {
@@ -64,10 +66,23 @@ cls.WebGLTrace = function()
           }
         }
 
-        data.push(new TraceEntry(function_name, error_code, result, args));
-      }
+        // Revive the result
+        if (result === "")
+        {
+          result = null;
+        }
+        else if (object_index_regexp.test(result))
+        {
+            var res_index = object_index_regexp.exec(result)[1];
+            result = new LinkedObject(trace.objects[res_index], ctx_id);
+        }
+        else if (!isNaN(result))
+        {
+          result = Number(result);
+        }
 
-      window.webgl.data[ctx_id].add_trace(data);
+        trace_list.push(new TraceEntry(function_name, error_code, result, args));
+      }
 
       for (var l = 0; l < trace.fbo_snapshots.length; l++)
       {
@@ -77,9 +92,12 @@ cls.WebGLTrace = function()
         snapshot.downloading = false;
 
         window.webgl.data[ctx_id].add_snapshot(snapshot);
+        trace_list[snapshot.call_idx].set_snapshot(snapshot);
       }
 
-      messages.post("webgl-new-trace", data);
+      window.webgl.data[ctx_id].add_trace(trace_list);
+
+      messages.post("webgl-new-trace", trace_list);
     }
   };
 
@@ -99,13 +117,21 @@ cls.WebGLTrace = function()
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
+
+    this.snapshot = null;
+    this.have_snapshot = false;
   }
 
+  TraceEntry.prototype.set_snapshot = function(snapshot)
+  {
+    this.snapshot = snapshot;
+    this.have_snapshot = true;
+  };
+
   /**
-   * An argument to a trace call that is an object.
-   * Sets properties that is used when the argument is displayed.
+   * Creates a object that can be used to link in the UI to a WebGL object.
    */
-  function TraceArgument(object, ctx_id)
+  function LinkedObject(object, ctx_id)
   {
     for (var key in object)
     {
@@ -125,7 +151,8 @@ cls.WebGLTrace = function()
         break;
       case "WebGLTexture":
         this.texture = window.webgl.data[ctx_id].texture_container[this.texture_index];
-        if (this.texture == null){ // TODO temporary until texture is rebuilt
+        if (this.texture == null)
+        { // TODO temporary until texture is rebuilt
           this.text = "Texture " + String(this.texture_index) + " (not loaded)";
           return;
         }
@@ -147,4 +174,17 @@ cls.WebGLTrace = function()
         }
     }
   }
+
+  LinkedObject.prototype.perform = function()
+  {
+    if (this.tab)
+    {
+      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + this.tab);
+    }
+
+    if (this.action)
+    {
+      this.action();
+    }
+  };
 };
