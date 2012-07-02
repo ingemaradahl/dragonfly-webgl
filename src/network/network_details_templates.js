@@ -9,7 +9,7 @@ templates.network_detail_row = function(wrap)
   return ["tr", ["td", wrap, "colspan", "2"]];
 };
 
-templates.network_log_details = function(ctx, selected, left_val)
+templates.network_log_details = function(entry, left_val)
 {
   return [
       "div", 
@@ -22,26 +22,24 @@ templates.network_log_details = function(ctx, selected, left_val)
           "class", "resize-request-detail",
           "handler", "resize-request-detail"
         ],
-        templates.network_log_detail(ctx, selected),
+        templates.network_log_detail(entry),
       "class", "network-details-container",
       "style", "left:" + left_val + "px"
     ];
 };
 
-templates.network_log_detail = function(ctx, selected)
+templates.network_log_detail = function(entry)
 {
-  var entry = ctx.get_entry_from_filtered(selected);
-  if (entry)
-  {
-    var responsecode = entry.responses.length && entry.responses.last.responsecode;
-    if (responsecode && responsecode in cls.ResourceUtil.http_status_codes)
-       responsecode = responsecode + " " + cls.ResourceUtil.http_status_codes[responsecode];
+  var responsecode = entry.responses.last && entry.responses.last.responsecode;
+  if (responsecode && responsecode in cls.ResourceUtil.http_status_codes)
+     responsecode = responsecode + " " + cls.ResourceUtil.http_status_codes[responsecode];
 
-    return ["div",
+  return (
+    ["div",
       ["table",
         ["tbody",
           ["tr",
-            ["th", ui_strings.S_HTTP_LABEL_URL + ":"], ["td", entry.human_url]
+            ["th", ui_strings.S_HTTP_LABEL_URL + ":"], ["td", entry.url]
           ],
           ["tr",
             ["th", ui_strings.S_HTTP_LABEL_METHOD + ":"],
@@ -58,18 +56,19 @@ templates.network_log_detail = function(ctx, selected)
         ],
         templates.request_details(entry),
         templates.network_request_body(entry),
-        entry.touched_network ? entry.responses.map(templates.network_response) : []
+        entry.responses.map(templates.network_response)
       ],
       "data-object-id", String(entry.id),
       "class", "request-details"
-    ];
-  }
+    ]
+  );
 };
 
 templates.network_response = function(response)
 {
   return [
-    templates.network_detail_row(["h2", ui_strings.S_NETWORK_REQUEST_DETAIL_RESPONSE_TITLE]),
+    response.logger_entry_touched_network ?
+      templates.network_detail_row(["h2", ui_strings.S_NETWORK_REQUEST_DETAIL_RESPONSE_TITLE]): [],
     templates.response_details(response),
     templates.network_response_body(response)
   ]
@@ -78,13 +77,16 @@ templates.network_response = function(response)
 templates.request_details = function(req)
 {
   var ret = [];
-  if (!req)
+  if (!req || req.urltype === cls.ResourceManager["1.2"].UrlLoad.URLType.DATA)
     return ret;
 
-  if (req.requestbody && req.requestbody.partList && req.requestbody.partList.length)
-    ret.push(templates.network_detail_row(["h2", ui_strings.S_NETWORK_MULTIPART_REQUEST_TITLE]));
-  else
-    ret.push(templates.network_detail_row(["h2", ui_strings.S_NETWORK_REQUEST_DETAIL_REQUEST_TITLE]));
+  if (req.touched_network)
+  {
+    if (req.requestbody && req.requestbody.partList && req.requestbody.partList.length)
+      ret.push(templates.network_detail_row(["h2", ui_strings.S_NETWORK_MULTIPART_REQUEST_TITLE]));
+    else
+      ret.push(templates.network_detail_row(["h2", ui_strings.S_NETWORK_REQUEST_DETAIL_REQUEST_TITLE]));
+  }
 
   var tbody = ["tbody"];
   if (req.is_finished && !req.touched_network)
@@ -137,7 +139,7 @@ templates.response_details = function(resp)
 templates.network_headers_list = function(headers, firstline)
 {
   var lis = headers.map(function(header) {
-      return ["tr", ["th", header.name], ["td", header.value], "data-spec", "http#" + header.name];
+      return ["tr", ["th", header.name + ":"], ["td", header.value], "data-spec", "http#" + header.name];
   });
 
   if (firstline)
@@ -226,7 +228,7 @@ templates.network_request_body = function(req)
   
   return [
            templates.network_detail_row(templates.network_body_seperator()),
-           ["tbody", ["tr", ["td", cont, "colspan", "2"]]]
+           ["tbody", cont]
          ];
 };
 
@@ -236,35 +238,21 @@ templates.network_response_body = function(resp)
   var ret = [templates.network_detail_row(templates.network_body_seperator())];
   var classname = "";
   if (resp.body_unavailable || 
-      !resp.responsebody && resp.unloaded)
+      !resp.responsebody && resp.is_unloaded)
   {
     classname = "network_info";
     ret.push(templates.network_detail_row(ui_strings.S_NETWORK_REQUEST_DETAIL_NO_RESPONSE_BODY));
   }
   else
   {
-    if (!resp.responsebody && !resp.logger_entry_is_finished)
+    if (!resp.responsebody)
     {
-      classname = "network_info";
-      ret.push(templates.network_detail_row(ui_strings.S_NETWORK_REQUEST_DETAIL_BODY_UNFINISHED));
-    }
-    else if (!resp.responsebody)
-    {
-      classname = "network_info";
-      ret.push(templates.network_detail_row(
-        ["p",
-          ui_strings.S_NETWORK_REQUEST_DETAIL_BODY_DESC,
-          ["p", ["span",
-              ui_strings.M_NETWORK_REQUEST_DETAIL_GET_RESPONSE_BODY_LABEL,
-              "data-object-id", String(resp.logger_entry_id),
-              // unselectable attribute works around bug CORE-35118
-              "unselectable", "on",
-              "handler", "get-response-body",
-              "class", "container-button ui-button",
-              "tabindex", "1"
-          ]],
-          "class", "response-view-body-container info-box"
-        ]));
+      if (!resp.logger_entry_is_finished)
+      {
+        classname = "network_info";
+        ret.push(templates.network_detail_row(ui_strings.S_NETWORK_REQUEST_DETAIL_BODY_UNFINISHED));
+      }
+      // else we're in the middle of getting it via GetResource, leave the response part empty until it updates.
     }
     else
     {

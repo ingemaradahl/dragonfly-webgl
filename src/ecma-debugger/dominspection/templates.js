@@ -193,6 +193,7 @@
         continue;
       }
       node_name = (node[NAMESPACE] ? node[NAMESPACE] + ':': '') + node[NAME];
+      node_name = helpers.escapeTextHtml(node_name);
       if (force_lower_case && disregard_force_lower_case(node))
       {
         disregard_force_lower_case_depth = node[DEPTH];
@@ -856,5 +857,21 @@
     }
     return ret;
   }
+
+  this.disabled_view = function()
+  {
+    return (
+    ["div",
+      ["p", window.app.profiles[window.app.profiles.PROFILER].is_enabled ?
+            ui_strings.S_INFO_PROFILER_MODE :
+            ui_strings.S_INFO_HTTP_PROFILER_MODE],
+      ["p", 
+        ["span", ui_strings.S_LABEL_ENABLE_DEFAULT_FEATURES,
+                 "class", "container-button ui-button",
+                 "handler", "enable-ecmascript-debugger",
+                 "unselectable", "on",
+                 "tabindex", "1"]],
+      "class", "info-box"]);
+  };
 
 }).apply(window.templates || (window.templates = {}));
