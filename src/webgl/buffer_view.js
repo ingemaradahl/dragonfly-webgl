@@ -61,11 +61,6 @@ cls.WebGLBufferView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx != null)
-    {
-      window.webgl.buffer.get_buffers_data_all(window.webgl.runtime_id, ctx);
-    }
   };
 
   this._on_new_buffers = function(ctx_id)

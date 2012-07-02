@@ -20,8 +20,8 @@ cls.WebGLState = function ()
       messages.post('webgl-new-state', {"object_id" : ctx_id, "state" : state });
     };
 
-    var scoper = new WebGLUtils.Scoperer(webgl.interfaces[ctx_id].get_state, finalize, this);
-    scoper.exec();
+    var scoper = new cls.Scoper(finalize, this);
+    scoper.execute_remote_function(window.webgl.interfaces[ctx_id].get_state);
   };
 
   this._error = function(status, message)

@@ -17,16 +17,15 @@ cls.WebGLTrace = function()
   {
     var rt_id = msg.runtime_id;
     var ctx_id = window.webgl.canvas_contexts[msg.object_id];
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
     var func = window.webgl.interfaces[ctx_id].get_trace;
-    var scoper = new cls.Scoper(msg.runtime_id, this._finalize_trace, this, [rt_id, ctx_id]);
+    var scoper = new cls.Scoper(this._finalize_trace, this, [rt_id, ctx_id]);
     scoper.set_object_action(function(key)
         {
           return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
         });
     scoper.set_max_depth(5);
     scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
-    scoper.eval_script(script, [["f", func.object_id]]);
+    scoper.execute_remote_function(func);
   };
 
   this._finalize_trace = function(traces, rt_id, ctx_id)
@@ -145,7 +144,7 @@ cls.WebGLTrace = function()
         this.text = "Buffer " + String(this.buffer.index);
         this.action = function()
         {
-          window.webgl.buffer.get_buffer_data(window.webgl.runtime_id, ctx_id, this.buffer_index, this.buffer.object_id);
+          window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
         };
         this.tab = "buffer";
         break;

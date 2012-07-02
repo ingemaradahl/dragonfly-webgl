@@ -25,18 +25,19 @@ cls.WebGLBuffer = function()
   };
 
   // Initiates a sequence of calls to update the metadata of a buffer and get the current data.
-  this.get_buffer_data = function(rt_id, ctx_id, buffer_index, buffer_id)
+  this.get_buffer_data = function(buffer_index, buffer)
   {
-    var finalize = function (buffer)
+    var finalize = function (updated_buffer)
     {
-      var data = buffer.data;
-      var buffer = window.webgl.data[ctx_id].buffers[buffer.index];
-      buffer.set_data(data);
+      buffer.update(updated_buffer);
+      buffer.set_data(updated_buffer.data);
       messages.post('webgl-buffer-data', buffer);
     };
 
-    var scoper = new cls.Scoper(rt_id, finalize, this);
-    scoper.examine_object(buffer_id);
+    var scoper = new cls.Scoper(finalize, this);
+    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
+    scoper.set_reviver(scoper.reviver_typed);
+    scoper.examine_object(buffer, false);
   };
 
   // Runs when new buffers have been created on the host.
@@ -55,15 +56,12 @@ cls.WebGLBuffer = function()
       }
     };
 
-    for (var c=0; c<window.webgl.contexts.length; c++)
-    {
-      var ctx_id = window.webgl.contexts[c];
-      var interface_call = window.webgl.interfaces[ctx_id].get_new_buffers;
-      var scoper = new WebGLUtils.Scoperer(interface_call, finalize, this, [ctx_id]);
-      scoper.set_max_depth(2);
-      scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
-      scoper.exec();
-    }
+    var ctx_id = window.webgl.canvas_contexts[msg.object_id];
+    var interface_call = window.webgl.interfaces[ctx_id].get_new_buffers;
+    var scoper = new cls.Scoper(finalize, this, [ctx_id]);
+    scoper.set_max_depth(2);
+    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
+    scoper.execute_remote_function(interface_call);
   };
 
   window.host_tabs.activeTab.addEventListener("webgl-buffer-created",

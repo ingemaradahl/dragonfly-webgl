@@ -113,7 +113,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.request_buffer_data = function(context_object_id, buffer_index)
   {
     var buffer = this.data[context_object_id].buffers[buffer_index];
-    this.buffer.get_buffer_data(this.runtime_id, context_object_id, buffer_index, buffer.object_id);
+    this.buffer.get_buffer_data(buffer_index, buffer);
   };
 
   this._send_injection = function (rt_id, cont_callback)
@@ -126,14 +126,14 @@ cls.WebGL.WebGLDebugger = function ()
       cont_callback();
     };
 
-    var scoper = new cls.Scoper(rt_id, finalize, this);
+    var scoper = new cls.Scoper(finalize, this);
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
-    scoper.eval_script(script, [], false, true);
+    scoper.eval_script(rt_id, script, [], false, true);
   };
 
   this._on_new_context = function (message)
   {
-    var finalize = (function (handler_interface, context_id)
+    var finalize = function (handler_interface, context_id)
     {
       this.contexts.push(context_id);
       this.canvas_contexts[message.object_id] = context_id;
@@ -144,7 +144,7 @@ cls.WebGL.WebGLDebugger = function ()
       this.interfaces[context_id].debugger_ready();
 
       messages.post('webgl-new-context', context_id);
-    }).bind(this);
+    }.bind(this);
 
     // Revives a "simple" function (a function where the return value if of no
     // interest)
@@ -190,10 +190,10 @@ cls.WebGL.WebGLDebugger = function ()
     {
       var canvas_id = message.object_id;
 
-      var scoper = new cls.Scoper(this.runtime_id, revive_interface, this, [this.runtime_id]);
+      var scoper = new cls.Scoper(revive_interface, this, [this.runtime_id]);
       var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
-      scoper.set_object_action(function(key, type) { return cls.Scoper.ACTIONS.EXAMINE; });
-      scoper.eval_script(script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]], false);
+      scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
+      scoper.eval_script(this.runtime_id, script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]], false);
     }
   };
 
@@ -252,20 +252,20 @@ cls.WebGL.WebGLDebugger = function ()
       return program;
     };
 
-    gl.programs["texture"] = compile_texture_program();
+    gl.programs.texture = compile_texture_program();
   };
 
-  var load_shaders = (function(callback)
+  var load_shaders = function(callback)
   {
     var num_shaders = 0;
     var loaded_shaders = 0;
 
-    var request_shader = (function(shader_id, src, type)
+    var request_shader = function(shader_id, src, type)
     {
       var request = new XMLHttpRequest();
       request.open("GET", src, true);
       request.overrideMimeType('text/plain');
-      request.onreadystatechange = (function()
+      request.onreadystatechange = function()
       {
         if (request.status === 404)
         {
@@ -286,9 +286,9 @@ cls.WebGL.WebGLDebugger = function ()
             callback();
           }
         }
-      }).bind(this);
+      }.bind(this);
       request.send();
-    }).bind(this);
+    }.bind(this);
 
     var scripts = document.getElementsByTagName("script");
     var requests = [];
@@ -308,7 +308,7 @@ cls.WebGL.WebGLDebugger = function ()
 
     requests.map(function(s) { request_shader(s.shader_id, s.src, s.type); });
 
-  }).bind(this);
+  }.bind(this);
 
   load_shaders(this.init_gl.bind(this));
 
