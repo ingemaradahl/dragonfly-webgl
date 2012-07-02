@@ -65,3 +65,35 @@ window.templates.webgl.trace_table = function(calls, view_id)
     "class", "sortable-table trace-table", // TODO css
   ];
 };
+
+
+window.templates.webgl.texture = function(obj)
+{
+  return ([["table",
+            ["tr",  
+              ["td", "Element Type:"],
+              ["td", obj.element_type]
+            ],
+            ["tr", 
+              ["td", "Source:"],
+              ["td", obj.source]
+            ],
+            ["tr",
+              ["td", "texture_wrap_s"],
+              ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
+            ],
+            ["tr",
+              ["td", "texture_wrap_t:"] ,
+              ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
+            ],
+            ["tr",
+              ["td", "texture_min_filter:"],
+              ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
+            ],
+            ["tr",
+              ["td", "texture_mag_filter:"],
+              ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
+            ],
+          ], ["img", "src", obj.img]]
+        );
+};
