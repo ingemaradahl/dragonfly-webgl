@@ -333,7 +333,7 @@ window.cls.Client = function()
     new CompositeView('console_panel',
                       ui_strings.M_VIEW_LABEL_COMMAND_LINE,
                       layouts.console_rough_layout);
-    new CompositeView('webgl_panel',
+    new CompositeView('webgl_mode',
                       "WebGL", // TODO
                       layouts.webgl_rough_layout,
                       'webgl',
@@ -619,17 +619,34 @@ ui_framework.layouts.utils_rough_layout =
 
 ui_framework.layouts.webgl_rough_layout =
 {
-  dir: 'h',
-  width: 1000,
-  height: 1000,
-  children: [
+  dir: 'h', width: 700, height: 700,
+  children:
+  [
     {
-      height: 1000,
-      tabs: ['webgl_trace', 'webgl_state', 'webgl_test', 'webgl_buffer',
-	  'webgl_program', 'webgl_texture']
+      name: 'webgl_panel',
+      children:
+      [
+        {
+          height: 350,
+          tabbar: { tabs: ['webgl_buffer', 'webgl_program', 'webgl_texture']} // TODO add: , is_hidden: true }
+        }
+      ]
+    },
+    {
+      name: 'webgl_side_panel',
+      width: 350,
+      children:
+      [
+        {
+          tabs: function(services)
+          {
+            return ['trace-side-panel', 'state-side-panel', 'webgl_test', 'buffer-side-panel'];
+          }
+        }
+      ]
     }
   ]
-}
+};
 
 ui_framework.layouts.storage_rough_layout =
 {
@@ -675,7 +692,7 @@ ui_framework.layouts.main_layout =
       {view: 'js_mode', tab_class: JavaScriptTab},
       'network_mode',
       'resource_panel',
-      'webgl_panel',
+      'webgl_mode',
       'storage',
       {view: 'console_mode', tab_class: ErrorConsoleTab},
       'utils',
