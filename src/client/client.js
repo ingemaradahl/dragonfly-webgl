@@ -339,6 +339,7 @@ window.cls.Client = function()
                       ui_strings.M_VIEW_LABEL_PROFILER,
                       layouts.profiler_rough_layout,
                       null,
+                      services);
     new CompositeView('webgl_panel',
                       "WebGL", // TODO
                       layouts.webgl_rough_layout,
