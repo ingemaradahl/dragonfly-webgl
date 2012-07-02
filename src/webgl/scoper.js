@@ -7,9 +7,9 @@ window.cls || (window.cls = {});
  * of objects and takes care of the releasing of them as well. The default behavior
  * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
  */
-cls.Scoper = function(runtime_id, callback, callback_that, callback_arguments)
+cls.Scoper = function(callback, callback_that, callback_arguments)
 {
-  this.runtime_id = runtime_id;
+  this.runtime_id;
 
   this.callback = callback;
   this.callback_that = callback_that;
@@ -86,8 +86,25 @@ cls.Scoper.prototype.set_reviver = function(reviver)
 };
 
 /**
+ * Executes a function that exists on the host.
+ *
+ * @param remote_function An object containing properties for object id of a
+ *   remote function and also a runtime id.
+ * @param {Boolean} release optional, if the root object should be released or not.
+ *   Defaults to true.
+ */
+cls.Scoper.prototype.execute_remote_function = function(remote_function, release)
+{
+  var script = "(function(){return f();}).call();";
+  this.runtime_id = remote_function.runtime_id;
+  var object_id = remote_function.object_id;
+  this.eval_script(this.runtime_id, script, [["f", object_id]], release);
+};
+
+/**
  * Evaluates a script and examies the result if its an object.
  *
+ * @param {Number} runtime_id Runtime id.
  * @param {String} script Script to be executed on the specified runtime.
  * @param {Array} objects Objects that should be available for the script.
  *   Use the following format: [["object_name", object_id]]
@@ -96,8 +113,9 @@ cls.Scoper.prototype.set_reviver = function(reviver)
  * @param {Boolean} debugging optional, if debugging should be enabled for
  *   script evaluation. Defaults to false
  */
-cls.Scoper.prototype.eval_script = function(script, objects, release, debugging)
+cls.Scoper.prototype.eval_script = function(runtime_id, script, objects, release, debugging)
 {
+  this.runtime_id = runtime_id;
   typeof(release) === "boolean" || (release = true);
   this.current_depth = 0;
 
@@ -119,7 +137,6 @@ cls.Scoper.prototype.eval_script = function(script, objects, release, debugging)
 
 /**
  * Callback to Scopes requestEval.
- * TODO: Add support for _not_ examining the result, just returning the object id
  */
 cls.Scoper.prototype._eval_callback = function(status, message, release)
 {
@@ -147,6 +164,7 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
       {
         var object = message[OBJECT][OBJECT_TYPE].indexOf("Array") !== -1 ? [] : {};
         object.object_id = object_id;
+        object.runtime_id = this.runtime_id;
         this.callback.apply(this, [object].concat(this.callback_arguments));
       }
     }
@@ -172,44 +190,48 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
   }
   else
   {
-    this._error();
+    this._error(message);
   }
 };
 
 /**
  * Examine a single object.
  *
- * @param {Number} object_id Object id of the object to examine.
+ * @param {Object} object Object to examine, should have object_id and runtime_id properties.
  * @param {Boolean} release optional, True will release the object in Scope.
  *   Defaults to true.
  */
-cls.Scoper.prototype.examine_object = function(object_id, release)
+cls.Scoper.prototype.examine_object = function(object, release)
 {
   typeof(release) === "boolean" || (release = true);
+  this.runtime_id = object.runtime_id;
   this.current_depth = 0;
   var targets = {};
-  targets[object_id] = this._object_reviver(this, "result", release);
+  targets[object.object_id] = this._object_reviver(this, "result", release);
 
   var args = [this.runtime_id, targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
-      [this.runtime_id, [object_id]]);
+      [this.runtime_id, [object.object_id]]);
 };
 
 /**
  * Examine a list of objects.
  *
- * @param {Array} object_ids Object ids of the objects to examine.
+ * @param {Number} runtime_id Runtime id.
+ * @param {Array} objects Object ids of the objects to examine.
  * @param {Boolean} release optional, True will release the objects in Scope.
  *   Defaults to true.
  */
-cls.Scoper.prototype.examine_objects = function(object_ids, release)
+cls.Scoper.prototype.examine_objects = function(runtime_id, object_ids, release)
 {
   typeof(release) === "boolean" || (release = true);
+  this.runtime_id = runtime_id;
   this.current_depth = 0;
   var targets = {};
   var base = [];
-  for (var i = 0; i < object_ids.length; i++) {
+  for (var i = 0; i < object_ids.length; i++)
+  {
     targets[object_ids[i]] = this._object_reviver(base, i, release);
   }
 
@@ -237,7 +259,7 @@ cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, 
 {
   if (status !== 0)
   {
-    this._error();
+    this._error(message);
     return;
   }
 
@@ -341,6 +363,7 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
   else
   {
     target.object_id = obj_info[0];
+    target.runtime_id = this.runtime_id;
   }
 
   if (msg_vars === undefined) return;
@@ -455,6 +478,7 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
   else
   {
     target.object_id = message[0][0];
+    target.runtime_id = this.runtime_id;
   }
 
   if (msg_vars === undefined) return;
@@ -503,6 +527,7 @@ cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
     case cls.Scoper.ACTIONS.NOTHING:
       target[key] = type.indexOf("Array") !== -1 ? [] : {};
       target[key].object_id = id;
+      target[key].runtime_id = this.runtime_id;
       break;
     case cls.Scoper.ACTIONS.RELEASE:
       target[key] = type.indexOf("Array") !== -1 ? [] : {};
@@ -541,7 +566,7 @@ cls.Scoper.prototype._have_error_callback = function()
 /**
  * Trigger an error, which will call the error callback if set.
  */
-cls.Scoper.prototype._error = function()
+cls.Scoper.prototype._error = function(message)
 {
   if (this._have_error_callback())
   {
@@ -551,7 +576,7 @@ cls.Scoper.prototype._error = function()
   else
   {
     opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-        "cls.Scoper failed!");
+        "cls.Scoper failed!" + (message != null ? " - " + message : ""));
   }
 };
 
@@ -579,17 +604,17 @@ cls.Scoper.prototype._retrive_stacktrace = function(error_id)
 Example usage:
 
 function scoper_examine(rt_id, obj_id){
-  var scoper = new cls.Scoper(rt_id, console.log, console);
-  scoper.examine_object(obj_id);
+  var scoper = new cls.Scoper(console.log, console);
+  scoper.examine_object({object_id: obj_id, runtime_id: rt_id});
   return scoper;
 }
 
 function scoper_eval(rt_id, depth){
-  var scoper = new cls.Scoper(rt_id, console.log, console);
+  var scoper = new cls.Scoper(console.log, console);
   var script = "return [{typed: new Int32Array(100), untyped: [1,2,3]},{obj: {num: 2, sobj: {}}, num: 0, other: {bla: \"bla\"}, noexamine: {hidden: 1337}}, 2, {art: 42}];";
   scoper.set_object_action(function(key, type){return key === "noexamine" ? cls.Scoper.ACTIONS.NOTHING : cls.Scoper.ACTIONS.EXAMINE_RELEASE;});
   scoper.set_max_depth(depth);
-  scoper.eval_script(script, []);
+  scoper.eval_script(rt_id, script, []);
   return scoper;
 }
 */

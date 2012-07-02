@@ -11,6 +11,46 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLBufferView = function(id, name, container_class)
 {
   this._container = null;
+
+  this.createView = function(container)
+  {
+    this._container = container;
+    this._render();
+  };
+
+  this._render = function()
+  {
+    this._container.clearAndRender(["div", "No buffer"]);
+  };
+
+  this.ondestroy = function()
+  {
+    this._container = null;
+  };
+
+  this._on_buffer_data = function(buffer)
+  {
+    this._container.clearAndRender(
+      ['div',
+        Array.prototype.join.call(buffer.values, ", "),
+      ]
+    );
+  };
+
+  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
+  this.init(id, name, container_class);
+};
+
+cls.WebGLBufferView.prototype = ViewBase;
+
+/**
+ * TODO: currently a temporary design of the view which displays data in a non user-friendly way.
+ * @constructor
+ * @extends ViewBase
+ */
+cls.WebGLBufferSideView = function(id, name, container_class)
+{
+  this._container = null;
   this._table = null;
   this._current_context = null;
   this._table_data = null;
@@ -21,12 +61,10 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._table = this._table || new SortableTable(this.tabledef, null, null, null, null, false, "buffer-table");
 
     this._render();
-    window.webgl.buffer.activate();
   };
 
   this.ondestroy = function()
   {
-    window.webgl.buffer.deactivate();
     this._container = null;
   };
 
@@ -61,11 +99,6 @@ cls.WebGLBufferView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx != null)
-    {
-      window.webgl.buffer.get_buffers_data_all(window.webgl.runtime_id, ctx);
-    }
   };
 
   this._on_new_buffers = function(ctx_id)
@@ -75,15 +108,6 @@ cls.WebGLBufferView = function(id, name, container_class)
 
     var visible_ctx_id = window['cst-selects']['context-select'].get_selected_context();
     if (visible_ctx_id === ctx_id) this._render();
-  };
-
-  this._on_buffer_data = function(buffer)
-  {
-    this._container.clearAndRender(
-      ['div',
-        Array.prototype.join.call(buffer.values, ", "),
-      ]
-    );
   };
 
   this._on_context_change = function(ctx_id)
@@ -151,18 +175,17 @@ cls.WebGLBufferView = function(id, name, container_class)
   eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
 
   messages.addListener('webgl-new-buffers', this._on_new_buffers.bind(this));
-  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLBufferView.prototype = ViewBase;
+cls.WebGLBufferSideView.prototype = ViewBase;
 
-cls.WebGLBufferView.create_ui_widgets = function()
+cls.WebGLBufferSideView.create_ui_widgets = function()
 {
   new ToolbarConfig(
-    'webgl_buffer',
+    'buffer-side-panel',
     [
       {
         handler: 'refresh-webgl-buffer',

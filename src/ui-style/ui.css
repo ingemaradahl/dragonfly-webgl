@@ -1470,6 +1470,16 @@ cst-select-option-list-container.color .ok-cancel input + input
   float: right;
 }
 
+.texture-box
+{
+  margin: 30px 50px 0 50px;
+  text-align: left;
+  padding: 1em;
+  border: 1px dashed #b3b3b3;
+  border-radius: 4px;
+  background: #f3f3f3;
+}
+
 .info-box
 {
   margin: 30px 50px 0 50px;

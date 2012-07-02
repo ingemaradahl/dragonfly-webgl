@@ -762,7 +762,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buffers = this.events["buffer-created"].get();
       var out = [];
-      for(var i = 0; i < buffers.length; i++)
+      for (var i = 0; i < buffers.length; i++)
       {
         var buffer = buffers[i];
         if (buffer === undefined) continue;
@@ -776,7 +776,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buffers = this.buffers;
       var out = [];
-      for(var i = 0; i < buffers.length; i++)
+      for (var i = 0; i < buffers.length; i++)
       {
         var buffer = buffers[i];
         if (buffer === undefined || buffer.data === undefined) continue;
@@ -1056,7 +1056,7 @@ cls.WebGL.RPCs.injection = function () {
   {
     if (!this.ready && this.messages.length > 0)
     {
-      document.dispatchEvent(new Event(this.name));
+      this.source.dispatchEvent(new Event(this.name));
       this.running = true;
     }
     this.ready = true;

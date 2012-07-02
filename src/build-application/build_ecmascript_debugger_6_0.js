@@ -82,7 +82,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WatchesView('watches', 
                         ui_strings.M_VIEW_LABEL_WATCHES,
                         'scroll mono');
-    
+   
     /* Runtime State */
     new cls.JSSidePanelView('scripts-side-panel', 
                             ui_strings.M_VIEW_LABEL_RUNTIME_STATE,
@@ -125,7 +125,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                              ui_strings.M_VIEW_LABEL_STYLES, 
                              'scroll css-inspector mono');
     new cls.CSSInspectorView.create_ui_widgets();
-    
+
     cls.CSSInspectorCompStyleView.prototype = ViewBase;
     new cls.CSSInspectorCompStyleView('css-comp-style', 
                                       ui_strings.M_VIEW_LABEL_COMPUTED_STYLE, 
@@ -138,7 +138,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.CSSInspectorActions('css-inspector');
 
     /* DOM sidepanel */
-    new cls.DOMSidePanelView('dom-side-panel', 
+    new cls.DOMSidePanelView('dom-side-panel',
                              ui_strings.M_VIEW_LABEL_STYLES,
                              ['css-comp-style', 'css-inspector', 'new-style'],
                              // default expanded flags for the view list
@@ -162,15 +162,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* Event Breakpoints */
     window.event_breakpoints = cls.EventBreakpoints.get_instance();
     cls.EventBreakpointsView.prototype = ViewBase;
-    new cls.EventBreakpointsView('event-breakpoints', 
-                                 ui_strings.M_VIEW_LABEL_EVENT_BREAKPOINTS, 
+    new cls.EventBreakpointsView('event-breakpoints',
+                                 ui_strings.M_VIEW_LABEL_EVENT_BREAKPOINTS,
                                  'scroll event-breakpoints');
     cls.EventBreakpointsView.create_ui_widgets();
 
     /* Breakpoints */
     cls.BreakpointsView.prototype = ViewBase;
-    new cls.BreakpointsView('breakpoints', 
-                            ui_strings.M_VIEW_LABEL_BREAKPOINTS, 
+    new cls.BreakpointsView('breakpoints',
+                            ui_strings.M_VIEW_LABEL_BREAKPOINTS,
                             'scroll breakpoints mono');
     cls.BreakpointsView.create_ui_widgets();
 
@@ -179,7 +179,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.JSSearchView('js-search', 
                          ui_strings.M_VIEW_LABEL_SEARCH, 
                          'scroll js-search');
-                             
+
     /* adjust the base class */
 
     var StorageDataBase = new namespace.StorageDataBase();
@@ -238,15 +238,24 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLContextSelect.prototype = new CstSelect();
     new cls.WebGLContextSelect('context-select', 'context-options');
 
-    cls.WebGLTraceSelect.prototype = new CstSelect();
-    new cls.WebGLTraceSelect('trace-select', 'trace-options');
+    new cls.WebGLView('webgl_panel',
+                      'WebGL',// TODO: ui_strings.M_VIEW_LABEL_WEBGL,
+                      'scroll webgl_panel mono');
+    cls.WebGLView.create_ui_widgets();
 
-    new cls.WebGLTraceView("webgl_trace",
+    new cls.WebGLBufferSideView("buffer-side-panel",
+                                "Buffers", // TODO
+                                "scroll side-panel buffer");
+    cls.WebGLBufferSideView.create_ui_widgets();
+
+    // Tabs on the left side
+
+    new cls.WebGLTraceView("trace-side-panel",
                            "Trace", // TODO
                            "scroll webgl_view trace");
     cls.WebGLTraceView.create_ui_widgets();
 
-    new cls.WebGLStateView("webgl_state",
+    new cls.WebGLStateView("state-side-panel",
                            "State", // TODO
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
@@ -254,7 +263,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLBufferView("webgl_buffer",
                            "Buffers", // TODO
                            "scroll webgl_view buffer");
-    cls.WebGLBufferView.create_ui_widgets();
 
     new cls.WebGLProgramView("webgl_program",
                              "Programs", // TODO

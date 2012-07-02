@@ -110,7 +110,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     var arg = this._current_trace[target["data-call-number"]].args[target["data-argument-number"]];
     if (arg.tab)
     {
-      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + arg.tab);
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_" + arg.tab);
     }
 
     if (arg.action)
@@ -205,23 +205,12 @@ cls.WebGLTraceView = function(id, name, container_class)
 cls.WebGLTraceView.create_ui_widgets = function()
 {
   new ToolbarConfig(
-    'webgl_trace',
+    'trace-side-panel',
     [
       {
         handler: 'webgl-trace-refresh',
         title: "Refresh the trace",
         icon: 'reload-webgl-trace'
-      }
-    ],
-    null,
-    null,
-    [
-      {
-        handler: 'select-webgl-context',
-        title: "Select WebGL context", // TODO
-        type: 'dropdown',
-        class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
       }
     ]
   );

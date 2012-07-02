@@ -171,27 +171,6 @@ cls.WebGLData = function (context_id)
     this.buffers[buffer.index] = new Buffer(buffer);
   };
 
-  /*
-   * Inserts a buffer into the collection. Uses the index from the object.
-   * If it already exists in it then the value is updated and the old value is returned.
-   * Else null is returned.
-   */
-  this.update_buffer_data = function(buffer_data)
-  {
-    var buffer;
-    if (buffer_data.index in this.buffers)
-    {
-      buffer = this.buffers[buffer_data.index];
-    }
-    else
-    {
-      opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
-        "Failed to find buffer with id " + id);
-    }
-
-    buffer.set_data(buffer_data);
-  };
-
   function Buffer(buf)
   {
     this.index = buf.index;
@@ -200,6 +179,7 @@ cls.WebGLData = function (context_id)
     this.size = buf.size;
     this.buffer = buf.buffer;
     this.object_id = buf.object_id;
+    this.runtime_id = buf.runtime_id;
   }
 
   Buffer.prototype.available = function()

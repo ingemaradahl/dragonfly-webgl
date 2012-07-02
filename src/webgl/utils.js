@@ -102,22 +102,22 @@ window.WebGLUtils.Scoperer = function(interface_function, callback, callback_tha
 {
   if (typeof interface_function === "function")
   {
-    throw "Illegal interface function call, use direct calling instead."
+    throw "Illegal interface function call, use direct calling instead.";
   }
 
   this.interface_function = interface_function;
-  var runtime_id = interface_function.runtime_id;
-  cls.Scoper.call(this, runtime_id, callback, callback_that, callback_arguments);
+  cls.Scoper.call(this, callback, callback_that, callback_arguments);
 };
 
-window.WebGLUtils.Scoperer.prototype = new cls.Scoper;
+window.WebGLUtils.Scoperer.prototype = new cls.Scoper();
 window.WebGLUtils.Scoperer.prototype.constructor = window.WebGLUtils.Scoperer;
 
 window.WebGLUtils.Scoperer.prototype.exec = function(release)
 {
   var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
+  var runtime_id = this.interface_function.runtime_id;
   var object_id = this.interface_function.object_id;
-  this.eval_script(script, [["f", object_id]], release);
+  this.eval_script(runtime_id, script, [["f", object_id]], release);
 };
 
 /**
