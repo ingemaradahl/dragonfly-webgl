@@ -243,12 +243,19 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                       'scroll webgl_panel mono');
     cls.WebGLView.create_ui_widgets();
 
-    new cls.WebGLTraceView("webgl_trace",
+    new cls.WebGLBufferSideView("buffer-side-panel",
+                                "Buffers", // TODO
+                                "scroll side-panel buffer");
+    cls.WebGLBufferSideView.create_ui_widgets();
+
+    // Tabs on the left side
+
+    new cls.WebGLTraceView("trace-side-panel",
                            "Trace", // TODO
                            "scroll webgl_view trace");
     cls.WebGLTraceView.create_ui_widgets();
 
-    new cls.WebGLStateView("webgl_state",
+    new cls.WebGLStateView("state-side-panel",
                            "State", // TODO
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
@@ -256,7 +263,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLBufferView("webgl_buffer",
                            "Buffers", // TODO
                            "scroll webgl_view buffer");
-    cls.WebGLBufferView.create_ui_widgets();
 
     new cls.WebGLProgramView("webgl_program",
                              "Programs", // TODO

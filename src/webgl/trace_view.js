@@ -205,7 +205,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 cls.WebGLTraceView.create_ui_widgets = function()
 {
   new ToolbarConfig(
-    'webgl_trace',
+    'trace-side-panel',
     [
       {
         handler: 'refresh-webgl-trace',

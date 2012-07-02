@@ -23,7 +23,7 @@ cls.WebGLStateView = function(id, name, container_class)
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     this._container = null;
   };
@@ -90,7 +90,7 @@ cls.WebGLStateView = function(id, name, container_class)
     window.webgl.request_state(this._context);
     this._render();
   };
-	
+
   this._on_context_change = function(ctx)
   {
     this._context = ctx;
@@ -112,7 +112,7 @@ cls.WebGLStateView = function(id, name, container_class)
     {
       return;
     }
-    
+
     opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
         "An error occured while retrieving WebGL state");
 
@@ -158,7 +158,7 @@ cls.WebGLStateView.prototype = ViewBase;
 cls.WebGLStateView.create_ui_widgets = function()
 {
   new ToolbarConfig(
-    'webgl_state',
+    'state-side-panel',
     [
       {
         handler: 'refresh-webgl-state',

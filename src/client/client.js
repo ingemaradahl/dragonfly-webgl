@@ -640,7 +640,7 @@ ui_framework.layouts.webgl_rough_layout =
         {
           tabs: function(services)
           {
-            return ['webgl_trace', 'webgl_state', 'webgl_test', 'trace-side-panel', 'state-side-panel', 'buffer-side-panel'];
+            return ['trace-side-panel', 'state-side-panel', 'webgl_test', 'buffer-side-panel'];
           }
         }
       ]
