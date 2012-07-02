@@ -387,9 +387,15 @@ cls.WebGLAPI = function ()
     webgl_constants_back[webgl_constants[key]] = key;
   }
 
+  /**
+   * Converts a numeric value to the WebGL property name.
+   * If the value does not match a property then the value will be returned as
+   * a String.
+   */
   this.constant_value_to_string = function(value)
   {
-    return webgl_constants_back[value];
+    var str = webgl_constants_back[value];
+    return str != null ? str : String(value);
   };
 
   // --------------------------
