@@ -95,7 +95,7 @@ cls.Scoper.prototype.set_reviver = function(reviver)
  */
 cls.Scoper.prototype.execute_remote_function = function(remote_function, release)
 {
-  var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
+  var script = "(function(){return f();}).call();";
   this.runtime_id = remote_function.runtime_id;
   var object_id = remote_function.object_id;
   this.eval_script(this.runtime_id, script, [["f", object_id]], release);
@@ -137,7 +137,6 @@ cls.Scoper.prototype.eval_script = function(runtime_id, script, objects, release
 
 /**
  * Callback to Scopes requestEval.
- * TODO: Add support for _not_ examining the result, just returning the object id
  */
 cls.Scoper.prototype._eval_callback = function(status, message, release)
 {
@@ -605,17 +604,17 @@ cls.Scoper.prototype._retrive_stacktrace = function(error_id)
 Example usage:
 
 function scoper_examine(rt_id, obj_id){
-  var scoper = new cls.Scoper(rt_id, console.log, console);
-  scoper.examine_object(obj_id);
+  var scoper = new cls.Scoper(console.log, console);
+  scoper.examine_object({object_id: obj_id, runtime_id: rt_id});
   return scoper;
 }
 
 function scoper_eval(rt_id, depth){
-  var scoper = new cls.Scoper(rt_id, console.log, console);
+  var scoper = new cls.Scoper(console.log, console);
   var script = "return [{typed: new Int32Array(100), untyped: [1,2,3]},{obj: {num: 2, sobj: {}}, num: 0, other: {bla: \"bla\"}, noexamine: {hidden: 1337}}, 2, {art: 42}];";
   scoper.set_object_action(function(key, type){return key === "noexamine" ? cls.Scoper.ACTIONS.NOTHING : cls.Scoper.ACTIONS.EXAMINE_RELEASE;});
   scoper.set_max_depth(depth);
-  scoper.eval_script(script, []);
+  scoper.eval_script(rt_id, script, []);
   return scoper;
 }
 */
