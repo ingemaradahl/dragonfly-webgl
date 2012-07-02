@@ -60,6 +60,7 @@ cls.WebGLProgramView.prototype = ViewBase;
 
 cls.WebGLProgramView.create_ui_widgets = function()
 {
+  return;
   new ToolbarConfig(
     'webgl_program',
 
