@@ -50,6 +50,6 @@ cls.WebGLTexture = function ()
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_max_depth(2);
     scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
-    scoper.execute_remote_function(texture.get_data);
+    scoper.execute_remote_function(texture.get_data, false);
   };
 };
