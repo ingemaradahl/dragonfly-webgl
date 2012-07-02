@@ -192,7 +192,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.click["refresh-webgl-trace"] = this._on_refresh.bind(this);
+  eh.click["webgl-trace-refresh"] = this._on_refresh.bind(this);
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
@@ -208,7 +208,7 @@ cls.WebGLTraceView.create_ui_widgets = function()
     'webgl_trace',
     [
       {
-        handler: 'refresh-webgl-trace',
+        handler: 'webgl-trace-refresh',
         title: "Refresh the trace",
         icon: 'reload-webgl-trace'
       }

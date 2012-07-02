@@ -104,9 +104,9 @@ cls.WebGL.RPCs.injection = function () {
         var error = gl.getError();
         if (error !== gl.NO_ERROR)
         {
-          if (oldest_error === gl.NO_ERROR) oldest_error = error;
-          // TODO: will flood the console if inside a loop, perhaps not log always?
-          console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
+          if (oldest_error === gl.NO_ERROR) {
+            oldest_error = error;
+          }
         }
         else if (innerFunction)
         {
@@ -115,8 +115,7 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          var call_idx = handler.trace.calls.length;
-          var trace_idx = 0; // TODO: Differ from different traces
+          var call_idx = handler.snapshot.call_trace.calls.length;
           var postFunction = postCaptureFuns[function_name];
 
           var args = [];
@@ -126,7 +125,7 @@ cls.WebGL.RPCs.injection = function () {
             {
               var obj = arguments[i];
               var trace_obj = make_trace_argument_object(obj);
-              var trace_obj_index = handler.trace.objects.push(trace_obj) - 1;
+              var trace_obj_index = handler.snapshot.call_trace.objects.push(trace_obj) - 1;
               args.push("@" + String(trace_obj_index));
             }
             else
@@ -136,13 +135,13 @@ cls.WebGL.RPCs.injection = function () {
           }
 
           var res = result === undefined ? "" : result;
-          handler.trace.calls.push([function_name, error, res].concat(args).join("|"));
+          handler.snapshot.call_trace.calls.push([function_name, error, res].concat(args).join("|"));
 
           switch (function_name)
           {
             case "drawArrays":
             case "drawElements":
-              postFunction.call(handler, trace_idx, call_idx);
+              postFunction.call(handler, call_idx);
               break;
           }
         }
@@ -203,11 +202,6 @@ cls.WebGL.RPCs.injection = function () {
       buf.buffer = buffer;
       var i = this.buffers.push(buf);
       buf.index = i - 1;
-
-      if (this.buffers_update)
-      {
-        this.events["buffer-created"].post(buf);
-      }
     };
     innerFuns.bindBuffer = function(result, args)
     {
@@ -229,11 +223,15 @@ cls.WebGL.RPCs.injection = function () {
       {
         buffer.size = args[1].length;
         buffer.data = args[1];
+        //buffer.data = Array.prototype.slice.call(args[1].slice(0); // Make sure we present correct data
+        // TODO: Make data cloning a selectable option?
       }
       buffer.usage = args[2];
     };
     innerFuns.bufferSubData = function(result, args)
     {
+      // TODO: data array in buffer has to be cloned, otherwise "external" array
+      // is modified as well
       if (this.bound_buffer == null) return;
       var buffer = this.bound_buffer;
       buffer.target = args[0];
@@ -251,25 +249,24 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = this.lookup_buffer(buf);
       this.buffers[buffer.index] = null;
       if (this.bound_buffer === buffer) this.bound_buffer = null;
-
-      if (this.buffers_update)
-      {
-        // TODO: should notify dragonfly about the deletion.
-      }
     };
 
+
     // Texture code
+    innerFuns.activeTexture = function(result, args)
+    {
+      this.active_texture = result;
+    };
+
     innerFuns.bindTexture = function(result, args)
     {
-
+      this.texture_binding[args[0]] = args[1];
     };
 
     innerFuns.createTexture = function(result, args)
     {
-      //this.created_textures.push(result);
       var texture_map_unit = {};
       texture_map_unit.texture = result;
-      //console.log("created");
       var index = this.textures.push(texture_map_unit);
       texture_map_unit.index = index - 1;
     };
@@ -286,7 +283,9 @@ cls.WebGL.RPCs.injection = function () {
       var texture_container_object = args[args.length -1];
       if (texture_container_object === null)  //TODO improve
         return;
-      var bound_texture = gl.getParameter(gl.TEXTURE_BINDING_2D);
+
+      var target = args[0];
+      var bound_texture = this.texture_binding[target].texture;
 
       for (var i=0; i<this.textures.length; i++)
       {
@@ -295,22 +294,18 @@ cls.WebGL.RPCs.injection = function () {
           var texture = {
             id : i,
             texture : bound_texture,
+            target  : target,
             object : texture_container_object,
             type : texture_container_object.toString(),
-            // TODO this is wrong parameter! FIX!
-            texture_wrap_s : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S),
-            texture_wrap_t : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T),
-            texture_min_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER),
-            texture_mag_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER),
+            texture_wrap_s : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_S),
+            texture_wrap_t : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_T),
+            texture_min_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MIN_FILTER),
+            texture_mag_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MAG_FILTER),
+
+            get_data : this.get_texture_data.bind(texture)
           };
 
-		  // Add data getter function
-          texture.get_data = this.get_texture_data.bind(texture);
-
           // TODO Translate to ENUMs
-          // TODO this is wrong parameter! FIX!
-          // TODO get real parameters
-          // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
 
           // We need to save some extra information about the call when an
           // ArrayBufferView is used.
@@ -431,7 +426,7 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     var postCaptureFuns = {};
-    postCaptureFuns.drawArrays = function(trace_idx, call_idx)
+    postCaptureFuns.drawArrays = function(call_idx)
     {
       var gl = this.gl;
 
@@ -450,8 +445,8 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      height = Math.min(height, 200);
-      width = Math.min(width, 200);
+      height = Math.min(height, 128);
+      width = Math.min(width, 128);
 
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
@@ -461,7 +456,6 @@ cls.WebGL.RPCs.injection = function () {
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
       var snapshot = {
-        trace_idx : trace_idx,
         call_idx : call_idx,
         pixels : Array.prototype.slice.call(pixels),
         size : size,
@@ -469,15 +463,14 @@ cls.WebGL.RPCs.injection = function () {
         height : height
       };
 
-      this.trace.fbo_snapshots.push(snapshot);
+      this.snapshot.call_trace.fbo_snapshots.push(snapshot);
 
       var program_state = {
-        trace_idx : trace_idx,
         call_idx : call_idx,
         state : this.get_program_state()
       };
 
-      this.trace.program_states.push(program_state);
+      this.snapshot.call_trace.program_states.push(program_state);
     };
     postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
 
@@ -500,15 +493,15 @@ cls.WebGL.RPCs.injection = function () {
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        handler.events["trace-completed"].post(handler.trace);
-        handler.trace = null;
+        handler.events["snapshot-completed"].post(handler.snapshot);
+        handler.snapshot = null;
       }
 
       if (handler.capture_next_frame)
       {
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
-        handler.trace = new Trace();
+        handler.snapshot = new Snapshot();
       }
     };
 
@@ -553,25 +546,25 @@ cls.WebGL.RPCs.injection = function () {
     this.gl = gl;
     this.context = context;
 
+    this.capture_next_frame = false;
+    this.capturing_frame = false;
+
+    this.snapshot = null;
+
     this.programs = [];
     this.shaders = [];
     this.bound_program = null;
 
     this.buffers = [];
     this.bound_buffer = null;
-    this.buffers_update = true;
 
-    this.trace = null;
-    this.fbo_snapshots = [];
-    this.capture_next_frame = false;
-    this.capturing_frame = false;
 
     this.textures = [];
-    this.textures_update = true;
+    this.texture_binding = {};
+    this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
     this.events = {
-      "buffer-created": new MessageQueue("webgl-buffer-created", canvas),
-      "trace-completed": new MessageQueue("webgl-trace-completed", canvas)
+      "snapshot-completed": new MessageQueue("webgl-snapshot-completed", canvas)
     };
 
     /* Interface definition between DF and the Context Handler, only the
@@ -583,17 +576,20 @@ cls.WebGL.RPCs.injection = function () {
       return this._interface;
     };
 
-    this.request_trace = function()
+
+
+    /* Requests a snapshot of all WebGL data for the next frame */
+    this.request_snapshot = function()
     {
       this.capture_next_frame = true;
     };
-    this._interface.request_trace = this.request_trace.bind(this);
+    this._interface.request_snapshot = this.request_snapshot.bind(this);
 
-    this.get_trace = function()
+    this.get_snapshot = function()
     {
-      return this.events["trace-completed"].get();
+      return this.events["snapshot-completed"].get();
     };
-    this._interface.get_trace = this.get_trace.bind(this);
+    this._interface.get_snapshot = this.get_snapshot.bind(this);
 
     this.get_state = function()
     {
@@ -1065,6 +1061,19 @@ cls.WebGL.RPCs.injection = function () {
     }
     this.ready = true;
   };
+
+    this.snapshot_idx = 0;
+
+  var _snapshot_idx = 0;
+
+  function Snapshot()
+  {
+    this.index = _snapshot_idx++;
+    this.call_trace = new Trace();
+    this.buffers = [];
+    this.programs = [];
+    this.textures = [];
+  }
 
   function Trace()
   {

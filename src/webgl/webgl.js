@@ -173,7 +173,7 @@ cls.WebGL.WebGLDebugger = function ()
         switch (fun_name)
         {
           case "debugger_ready":
-          case "request_trace":
+          case "request_snapshot":
           case "enable_buffers_update":
           case "disable_buffers_update":
             handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);

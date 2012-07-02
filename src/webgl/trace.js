@@ -10,7 +10,7 @@ cls.WebGLTrace = function()
   // Retrieves the frame trace for the last rendered frame of a WebGL context denoted by it's runtime & object id
   this.send_trace_request = function(ctx_id)
   {
-    window.webgl.interfaces[ctx_id].request_trace();
+    window.webgl.interfaces[ctx_id].request_snapshot();
   };
 
   var on_trace_complete = function(msg)
@@ -18,7 +18,7 @@ cls.WebGLTrace = function()
     var rt_id = msg.runtime_id;
     var ctx_id = window.webgl.canvas_contexts[msg.object_id];
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.call_function);
-    var func = window.webgl.interfaces[ctx_id].get_trace;
+    var func = window.webgl.interfaces[ctx_id].get_snapshot;
     var scoper = new cls.Scoper(msg.runtime_id, this._finalize_trace, this, [rt_id, ctx_id]);
     scoper.set_object_action(function(key)
         {
@@ -32,7 +32,7 @@ cls.WebGLTrace = function()
   this._finalize_trace = function(traces, rt_id, ctx_id)
   {
     for (var i = 0; i < traces.length; i++) {
-      var trace = traces[i];
+      var trace = traces[i].call_trace;
       var data = [];
       var arg_obj_re = /@([0-9]+)/;
       for (var j = 0; j < trace.calls.length; j++) {
@@ -85,7 +85,7 @@ cls.WebGLTrace = function()
 
   // ---------------------------------------------------------------------------
 
-  window.host_tabs.activeTab.addEventListener("webgl-trace-completed",
+  window.host_tabs.activeTab.addEventListener("webgl-snapshot-completed",
       on_trace_complete.bind(this), false, false);
 
   /**
