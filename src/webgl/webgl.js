@@ -71,7 +71,7 @@ cls.WebGL.WebGLDebugger = function ()
     }
   };
 
-  // Request for texture names (===urls).
+  // Request for texture names.
   this.request_textures = function(ctx)
   {
     if (this.available())

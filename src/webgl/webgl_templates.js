@@ -176,16 +176,19 @@ window.templates.webgl.trace_table = function(calls, view_id)
 window.templates.webgl.texture = function(obj)
 {
   return ([["table",
-            ["tr",
-              ["td", "Element Type:"],
-              ["td", obj.element_type]
+            ["tr",  
+              ["td", ["h2" , obj.element_type]]
+            ],
+            ["tr",  
+              ["td", "Texture id:"],
+              ["td", String(obj.id)]
             ],
             ["tr",
               ["td", "Source:"],
               ["td", obj.source]
             ],
             ["tr",
-              ["td", "texture_wrap_s"],
+              ["td", "texture_wrap_s:"],
               ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
             ],
             ["tr",

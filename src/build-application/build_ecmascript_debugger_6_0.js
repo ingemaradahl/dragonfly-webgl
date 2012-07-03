@@ -248,6 +248,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                                 "scroll side-panel buffer");
     cls.WebGLBufferSideView.create_ui_widgets();
 
+    new cls.WebGLTextureSideView("texture-side-panel",
+                                 "Textures",
+                                 "scroll side-panel texture");
+    cls.WebGLTextureSideView.create_ui_widgets();
+
     // Tabs on the left side
 
     new cls.WebGLDrawCallView("webgl_draw_call",
@@ -281,7 +286,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLTextureView("webgl_texture",
                              "Textures",
                              "scroll webgl_texture texture");
-    cls.WebGLTextureView.create_ui_widgets();
 
     /* the following views must be created to get entry in the Settings tab */
 
