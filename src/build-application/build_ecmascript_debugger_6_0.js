@@ -250,6 +250,10 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     // Tabs on the left side
 
+    new cls.WebGLDrawCallView("webgl_draw_call",
+                           "Draw call", // TODO
+                           "scroll webgl_view draw-call");
+
     new cls.WebGLTraceView("trace-side-panel",
                            "Trace", // TODO
                            "scroll webgl_view trace");

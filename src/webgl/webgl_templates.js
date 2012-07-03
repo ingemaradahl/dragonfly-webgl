@@ -3,6 +3,110 @@
 window.templates = window.templates || {};
 window.templates.webgl = window.templates.webgl || {};
 
+window.templates.webgl.buffer_base = function(buffer)
+{
+  var MAX_NUM_ELEMENTS = 1000;
+  var data_table_rows = [];
+  for (var i = 0; i < Math.min(buffer.values.length, MAX_NUM_ELEMENTS); i++) {
+    var value = buffer.values[i];
+    data_table_rows.push([
+      "tr",
+      [
+        [
+          "td",
+          String(i),
+          "style", // TODO make css class
+          "text-align: right"
+        ],
+        [
+          "td",
+          String(value)
+        ]
+      ]
+    ]);
+  }
+
+  // TODO temporary solution since Dragonfly will freeze when to many elements
+  var more_data = [];
+  if (buffer.values.length > MAX_NUM_ELEMENTS)
+  {
+    var diff = buffer.values.length - MAX_NUM_ELEMENTS;
+    more_data = [
+      "div",
+      "There are " + String(diff) + " more elements."
+    ];
+  }
+
+  var data_table_head = [
+    "tr",
+    [
+      [
+        "td",
+        "Index"
+      ],
+      [
+        "td",
+        "value"
+      ]
+    ],
+    "class",
+    "header"
+  ];
+
+  var buffer_info = [
+    {name: "Target", value: buffer.target_string()},
+    {name: "Usage", value: buffer.usage_string()},
+    {name: "Size", value: String(buffer.size)},
+    {name: "Length", value: String(buffer.values.length)}
+  ];
+  var info_table_rows = buffer_info.map(function(info){
+    return [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  });
+
+  return [
+    "div",
+    [
+      [
+        "div",
+        [
+          [
+            "h2",
+            "Buffer " + String(buffer.index)
+          ],
+          [
+            "table",
+            info_table_rows,
+            "class",
+            "buffer-info"
+          ]
+        ]
+      ],
+      [
+        "table",
+        [
+            data_table_head,
+            data_table_rows
+        ],
+        "class",
+        "sortable-table buffer-data-table"
+      ],
+      more_data
+    ]
+  ];
+};
+
 window.templates.webgl.trace_row = function(call, call_number, view_id)
 {
   var func_text = [
@@ -70,11 +174,11 @@ window.templates.webgl.trace_table = function(calls, view_id)
 window.templates.webgl.texture = function(obj)
 {
   return ([["table",
-            ["tr",  
+            ["tr",
               ["td", "Element Type:"],
               ["td", obj.element_type]
             ],
-            ["tr", 
+            ["tr",
               ["td", "Source:"],
               ["td", obj.source]
             ],

@@ -159,7 +159,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       else
       {
-        buffer.size = args[1].length;
+        buffer.size = args[1].byteLength;
         buffer.data = args[1];
         //buffer.data = Array.prototype.slice.call(args[1].slice(0); // Make sure we present correct data
         // TODO: Make data cloning a selectable option?
@@ -838,15 +838,15 @@ cls.WebGL.RPCs.injection = function () {
         var format;
         var alphaOffset=0;
 
-        // Flipping the image on the y-axis because 
-        // imgData is drawn from top left to right. 
+        // Flipping the image on the y-axis because
+        // imgData is drawn from top left to right.
         // The UintArary is bottom left to right.
         if (this.format === gl.RGB)
         {
           for (var i=0; i<height; i++)
           {
             for (var j=0; j<width*3; j += 3)
-            {   
+            {
               pix[j+i*width*3+alphaOffset] = element[j+(height-1-i)*width*3];
               pix[j+i*width*3+1+alphaOffset] = element[j+(height-1-i)*width*3+1];
               pix[j+i*width*3+2+alphaOffset] = element[j+(height-1-i)*width*3+2];

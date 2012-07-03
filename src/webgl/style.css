@@ -3,6 +3,41 @@
   width: 40%;
 }
 
+/* Buffer */
+
+.webgl_view.buffer > div
+{
+  padding: 10px;
+}
+
+.buffer-info table
+{
+  border-collapse: collapse;
+}
+
+.buffer-info td,
+.buffer-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.buffer-info th
+{
+  text-align: left;
+  padding-right: 30px;
+  width: 140px;
+}
+
+.buffer-data-table
+{
+  margin-top: 10px;
+  border: 1px solid #999999;
+  width: 100px;
+}
+
+/* Trace */
+
 .trace-table span.link
 {
   color: blue;
