@@ -102,77 +102,15 @@ cls.WebGLTraceView = function(id, name, container_class)
   {
     var call_number = target["data-call-number"];
 
-    this.display_snapshot_by_call(call_number);
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_draw_call");
+    window.views.webgl_draw_call.display_snapshot_by_call(call_number);
   };
 
   this._on_argument_click = function(evt, target)
   {
     var arg = this._current_trace[target["data-call-number"]].args[target["data-argument-number"]];
-    if (arg.tab)
-    {
-      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_" + arg.tab);
-    }
 
-    if (arg.action)
-    {
-      arg.action();
-    }
-  };
-
-  this.display_snapshot_by_call = function(call)
-  {
-    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
-
-    var snapshot = webgl.data[ctx_id].get_snapshot_by_call(0, call);
-    if (!snapshot)
-    {
-      this._container.innerHTML = "No snapshot for call " + call;
-      return;
-    }
-
-    if (snapshot.downloading)
-    {
-      this._container.innerHTML = "Snapshot still downloading...";
-      return;
-    }
-
-    // TODO: Only temporary of course
-    this._container.innerHTML = "";
-    this._container.appendChild(window.webgl.gl.canvas);
-    var gl;
-    if (!(gl = window.webgl.gl))
-    {
-      this._container.innerHTML = "WebGLContext unavailable, try using Opera Next";
-      return;
-    }
-
-    gl.canvas.width = snapshot.width;
-    gl.canvas.height = snapshot.height;
-    gl.viewport(0, 0, snapshot.width, snapshot.height);
-
-    var program = gl.programs["texture"];
-
-    // Make sure we don't upload texture to GPU unnecessarily
-    if (!snapshot.texture || snapshot.texture.gl !== gl)
-    {
-      snapshot.texture = {};
-      snapshot.texture.gl = gl;
-      snapshot.texture.tex = gl.createTexture();
-
-      gl.bindTexture(gl.TEXTURE_2D, snapshot.texture.tex);
-
-      // WebGL has limited NPOT texturing support
-      // http://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, snapshot.width, snapshot.height,
-                    0, gl.RGBA, gl.UNSIGNED_BYTE, snapshot.pixels);
-    }
-
-    WebGLUtils.draw_texture(program, snapshot.texture.tex);
+    arg.perform();
   };
 
   this.tabledef = {

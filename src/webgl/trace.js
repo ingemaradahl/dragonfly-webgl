@@ -146,7 +146,7 @@ cls.WebGLTrace = function()
         {
           window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
         };
-        this.tab = "buffer";
+        this.tab = "webgl_buffer";
         break;
       case "WebGLTexture":
         this.texture = window.webgl.data[ctx_id].texture_container[this.texture_index];
@@ -160,7 +160,7 @@ cls.WebGLTrace = function()
         {
           window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
         };
-        this.tab = "texture";
+        this.tab = "webgl_texture";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
@@ -178,7 +178,7 @@ cls.WebGLTrace = function()
   {
     if (this.tab)
     {
-      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + this.tab);
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.tab);
     }
 
     if (this.action)
