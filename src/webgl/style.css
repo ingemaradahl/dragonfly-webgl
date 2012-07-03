@@ -11,12 +11,8 @@
 }
 
 /* Buffer */
-<<<<<<< local
-.webgl_view.buffer div
-=======
 
 .webgl_view.buffer > div
->>>>>>> other
 {
   padding: 10px;
 }

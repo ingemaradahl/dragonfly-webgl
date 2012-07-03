@@ -15,7 +15,7 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._render = function()
   {
-    this._container.clearAndRender(['div', 'No texture']);
+    this._container.clearAndRender(['div', 'Choose texture to inspect']);
   };
 
   this.ondestroy = function()
