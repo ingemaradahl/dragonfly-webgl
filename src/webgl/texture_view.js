@@ -6,6 +6,42 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTextureView = function(id, name, container_class)
 {
   this._container = null;
+  
+  this.createView = function(container)
+  {
+    this._container = container;
+    this._render();
+  };
+
+  this._render = function()
+  {
+    this._container.clearAndRender(['div', 'No texture']);
+  };
+
+  this.ondestroy = function()
+  {
+    this._container = null;
+  };
+
+  this._on_texture_data = function(msg)
+  {
+    var texture_index = msg["id"];
+    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var obj = window.webgl.data[ctx].texture_data[texture_index];
+
+    var template = ["div", window.templates.webgl.texture(obj), "class", "texture-box"];
+    this._container.clearAndRender(template);
+  };
+
+  messages.addListener('webgl-new-texture-data', this._on_texture_data.bind(this));
+  this.init(id, name, container_class);
+};
+
+cls.WebGLTextureView.prototype = ViewBase;
+
+cls.WebGLTextureSideView = function(id, name, container_class)
+{
+  this._container = null;
 
   this.createView = function(container)
   {
@@ -27,16 +63,6 @@ cls.WebGLTextureView = function(id, name, container_class)
   {
     // TODO remove listeners
 
-  };
-
-  this.clear = function ()
-  {
-    if (window.webgl.available())
-    {
-      window.webgl.request_textures(this._context);
-    }
-
-    this._render();
   };
 
   this._render = function()
@@ -97,15 +123,6 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._on_new_texture_data = function(msg)
   {
-    // TODO collecting data from webg.data. Would be nice with
-    // a nice generic solution.
-    var texture_index = msg["id"]; //TODO ugly
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    var obj = window.webgl.data[ctx].texture_data[texture_index];
-
-
-    var template = ["div", window.templates.webgl.texture(obj), "class", "texture-box"];
-    this._container.clearAndRender(template);
 
   };
 
@@ -127,21 +144,18 @@ cls.WebGLTextureView = function(id, name, container_class)
   eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
 
   messages.addListener('webgl-new-texture-list', this._on_new_texture_list.bind(this));
-  messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
-  messages.addListener('webgl-new-texture-data',
-      this._on_new_texture_data.bind(this));
 
   this.init(id, name, container_class);
 }
 
-cls.WebGLTextureView.prototype = ViewBase;
+cls.WebGLTextureSideView.prototype = ViewBase;
 
 
-cls.WebGLTextureView.create_ui_widgets = function()
+cls.WebGLTextureSideView.create_ui_widgets = function()
 {
   new ToolbarConfig(
-    'webgl_texture',
+    'texture-side-panel',
     [
       {
         handler: 'refresh-webgl-texture',

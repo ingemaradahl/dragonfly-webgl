@@ -305,9 +305,6 @@ cls.WebGL.RPCs.injection = function () {
 		  // Add data getter function
           texture.get_data = this.get_texture_data.bind(texture);
 
-          // TODO Translate to ENUMs
-          // TODO this is wrong parameter! FIX!
-          // TODO get real parameters
           // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
 
           // We need to save some extra information about the call when an
