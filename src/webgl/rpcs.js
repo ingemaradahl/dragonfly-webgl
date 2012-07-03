@@ -266,10 +266,8 @@ cls.WebGL.RPCs.injection = function () {
 
     innerFuns.createTexture = function(result, args)
     {
-      //this.created_textures.push(result);
       var texture_map_unit = {};
       texture_map_unit.texture = result;
-      //console.log("created");
       var index = this.textures.push(texture_map_unit);
       texture_map_unit.index = index - 1;
     };

@@ -103,19 +103,10 @@ cls.WebGLTextureView = function(id, name, container_class)
     var ctx = window['cst-selects']['context-select'].get_selected_context();
     var obj = window.webgl.data[ctx].texture_data[texture_index];
 
-    this._container.clearAndRender(
-      ['div',
-        ['p',"Texture" + texture_index ],
-        ['p',"Element Type: " + obj.element_type],
-        ['p', "texture_wrap_s: " + obj.texture_wrap_s],
-        ['p', "texture_wrap_t: " + obj.texture_wrap_t],
-        ['p', "texture_min_filter: " + obj.texture_min_filter],
-        ['p', "texture_mag_filter: " + obj.texture_mag_filter],
-        ['p', "Source : " + obj.source],
-        ['img', 'src',  obj.img ],
-        'class', 'info-box'
-      ]
-    );
+
+    var template = ["div", window.templates.webgl.texture(obj), "class", "texture-box"];
+    this._container.clearAndRender(template);
+
   };
 
   this.tabledef = {
