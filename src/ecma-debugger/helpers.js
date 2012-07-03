@@ -105,6 +105,8 @@ window.cls.Helpers = function()
 
   this.resolveURLS = function(top_url, url)
   {
+    if (url.trim().startswith("data:"))
+      return url;
     return (
         /^.{4,5}:\/\//.test(url) && url
         || /^\//.test(url) && /^.{4,5}:\/\/[^/]*/.exec(top_url)[0] + url
@@ -288,7 +290,7 @@ window.cls.Helpers = function()
 
     while (integral.length > 3)
     {
-      ret = "," + integral.splice(integral.length-3, 3).join("") + ret;
+      ret = "," + integral.splice(integral.length - 3, 3).join("") + ret;
     }
 
     if (integral.length)
@@ -333,6 +335,18 @@ window.cls.Helpers = function()
 
     return color[notation];
   };
+
+  this.prop = (function()
+  {
+   var cache = {};
+   return function(prop)
+   {
+     return cache[prop] || (cache[prop] = function(obj)
+     {
+       return obj[prop];
+     });
+   };
+  })();
 }
 
 cls.Helpers.shortcut_search_cb = function(action_id, event, target)

@@ -104,9 +104,9 @@ cls.WebGL.RPCs.injection = function () {
         var error = gl.getError();
         if (error !== gl.NO_ERROR)
         {
-          if (oldest_error === gl.NO_ERROR) oldest_error = error;
-          // TODO: will flood the console if inside a loop, perhaps not log always?
-          console.log("ERROR IN WEBGL in call to " + function_name + ": error " + error);
+          if (oldest_error === gl.NO_ERROR) {
+            oldest_error = error;
+          }
         }
         else if (innerFunction)
         {
@@ -115,86 +115,22 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          var call_idx = handler.trace.calls.length;
-          var trace_idx = 0; // TODO: Differ from different traces
           var postFunction = postCaptureFuns[function_name];
-
-          var args = [];
-          for (var i = 0; i < arguments.length; i++)
-          {
-            if (typeof(arguments[i]) === "object" && arguments[i] !== null)
-            {
-              var obj = arguments[i];
-              var trace_obj = make_trace_argument_object(obj);
-              var trace_obj_index = handler.trace.objects.push(trace_obj) - 1;
-              args.push("@" + String(trace_obj_index));
-            }
-            else
-            {
-              args.push(arguments[i]);
-            }
-          }
-
-          var res = result === undefined ? "" : result;
-          handler.trace.calls.push([function_name, error, res].concat(args).join("|"));
 
           switch (function_name)
           {
             case "drawArrays":
             case "drawElements":
-              postFunction.call(handler, trace_idx, call_idx);
+              postFunction.call(handler);
               break;
           }
+
+          handler.snapshot.add_call(function_name, error, arguments, result);
         }
         return result;
       };
     }
 
-
-    /**
-     * Pairs a trace argument with a WebGL object.
-     * Creates a object for easy pairing on the Dragonfly side.
-     */
-    var object_type_regexp = /^\[object (.*?)\]$/;
-    function make_trace_argument_object(obj, args)
-    {
-      var type = obj.constructor.name;
-      if (type === "Function.prototype")
-      {
-        var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
-        if (re != null && re[1] != null) type = re[1];
-      }
-      var target = obj;
-
-      var arg = {};
-      arg.type = type;
-      if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
-      {
-        arg.data = new (eval(type))(obj);
-        // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
-        //arg.data = obj;
-      }
-      else if (obj instanceof WebGLUniformLocation)
-      {
-        var uniform = handler.lookup_uniform(obj);
-      }
-      else if (obj instanceof WebGLBuffer)
-      {
-        var buffer = handler.lookup_buffer(obj);
-        arg.buffer_index = buffer.index;
-      }
-      else if (obj instanceof WebGLProgram)
-      {
-        var program = handler.lookup_program(obj);
-        target = program.index;
-      }
-      else if (obj instanceof WebGLTexture)
-      {
-        var texture = handler.lookup_texture(obj);
-        arg.texture_index = texture.index;
-      }
-      return arg;
-    }
 
     var innerFuns = {};
     innerFuns.createBuffer = function(buffer, args)
@@ -203,17 +139,13 @@ cls.WebGL.RPCs.injection = function () {
       buf.buffer = buffer;
       var i = this.buffers.push(buf);
       buf.index = i - 1;
-
-      if (this.buffers_update)
-      {
-        this.events["buffer-created"].post(buf);
-      }
     };
     innerFuns.bindBuffer = function(result, args)
     {
       var buffer = args[1];
       if (buffer == null) return;
       this.bound_buffer = this.lookup_buffer(buffer);
+      // TODO: redundancy check
     };
     innerFuns.bufferData = function(result, args)
     {
@@ -229,11 +161,15 @@ cls.WebGL.RPCs.injection = function () {
       {
         buffer.size = args[1].byteLength;
         buffer.data = args[1];
+        //buffer.data = Array.prototype.slice.call(args[1].slice(0); // Make sure we present correct data
+        // TODO: Make data cloning a selectable option?
       }
       buffer.usage = args[2];
     };
     innerFuns.bufferSubData = function(result, args)
     {
+      // TODO: data array in buffer has to be cloned, otherwise "external" array
+      // is modified as well
       if (this.bound_buffer == null) return;
       var buffer = this.bound_buffer;
       buffer.target = args[0];
@@ -251,20 +187,21 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = this.lookup_buffer(buf);
       this.buffers[buffer.index] = null;
       if (this.bound_buffer === buffer) this.bound_buffer = null;
-
-      if (this.buffers_update)
-      {
-        // TODO: should notify dragonfly about the deletion.
-      }
     };
+
 
     // Texture code
-    innerFuns.bindTexture = function(result, args)
+    innerFuns.activeTexture = function(result, args)
     {
-
+      this.active_texture = result;
     };
 
-    innerFuns.createTexture = function(texture, args)
+    innerFuns.bindTexture = function(result, args)
+    {
+      this.texture_binding[args[0]] = args[1];
+    };
+
+    innerFuns.createTexture = function(result, args)
     {
       var tex = {};
       tex.texture = texture;
@@ -289,7 +226,9 @@ cls.WebGL.RPCs.injection = function () {
       var texture_container_object = args[args.length -1];
       if (texture_container_object === null)  //TODO improve
         return;
-      var bound_texture = gl.getParameter(gl.TEXTURE_BINDING_2D);
+
+      var target = args[0];
+      var bound_texture = this.texture_binding[target].texture;
 
       for (var i=0; i<this.textures.length; i++)
       {
@@ -298,18 +237,18 @@ cls.WebGL.RPCs.injection = function () {
           var texture = {
             id : i,
             texture : bound_texture,
+            target  : target,
             object : texture_container_object,
             type : texture_container_object.toString(),
-            texture_wrap_s : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S),
-            texture_wrap_t : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T),
-            texture_min_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER),
-            texture_mag_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER),
+            texture_wrap_s : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_S),
+            texture_wrap_t : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_T),
+            texture_min_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MIN_FILTER),
+            texture_mag_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MAG_FILTER),
+
+            get_data : this.get_texture_data.bind(texture)
           };
 
-		  // Add data getter function
-          texture.get_data = this.get_texture_data.bind(texture);
-
-          // TODO TEXTURE_2D and TEXTURE_CUBE_MAP
+          // TODO Translate to ENUMs
 
           // We need to save some extra information about the call when an
           // ArrayBufferView is used.
@@ -407,7 +346,7 @@ cls.WebGL.RPCs.injection = function () {
           loc  : loc,
           type : active_uniform.type,
           size : active_uniform.size,
-          program_idx : program_obj.index
+          program_index : program_obj.index
         });
       }
 
@@ -430,7 +369,7 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     var postCaptureFuns = {};
-    postCaptureFuns.drawArrays = function(trace_idx, call_idx)
+    postCaptureFuns.drawArrays = function()
     {
       var gl = this.gl;
 
@@ -449,9 +388,6 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      height = Math.min(height, 200);
-      width = Math.min(width, 200);
-
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
       var arr = new ArrayBuffer(size);
@@ -460,23 +396,13 @@ cls.WebGL.RPCs.injection = function () {
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
       var snapshot = {
-        trace_idx : trace_idx,
-        call_idx : call_idx,
         pixels : Array.prototype.slice.call(pixels),
         size : size,
         width : width,
         height : height
       };
 
-      this.trace.fbo_snapshots.push(snapshot);
-
-      var program_state = {
-        trace_idx : trace_idx,
-        call_idx : call_idx,
-        state : this.get_program_state()
-      };
-
-      this.trace.program_states.push(program_state);
+      this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM));
     };
     postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
 
@@ -499,15 +425,15 @@ cls.WebGL.RPCs.injection = function () {
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        handler.events["trace-completed"].post(handler.trace);
-        handler.trace = null;
+        handler.events["snapshot-completed"].post(handler.snapshot.end());
+        handler.snapshot = null;
       }
 
       if (handler.capture_next_frame)
       {
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
-        handler.trace = new Trace();
+        handler.snapshot = new Snapshot(handler);
       }
     };
 
@@ -552,26 +478,25 @@ cls.WebGL.RPCs.injection = function () {
     this.gl = gl;
     this.context = context;
 
+    this.capture_next_frame = false;
+    this.capturing_frame = false;
+
+    this.snapshot = null;
+
     this.programs = [];
     this.shaders = [];
     this.bound_program = null;
 
     this.buffers = [];
     this.bound_buffer = null;
-    this.buffers_update = true;
 
-    this.trace = null;
-    this.fbo_snapshots = [];
-    this.capture_next_frame = false;
-    this.capturing_frame = false;
 
     this.textures = [];
-    this.textures_update = true;
+    this.texture_binding = {};
+    this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
     this.events = {
-      "buffer-created": new MessageQueue("webgl-buffer-created", canvas),
-      "trace-completed": new MessageQueue("webgl-trace-completed", canvas),
-      "texture-created": new MessageQueue("webgl-texture-created", canvas)
+      "snapshot-completed": new MessageQueue("webgl-snapshot-completed", canvas)
     };
 
     /* Interface definition between DF and the Context Handler, only the
@@ -583,17 +508,20 @@ cls.WebGL.RPCs.injection = function () {
       return this._interface;
     };
 
-    this.request_trace = function()
+
+
+    /* Requests a snapshot of all WebGL data for the next frame */
+    this.request_snapshot = function()
     {
       this.capture_next_frame = true;
     };
-    this._interface.request_trace = this.request_trace.bind(this);
+    this._interface.request_snapshot = this.request_snapshot.bind(this);
 
-    this.get_trace = function()
+    this.get_snapshot = function()
     {
-      return this.events["trace-completed"].get();
+      return this.events["snapshot-completed"].get();
     };
-    this._interface.get_trace = this.get_trace.bind(this);
+    this._interface.get_snapshot = this.get_snapshot.bind(this);
 
     this.get_state = function()
     {
@@ -790,44 +718,11 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.get_buffers = this.get_buffers.bind(this);
 
-    this.get_new_textures = function()
-    {
-      var textures = this.events["texture-created"].get();
-      var out = [];
-      var i;
-      var texture;
-      for (i=0; i<textures.length; i++)
-      {
-        texture = textures[i];
-        if (texture === undefined) continue;
-        out.push(texture);
-      }
-      return out;
-    };
-    this._interface.get_new_textures = this.get_new_textures.bind(this);
-
-    this.get_textures = function()
-    {
-      var textures = this.textures;
-      var out = [];
-      var i;
-      for (i=0; i<textures.length; i++)
-      {
-        var texture = textures[i];
-        if (texture === undefined || texture.img === undefined) continue;
-        out.push(texture);
-      }
-      return out;
-    };
-    this._interface.get_textures = this.get_textures.bind(this);
-
     this.get_texture_names = function()
     {
       return this.textures;
     };
     this._interface.get_texture_names = this.get_texture_names.bind(this);
-
-  
 
 
     this.lookup_buffer = function(buffer)
@@ -1009,10 +904,11 @@ cls.WebGL.RPCs.injection = function () {
       };
     };
 
-    this.get_program_state = function()
+    this.get_program_state = function(program)
     {
-      var gl = this.gl;
-      var program = gl.getParameter(gl.CURRENT_PROGRAM);
+      var gl = this.context;
+
+      program = program || gl.getParameter(gl.CURRENT_PROGRAM);
 
       if (!program)
       {
@@ -1024,6 +920,7 @@ cls.WebGL.RPCs.injection = function () {
       var state =
       {
         program : program_obj.index,
+        shaders : program_obj.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
         attributes : [],
         uniforms : []
       };
@@ -1043,13 +940,13 @@ cls.WebGL.RPCs.injection = function () {
       }
 
 
-      for (var idx=0; idx<program_obj.uniforms.length; idx++)
+      for (var index=0; index<program_obj.uniforms.length; index++)
       {
-        var uniform = program_obj.uniforms[idx];
+        var uniform = program_obj.uniforms[index];
         var value = gl.getUniform(program, uniform.loc);
         state.uniforms.push({
           name : uniform.name,
-          idx  : idx,
+          index  : index,
           //loc  : uniform.loc,
           type : uniform.type,
           size : uniform.size,
@@ -1099,12 +996,183 @@ cls.WebGL.RPCs.injection = function () {
     this.ready = true;
   };
 
+  var _snapshot_index = 0;
+
+  function Snapshot(handler)
+  {
+    this.index = _snapshot_index++;
+    this.handler = handler;
+
+    this.call_index = -1;
+    this.calls = [];
+    this.call_refs = [];
+
+    this.drawcalls = [];
+    this.buffers = [];
+    this.programs = [];
+    this.textures = [];
+
+    /* Gather initial information about the state of WebGL */
+    var init = function ()
+    {
+      var h = this.handler;
+
+      var init_buffers = function ()
+      {
+        for (var i=0; i<h.buffers.length; i++)
+        {
+          this.add_buffer(h.buffers[i]);
+        }
+      }.bind(this);
+
+      var init_programs = function ()
+      {
+        for (var i=0; i<h.programs.length; i++)
+        {
+          var prg = h.programs[i];
+
+          var program_state = {
+            call_index : this.call_index,
+            index : prg.index,
+            shaders : prg.shaders,
+            attributes : prg.attributes,
+            uniforms : prg.uniforms
+          };
+
+          this.programs.push(program_state);
+        }
+      }.bind(this);
+
+      init_buffers();
+      init_programs();
+      //init_textures();
+      //init_fbos();
+
+      this.call_index++;
+    }.bind(this);
+
+    /* Adds a WebGL function call to the snapshot */
+    this.add_call = function (function_name, error, args, result)
+    {
+      /**
+       * Pairs a trace argument with a WebGL object.
+       * Creates a object for easy pairing on the Dragonfly side.
+       */
+      var object_type_regexp = /^\[object (.*?)\]$/;
+      var make_trace_argument_object = function (obj, args)
+      {
+        var type = obj.constructor.name;
+        if (type === "Function.prototype")
+        {
+          var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
+          if (re != null && re[1] != null) type = re[1];
+        }
+        var target = obj;
+
+        var arg = {};
+        arg.type = type;
+        if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+        {
+          arg.data = new (eval(type))(obj);
+          // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
+          //arg.data = obj;
+        }
+        else if (obj instanceof WebGLUniformLocation)
+        {
+          var uniform = handler.lookup_uniform(obj);
+        }
+        else if (obj instanceof WebGLBuffer)
+        {
+          var buffer = handler.lookup_buffer(obj);
+          arg.buffer_index = buffer.index;
+        }
+        else if (obj instanceof WebGLProgram)
+        {
+          var program = handler.lookup_program(obj);
+          target = program.index;
+        }
+        else if (obj instanceof WebGLTexture)
+        {
+          var texture = handler.lookup_texture(obj);
+          arg.texture_index = texture.index;
+        }
+        return arg;
+      }
+
+      var call_args = [];
+
+      for (var i = 0; i < args.length; i++)
+      {
+        if (typeof(args[i]) === "object" && args[i] !== null)
+        {
+          var obj = args[i];
+          var trace_ref = make_trace_argument_object(obj);
+          var trace_ref_index = this.call_refs.push(trace_ref) - 1;
+          call_args.push("@" + String(trace_ref_index));
+        }
+        else
+        {
+          call_args.push(args[i]);
+        }
+      }
+
+      var res = result === undefined ? "" : result;
+
+      this.call_index = this.calls.push([function_name, error, res].concat(call_args).join("|")) - 1;
+    };
+
+    this.add_drawcall = function (fbo, program)
+    {
+      var program_obj = this.handler.lookup_program(program);
+
+      this.drawcalls.push({
+        call_index : this.call_index,
+        fbo : fbo,
+        program_index : program_obj.index
+      });
+    };
+
+    /* Adds a buffer state to the snapshot */
+    this.add_buffer = function (buffer)
+    {
+      var buffer_state = {
+        call_index : this.call_index,
+        index : buffer.index,
+        //buffer : buffer.buffer
+      };
+
+      if (buffer.data)
+      {
+        buffer_state.data = buffer.data;
+        buffer_state.size = buffer.size;
+        buffer_state.target = buffer.target;
+        buffer_state.usage = buffer.usage;
+      }
+
+      this.buffers.push(buffer_state);
+    }
+
+    /* Wraps up the frame in a complete package for transmission to DF */
+    this.end = function()
+    {
+      return {
+        index : this.index,
+        calls : this.calls,
+        call_refs : this.call_refs,
+        buffers : this.buffers,
+        programs : this.programs,
+        textures : this.textures,
+        drawcalls : this.drawcalls
+      }
+    };
+
+    init();
+  }
+
   function Trace()
   {
     this.calls = [];
     this.objects = [];
-    this.fbo_snapshots = [];
-    this.program_states = [];
   }
 
   return canvas_map;

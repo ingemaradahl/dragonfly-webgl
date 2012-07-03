@@ -1,5 +1,7 @@
 syntax: glob
 *.pyc
+*.swo
+*.swp
 build/*
 */Thumbs.db
 .DS_Store

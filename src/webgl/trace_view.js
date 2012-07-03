@@ -30,9 +30,11 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._render = function()
   {
-    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
+    //var ctx_id = window['cst-selects']['context-select'].get_selected_context();
+    // TODO: FIXME
+    var ctx_id = window.webgl.contexts[0];
     var trace;
-    if (ctx_id != null && (trace = window.webgl.data[ctx_id].get_latest_trace()) != null)
+    if (ctx_id != null && (trace = window.webgl.snapshots[ctx_id].get_latest_trace()) != null)
     {
       this._current_trace = trace;
       var template = window.templates.webgl.trace_table(trace, this.id);
@@ -63,7 +65,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     var ctx = window['cst-selects']['context-select'].get_selected_context();
     if (ctx != null)
     {
-      window.webgl.request_trace(ctx);
+      window.webgl.request_snapshot(ctx);
     }
   };
 
@@ -130,7 +132,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.click["refresh-webgl-trace"] = this._on_refresh.bind(this);
+  eh.click["webgl-trace-refresh"] = this._on_refresh.bind(this);
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
@@ -146,7 +148,7 @@ cls.WebGLTraceView.create_ui_widgets = function()
     'trace-side-panel',
     [
       {
-        handler: 'refresh-webgl-trace',
+        handler: 'webgl-trace-refresh',
         title: "Refresh the trace",
         icon: 'reload-webgl-trace'
       }
