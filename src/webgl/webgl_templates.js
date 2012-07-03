@@ -48,7 +48,9 @@ window.templates.webgl.buffer_base = function(buffer)
         "td",
         "value"
       ]
-    ]
+    ],
+    "class",
+    "header"
   ];
 
   var buffer_info = [
@@ -94,15 +96,11 @@ window.templates.webgl.buffer_base = function(buffer)
       [
         "table",
         [
-          [
-            "thead",
-            data_table_head
-          ],
-          [
-            "tbody",
+            data_table_head,
             data_table_rows
-          ]
-        ]
+        ],
+        "class",
+        "sortable-table buffer-data-table"
       ],
       more_data
     ]
