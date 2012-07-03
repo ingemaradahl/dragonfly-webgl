@@ -264,12 +264,17 @@ cls.WebGL.RPCs.injection = function () {
 
     };
 
-    innerFuns.createTexture = function(result, args)
+    innerFuns.createTexture = function(texture, args)
     {
-      var texture_map_unit = {};
-      texture_map_unit.texture = result;
-      var index = this.textures.push(texture_map_unit);
-      texture_map_unit.index = index - 1;
+      var tex = {};
+      tex.texture = texture;
+      var i = this.textures.push(tex);
+      tex.index = i - 1;
+
+      if (this.texture_update)
+      {
+        this.events["texture-created"].post(tex);
+      }
     };
 
     innerFuns.deleteTexture = function(result, args)
@@ -295,7 +300,6 @@ cls.WebGL.RPCs.injection = function () {
             texture : bound_texture,
             object : texture_container_object,
             type : texture_container_object.toString(),
-            // TODO this is wrong parameter! FIX!
             texture_wrap_s : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S),
             texture_wrap_t : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T),
             texture_min_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER),
@@ -566,7 +570,8 @@ cls.WebGL.RPCs.injection = function () {
 
     this.events = {
       "buffer-created": new MessageQueue("webgl-buffer-created", canvas),
-      "trace-completed": new MessageQueue("webgl-trace-completed", canvas)
+      "trace-completed": new MessageQueue("webgl-trace-completed", canvas),
+      "texture-created": new MessageQueue("webgl-texture-created", canvas)
     };
 
     /* Interface definition between DF and the Context Handler, only the
@@ -785,11 +790,44 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.get_buffers = this.get_buffers.bind(this);
 
+    this.get_new_textures = function()
+    {
+      var textures = this.events["texture-created"].get();
+      var out = [];
+      var i;
+      var texture;
+      for (i=0; i<textures.length; i++)
+      {
+        texture = textures[i];
+        if (texture === undefined) continue;
+        out.push(texture);
+      }
+      return out;
+    };
+    this._interface.get_new_textures = this.get_new_textures.bind(this);
+
+    this.get_textures = function()
+    {
+      var textures = this.textures;
+      var out = [];
+      var i;
+      for (i=0; i<textures.length; i++)
+      {
+        var texture = textures[i];
+        if (texture === undefined || texture.img === undefined) continue;
+        out.push(texture);
+      }
+      return out;
+    };
+    this._interface.get_textures = this.get_textures.bind(this);
+
     this.get_texture_names = function()
     {
       return this.textures;
     };
     this._interface.get_texture_names = this.get_texture_names.bind(this);
+
+  
 
 
     this.lookup_buffer = function(buffer)
