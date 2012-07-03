@@ -14,7 +14,9 @@ window.templates.webgl.buffer_base = function(buffer)
       [
         [
           "td",
-          String(i)
+          String(i),
+          "style", // TODO make css class
+          "text-align: right"
         ],
         [
           "td",
@@ -40,9 +42,7 @@ window.templates.webgl.buffer_base = function(buffer)
     [
       [
         "td",
-        "Index",
-        "style", // TODO make css class
-        "text-align: right"
+        "Index"
       ],
       [
         "td",
@@ -175,11 +175,11 @@ window.templates.webgl.trace_table = function(calls, view_id)
 window.templates.webgl.texture = function(obj)
 {
   return ([["table",
-            ["tr",  
+            ["tr",
               ["td", "Element Type:"],
               ["td", obj.element_type]
             ],
-            ["tr", 
+            ["tr",
               ["td", "Source:"],
               ["td", obj.source]
             ],
