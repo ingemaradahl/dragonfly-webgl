@@ -31,11 +31,8 @@ cls.WebGLBufferView = function(id, name, container_class)
   this._on_buffer_data = function(buffer)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
-    this._container.clearAndRender(
-      ['div',
-        Array.prototype.join.call(buffer.values, ", "),
-      ]
-    );
+
+    this._container.clearAndRender(window.templates.webgl.buffer_base(buffer));
   };
 
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
