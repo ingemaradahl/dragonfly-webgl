@@ -25,11 +25,13 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._on_texture_data = function(msg)
   {
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
+
     var texture_index = msg["id"];
     var ctx = window['cst-selects']['context-select'].get_selected_context();
     var obj = window.webgl.data[ctx].texture_data[texture_index];
 
-    var template = ["div", window.templates.webgl.texture(obj), "class", "texture-box"];
+    var template = ["div", window.templates.webgl.texture(obj)];
     this._container.clearAndRender(template);
   };
 

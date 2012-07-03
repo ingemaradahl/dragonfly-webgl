@@ -285,7 +285,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     new cls.WebGLTextureView("webgl_texture",
                              "Textures",
-                             "scroll webgl_texture texture");
+                             "scroll webgl_view texture");
 
     /* the following views must be created to get entry in the Settings tab */
 

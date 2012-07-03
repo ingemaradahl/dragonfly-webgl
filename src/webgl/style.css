@@ -3,8 +3,14 @@
   width: 40%;
 }
 
-/* Buffer */
+/* Texture */
+.webgl_view.texture div
+{
+  text-align: left;
+  padding: 10px;
+}
 
+/* Buffer */
 .webgl_view.buffer div
 {
   padding: 10px;

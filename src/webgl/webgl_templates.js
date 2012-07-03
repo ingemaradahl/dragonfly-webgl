@@ -188,21 +188,23 @@ window.templates.webgl.texture = function(obj)
               ["td", obj.source]
             ],
             ["tr",
-              ["td", "texture_wrap_s:"],
+              ["td", "TEXTURE_WRAP_S:"],
               ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
             ],
             ["tr",
-              ["td", "texture_wrap_t:"] ,
+              ["td", "TEXTURE_WRAP_T:"] ,
               ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
             ],
             ["tr",
-              ["td", "texture_min_filter:"],
+              ["td", "TEXTURE_MIN_FILTER:"],
               ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
             ],
             ["tr",
-              ["td", "texture_mag_filter:"],
+              ["td", "TEXTURE_MAG_FILTER:"],
               ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
-            ],
-          ], ["img", "src", obj.img]]
+            ], 
+          ],
+          ["img", "src", obj.img],
+         ]
         );
 };

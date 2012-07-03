@@ -295,7 +295,6 @@ cls.WebGL.RPCs.injection = function () {
             texture : bound_texture,
             object : texture_container_object,
             type : texture_container_object.toString(),
-            // TODO this is wrong parameter! FIX!
             texture_wrap_s : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S),
             texture_wrap_t : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T),
             texture_min_filter : gl.getTexParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER),
