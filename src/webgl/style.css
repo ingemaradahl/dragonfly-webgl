@@ -11,7 +11,12 @@
 }
 
 /* Buffer */
+<<<<<<< local
 .webgl_view.buffer div
+=======
+
+.webgl_view.buffer > div
+>>>>>>> other
 {
   padding: 10px;
 }
@@ -33,6 +38,13 @@
   text-align: left;
   padding-right: 30px;
   width: 140px;
+}
+
+.buffer-data-table
+{
+  margin-top: 10px;
+  border: 1px solid #999999;
+  width: 100px;
 }
 
 /* Trace */
