@@ -115,85 +115,22 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          var call_idx = handler.snapshot.call_trace.calls.length;
           var postFunction = postCaptureFuns[function_name];
-
-          var args = [];
-          for (var i = 0; i < arguments.length; i++)
-          {
-            if (typeof(arguments[i]) === "object" && arguments[i] !== null)
-            {
-              var obj = arguments[i];
-              var trace_obj = make_trace_argument_object(obj);
-              var trace_obj_index = handler.snapshot.call_trace.objects.push(trace_obj) - 1;
-              args.push("@" + String(trace_obj_index));
-            }
-            else
-            {
-              args.push(arguments[i]);
-            }
-          }
-
-          var res = result === undefined ? "" : result;
-          handler.snapshot.call_trace.calls.push([function_name, error, res].concat(args).join("|"));
 
           switch (function_name)
           {
             case "drawArrays":
             case "drawElements":
-              postFunction.call(handler, call_idx);
+              postFunction.call(handler);
               break;
           }
+
+          handler.snapshot.add_call(function_name, error, arguments, result);
         }
         return result;
       };
     }
 
-
-    /**
-     * Pairs a trace argument with a WebGL object.
-     * Creates a object for easy pairing on the Dragonfly side.
-     */
-    var object_type_regexp = /^\[object (.*?)\]$/;
-    function make_trace_argument_object(obj, args)
-    {
-      var type = obj.constructor.name;
-      if (type === "Function.prototype")
-      {
-        var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
-        if (re != null && re[1] != null) type = re[1];
-      }
-      var target = obj;
-
-      var arg = {};
-      arg.type = type;
-      if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
-      {
-        arg.data = new (eval(type))(obj);
-        // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
-        //arg.data = obj;
-      }
-      else if (obj instanceof WebGLUniformLocation)
-      {
-        var uniform = handler.lookup_uniform(obj);
-      }
-      else if (obj instanceof WebGLBuffer)
-      {
-        var buffer = handler.lookup_buffer(obj);
-        arg.buffer_index = buffer.index;
-      }
-      else if (obj instanceof WebGLProgram)
-      {
-        var program = handler.lookup_program(obj);
-        target = program.index;
-      }
-      else if (obj instanceof WebGLTexture)
-      {
-        var texture = handler.lookup_texture(obj);
-        arg.texture_index = texture.index;
-      }
-      return arg;
-    }
 
     var innerFuns = {};
     innerFuns.createBuffer = function(buffer, args)
@@ -208,6 +145,7 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = args[1];
       if (buffer == null) return;
       this.bound_buffer = this.lookup_buffer(buffer);
+      // TODO: redundancy check
     };
     innerFuns.bufferData = function(result, args)
     {
@@ -403,7 +341,7 @@ cls.WebGL.RPCs.injection = function () {
           loc  : loc,
           type : active_uniform.type,
           size : active_uniform.size,
-          program_idx : program_obj.index
+          program_index : program_obj.index
         });
       }
 
@@ -426,7 +364,7 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     var postCaptureFuns = {};
-    postCaptureFuns.drawArrays = function(call_idx)
+    postCaptureFuns.drawArrays = function()
     {
       var gl = this.gl;
 
@@ -445,9 +383,6 @@ cls.WebGL.RPCs.injection = function () {
         height = viewport[3];
       }
 
-      height = Math.min(height, 128);
-      width = Math.min(width, 128);
-
       // Image data will be stored as RGBA - 4 bytes per pixel
       var size = width * height * 4;
       var arr = new ArrayBuffer(size);
@@ -456,21 +391,13 @@ cls.WebGL.RPCs.injection = function () {
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
       var snapshot = {
-        call_idx : call_idx,
         pixels : Array.prototype.slice.call(pixels),
         size : size,
         width : width,
         height : height
       };
 
-      this.snapshot.call_trace.fbo_snapshots.push(snapshot);
-
-      var program_state = {
-        call_idx : call_idx,
-        state : this.get_program_state()
-      };
-
-      this.snapshot.call_trace.program_states.push(program_state);
+      this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM));
     };
     postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
 
@@ -493,7 +420,7 @@ cls.WebGL.RPCs.injection = function () {
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        handler.events["snapshot-completed"].post(handler.snapshot);
+        handler.events["snapshot-completed"].post(handler.snapshot.end());
         handler.snapshot = null;
       }
 
@@ -501,7 +428,7 @@ cls.WebGL.RPCs.injection = function () {
       {
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
-        handler.snapshot = new Snapshot();
+        handler.snapshot = new Snapshot(handler);
       }
     };
 
@@ -972,10 +899,11 @@ cls.WebGL.RPCs.injection = function () {
       };
     };
 
-    this.get_program_state = function()
+    this.get_program_state = function(program)
     {
-      var gl = this.gl;
-      var program = gl.getParameter(gl.CURRENT_PROGRAM);
+      var gl = this.context;
+
+      program = program || gl.getParameter(gl.CURRENT_PROGRAM);
 
       if (!program)
       {
@@ -987,6 +915,7 @@ cls.WebGL.RPCs.injection = function () {
       var state =
       {
         program : program_obj.index,
+        shaders : program_obj.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
         attributes : [],
         uniforms : []
       };
@@ -1006,13 +935,13 @@ cls.WebGL.RPCs.injection = function () {
       }
 
 
-      for (var idx=0; idx<program_obj.uniforms.length; idx++)
+      for (var index=0; index<program_obj.uniforms.length; index++)
       {
-        var uniform = program_obj.uniforms[idx];
+        var uniform = program_obj.uniforms[index];
         var value = gl.getUniform(program, uniform.loc);
         state.uniforms.push({
           name : uniform.name,
-          idx  : idx,
+          index  : index,
           //loc  : uniform.loc,
           type : uniform.type,
           size : uniform.size,
@@ -1062,25 +991,183 @@ cls.WebGL.RPCs.injection = function () {
     this.ready = true;
   };
 
-    this.snapshot_idx = 0;
+  var _snapshot_index = 0;
 
-  var _snapshot_idx = 0;
-
-  function Snapshot()
+  function Snapshot(handler)
   {
-    this.index = _snapshot_idx++;
-    this.call_trace = new Trace();
+    this.index = _snapshot_index++;
+    this.handler = handler;
+
+    this.call_index = -1;
+    this.calls = [];
+    this.call_refs = [];
+
+    this.drawcalls = [];
     this.buffers = [];
     this.programs = [];
     this.textures = [];
+
+    /* Gather initial information about the state of WebGL */
+    var init = function ()
+    {
+      var h = this.handler;
+
+      var init_buffers = function ()
+      {
+        for (var i=0; i<h.buffers.length; i++)
+        {
+          this.add_buffer(h.buffers[i]);
+        }
+      }.bind(this);
+
+      var init_programs = function ()
+      {
+        for (var i=0; i<h.programs.length; i++)
+        {
+          var prg = h.programs[i];
+
+          var program_state = {
+            call_index : this.call_index,
+            index : prg.index,
+            shaders : prg.shaders,
+            attributes : prg.attributes,
+            uniforms : prg.uniforms
+          };
+
+          this.programs.push(program_state);
+        }
+      }.bind(this);
+
+      init_buffers();
+      init_programs();
+      //init_textures();
+      //init_fbos();
+
+      this.call_index++;
+    }.bind(this);
+
+    /* Adds a WebGL function call to the snapshot */
+    this.add_call = function (function_name, error, args, result)
+    {
+      /**
+       * Pairs a trace argument with a WebGL object.
+       * Creates a object for easy pairing on the Dragonfly side.
+       */
+      var object_type_regexp = /^\[object (.*?)\]$/;
+      var make_trace_argument_object = function (obj, args)
+      {
+        var type = obj.constructor.name;
+        if (type === "Function.prototype")
+        {
+          var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
+          if (re != null && re[1] != null) type = re[1];
+        }
+        var target = obj;
+
+        var arg = {};
+        arg.type = type;
+        if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+        {
+          arg.data = new (eval(type))(obj);
+          // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
+          //arg.data = obj;
+        }
+        else if (obj instanceof WebGLUniformLocation)
+        {
+          var uniform = handler.lookup_uniform(obj);
+        }
+        else if (obj instanceof WebGLBuffer)
+        {
+          var buffer = handler.lookup_buffer(obj);
+          arg.buffer_index = buffer.index;
+        }
+        else if (obj instanceof WebGLProgram)
+        {
+          var program = handler.lookup_program(obj);
+          target = program.index;
+        }
+        else if (obj instanceof WebGLTexture)
+        {
+          var texture = handler.lookup_texture(obj);
+          arg.texture_index = texture.index;
+        }
+        return arg;
+      }
+
+      var call_args = [];
+
+      for (var i = 0; i < args.length; i++)
+      {
+        if (typeof(args[i]) === "object" && args[i] !== null)
+        {
+          var obj = args[i];
+          var trace_ref = make_trace_argument_object(obj);
+          var trace_ref_index = this.call_refs.push(trace_ref) - 1;
+          call_args.push("@" + String(trace_ref_index));
+        }
+        else
+        {
+          call_args.push(args[i]);
+        }
+      }
+
+      var res = result === undefined ? "" : result;
+
+      this.call_index = this.calls.push([function_name, error, res].concat(call_args).join("|")) - 1;
+    };
+
+    this.add_drawcall = function (fbo, program)
+    {
+      var program_obj = this.handler.lookup_program(program);
+
+      this.drawcalls.push({
+        call_index : this.call_index,
+        fbo : fbo,
+        program_index : program_obj.index
+      });
+    };
+
+    /* Adds a buffer state to the snapshot */
+    this.add_buffer = function (buffer)
+    {
+      var buffer_state = {
+        call_index : this.call_index,
+        index : buffer.index,
+        //buffer : buffer.buffer
+      };
+
+      if (buffer.data)
+      {
+        buffer_state.data = buffer.data;
+        buffer_state.size = buffer.size;
+        buffer_state.target = buffer.target;
+        buffer_state.usage = buffer.usage;
+      }
+
+      this.buffers.push(buffer_state);
+    }
+
+    /* Wraps up the frame in a complete package for transmission to DF */
+    this.end = function()
+    {
+      return {
+        index : this.index,
+        calls : this.calls,
+        call_refs : this.call_refs,
+        buffers : this.buffers,
+        programs : this.programs,
+        textures : this.textures,
+        drawcalls : this.drawcalls
+      }
+    };
+
+    init();
   }
 
   function Trace()
   {
     this.calls = [];
     this.objects = [];
-    this.fbo_snapshots = [];
-    this.program_states = [];
   }
 
   return canvas_map;

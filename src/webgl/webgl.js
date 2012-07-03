@@ -11,19 +11,18 @@ cls.WebGL.WebGLDebugger = function ()
   /* Context IDs for wrapped contexts. NOT an object id */
   this.contexts = [];
 
-  /* Map from canvas object ids to their context (handler) object id */
+  /* Map from canvas object ids to their respective context id in this.contexts */
   this.canvas_contexts = {};
 
   /* Interface functions to the context handler */
   this.interfaces = {};
 
-  /* Each context have its own data object, the context id is used as a key. */
-  this.data = {};
+  /* Each context have its own snapshot data object, the context id is used as a key. */
+  this.snapshots = {};
 
   this.api = new cls.WebGLAPI();
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
-  this.trace = new cls.WebGLTrace();
   this.test = new cls.WebGLTest();
   this.texture = new cls.WebGLTexture();
 
@@ -101,13 +100,13 @@ cls.WebGL.WebGLDebugger = function ()
   };
 
   /**
-   * Gets a trace of all WebGL calls from the current frame.
-   * TODO: Temporary requires that the script runs gl.new_frame() before each new frame is drawn.
+   * Gets a snapshot of WebGL state for the next frame.
    * @param context_id Id of the context which should be traced.
    */
-  this.request_trace = function(context_id)
+  this.request_snapshot = function(context_id)
   {
-    this.trace.send_trace_request(context_id);
+    context_id = context_id || this.contexts[0];
+    this.snapshots[context_id].send_snapshot_request();
   };
 
   this.request_buffer_data = function(context_object_id, buffer_index)
@@ -138,7 +137,7 @@ cls.WebGL.WebGLDebugger = function ()
       this.contexts.push(context_id);
       this.canvas_contexts[message.object_id] = context_id;
       this.interfaces[context_id] = handler_interface;
-      this.data[context_id] = new cls.WebGLData(context_id);
+      this.snapshots[context_id] = new cls.WebGLSnapshotArray(context_id);
 
       // Tell the target context that the debugger is ready.
       this.interfaces[context_id].debugger_ready();
