@@ -1,4 +1,4 @@
-﻿<viewport xmlns='http://www.w3.org/1999/xhtml'
+<viewport xmlns='http://www.w3.org/1999/xhtml'
           xmlns:xlink="http://www.w3.org/1999/xlink"
           xmlns:svg="http://www.w3.org/2000/svg"
           spellcheck="false">
@@ -424,7 +424,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/scoper.js"/>
 <script src="./webgl/utils.js"/>
 <script src="./webgl/api.js"/>
-<script src="./webgl/snapshot.js"/>
+<script src="./webgl/snapshot.js"/
 <script src="./webgl/program.js"/>
 <script src="./webgl/buffer.js"/>
 <script src="./webgl/state.js"/>
