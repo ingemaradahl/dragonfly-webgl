@@ -89,7 +89,8 @@ cls.WebGLSnapshotArray = function(context_id)
         var function_name = parts[0];
         var error_code = Number(parts[1]);
         var result = parts[2];
-        var args = parts.slice(3);
+        var redundant = parts[3];
+        var args = parts.slice(4);
 
         // Revive the arguments
         for (var k = 0; k < args.length; k++) 
@@ -121,7 +122,7 @@ cls.WebGLSnapshotArray = function(context_id)
           result = Number(result);
         }
 
-        trace_list.push(new TraceEntry(function_name, error_code, result, args));
+        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args));
       }
 
       this.trace = trace_list;
@@ -142,11 +143,12 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Used to store a single function call in a frame trace.
    */
-  function TraceEntry(function_name, error_code, result, args)
+  function TraceEntry(function_name, error_code, redundant, result, args)
   {
     this.function_name = function_name;
     this.error_code = error_code;
     this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
+    this.redundant = redundant;
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
