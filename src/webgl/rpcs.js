@@ -224,11 +224,6 @@ cls.WebGL.RPCs.injection = function () {
       tex.texture = result;
       var i = this.textures.push(tex);
       tex.index = i - 1;
-
-      if (this.texture_update)
-      {
-        this.events["texture-created"].post(tex);
-      }
     };
 
     innerFuns.deleteTexture = function(result, args)
@@ -240,29 +235,24 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.texImage2D = function(result, args)
     {
       // Last argument is the one containing the texture data.
-      var texture_container_object = args[args.length -1];
-      if (texture_container_object === null)  //TODO improve
-        return;
+      var texture_container_object = args[args.length-1];
 
       var target = args[0];
-      var bound_texture = this.texture_binding[target].texture;
+      var bound_texture = this.texture_binding[target];
 
       for (var i=0; i<this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
           var texture = {
-            id : i,
+            index : i,
             texture : bound_texture,
-            target  : target,
             object : texture_container_object,
-            type : texture_container_object.toString(),
-            texture_wrap_s : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_S),
-            texture_wrap_t : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_T),
-            texture_min_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MIN_FILTER),
-            texture_mag_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MAG_FILTER),
-
-            get_data : this.get_texture_data.bind(texture)
+            type : texture_container_object ? texture_container_object.toString() : null,
+            texture_wrap_s : gl.getTexParameter(target, gl.TEXTURE_WRAP_S),
+            texture_wrap_t : gl.getTexParameter(target, gl.TEXTURE_WRAP_T),
+            texture_min_filter : gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER),
+            texture_mag_filter : gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER),
           };
 
           // TODO Translate to ENUMs
@@ -437,6 +427,14 @@ cls.WebGL.RPCs.injection = function () {
       this.snapshot.add_buffer(buffer);
     };
     snapshot_functions.bufferSubData = snapshot_functions.bufferData;
+
+    snapshot_functions.texImage2D = function (result, args)
+    {
+      var target = args[0];
+      var texture = this.texture_binding[target];
+
+      this.snapshot.add_texture(texture);
+    };
 
     // -------------------------------------------------------------------------
 
@@ -712,52 +710,6 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
-    this.enable_buffers_update = function()
-    {
-      this.buffers_update = true;
-    };
-    this._interface.enable_buffers_update = this.enable_buffers_update.bind(this);
-
-    this.disable_buffers_update = function()
-    {
-      this.buffers_update = false;
-    };
-    this._interface.disable_buffers_update = this.disable_buffers_update.bind(this);
-
-    this.get_new_buffers = function()
-    {
-      var buffers = this.events["buffer-created"].get();
-      var out = [];
-      for (var i = 0; i < buffers.length; i++)
-      {
-        var buffer = buffers[i];
-        if (buffer === undefined) continue;
-        out.push(buffer);
-      }
-      return out;
-    };
-    this._interface.get_new_buffers = this.get_new_buffers.bind(this);
-
-    this.get_buffers = function()
-    {
-      var buffers = this.buffers;
-      var out = [];
-      for (var i = 0; i < buffers.length; i++)
-      {
-        var buffer = buffers[i];
-        if (buffer === undefined || buffer.data === undefined) continue;
-        out.push(buffer);
-      }
-      return out;
-    };
-    this._interface.get_buffers = this.get_buffers.bind(this);
-
-    this.get_texture_names = function()
-    {
-      return this.textures;
-    };
-    this._interface.get_texture_names = this.get_texture_names.bind(this);
-
 
     this.lookup_buffer = function(buffer)
     {
@@ -918,7 +870,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       else
       {
-        console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + this.toString());
+        // TODO: Draw texture to a new FBO, thes same as Uint8Array
       }
 
       return this;
@@ -1081,13 +1033,11 @@ cls.WebGL.RPCs.injection = function () {
         }
       }.bind(this);
 
-      var init_textures = function ()
-      {
-      }.bind(this);
-
       init_buffers();
       init_programs();
-      //init_textures();
+
+      // Init textures
+      this.handler.textures.forEach(this.add_texture, this);
       //init_fbos();
 
       this.call_index++;
@@ -1159,6 +1109,9 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       // TODO: better fix
+      // http://www.glge.org/demos/canvasdemo/ (and possibly all GLGE
+      // applications?) adds an extra parameter to texImage2D, rendering the
+      // arguments "decoding" heuristic in DF invalid
       if (function_name === "texImage2D")
       {
         call_args = call_args.slice(0, 9);
@@ -1202,7 +1155,42 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       this.buffers.push(buffer_state);
-    }
+    };
+
+    this.add_texture = function (texture)
+    {
+      texture = texture instanceof WebGLTexture ? this.handler.lookup_texture(texture) : texture;
+
+      if (!texture)
+        return;
+
+      var texture_state = {
+        call_index : this.call_index,
+        index : texture.index,
+        object : texture.object // Needed for data retrieval
+      };
+
+      // Add texture data getter, and bind it to the object
+      texture_state.get_data = this.handler.get_texture_data.bind(texture_state);
+
+      if (texture.internalFormat)
+      {
+        texture_state.internalFormat = texture.internalFormat;
+        texture_state.width = texture.width;
+        texture_state.height = texture.height;
+        texture_state.format = texture.format;
+      }
+      else 
+      {
+        texture_state.texture_mag_filter = texture.texture_mag_filter;
+        texture_state.texture_min_filter = texture.texture_min_filter;
+        texture_state.texture_min_filter = texture.texture_min_filter;
+        texture_state.texture_wrap_s = texture.texture_wrap_s;
+        texture_state.texture_wrap_t = texture.texture_wrap_s;
+      }
+
+      this.textures.push(texture_state);
+    };
 
     /* Wraps up the frame in a complete package for transmission to DF */
     this.end = function()

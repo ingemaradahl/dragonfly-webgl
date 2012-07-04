@@ -56,7 +56,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
-    this.texture_container = [];
+    this.textures = snapshot.textures;
     this.trace = [];
 
     var init_trace = function (calls, call_refs)
@@ -175,12 +175,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.tab = "buffer";
         break;
       case "WebGLTexture":
-        this.texture = snapshot.texture_container[this.texture_index];
-        if (this.texture == null)
-        { // TODO temporary until texture is rebuilt
-          this.text = "Texture " + String(this.texture_index) + " (not loaded)";
-          return;
-        }
+        this.texture = snapshot.textures[this.texture_index];
         this.text = "Texture " + String(this.texture.index);
         this.action = function()
         {
