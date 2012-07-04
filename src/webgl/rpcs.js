@@ -212,8 +212,8 @@ cls.WebGL.RPCs.injection = function () {
       var target = args[0];
       var texture = args[1];
 
-      var redundant = this.texture_binding.target === texture;
-      this.texture_binding[args[0]] = args[1];
+      var redundant = this.texture_binding[target] === texture;
+      this.texture_binding[target] = texture;
 
       return redundant;
     };
@@ -1081,6 +1081,10 @@ cls.WebGL.RPCs.injection = function () {
         }
       }.bind(this);
 
+      var init_textures = function ()
+      {
+      }.bind(this);
+
       init_buffers();
       init_programs();
       //init_textures();
@@ -1151,6 +1155,16 @@ cls.WebGL.RPCs.injection = function () {
         else
         {
           call_args.push(args[i]);
+        }
+      }
+
+      // TODO: better fix
+      if (function_name === "texImage2D")
+      {
+        call_args = call_args.slice(0, 9);
+        if (call_args.length > 6 && call_args.length < 9)
+        {
+          call_args = call_args.slice(0, 6);
         }
       }
 
