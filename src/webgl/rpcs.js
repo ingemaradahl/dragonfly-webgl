@@ -204,7 +204,7 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.createTexture = function(result, args)
     {
       var tex = {};
-      tex.texture = texture;
+      tex.texture = result;
       var i = this.textures.push(tex);
       tex.index = i - 1;
 
