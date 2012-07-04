@@ -70,7 +70,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   {
     if(!this._container) return;
     var ctx_id = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx_id != null && window.webgl.data[ctx_id].buffers.length > 0 && this._table_data != null)
+    if (ctx_id != null && this._table_data != null)
     {
       this._table.set_data(this._table_data);
       this._container.clearAndRender(this._table.render());
@@ -99,27 +99,13 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   {
   };
 
-  this._on_new_buffers = function(ctx_id)
+  this._on_changed_snapshot = function(snapshot_info)
   {
-    var buffers = window.webgl.data[ctx_id].buffers;
+    var buffers = window.webgl.snapshots[snapshot_info.context_id][snapshot_info.snapshot_index].buffers;
     this._table_data = this._format_buffer_table(buffers);
-
-    var visible_ctx_id = window['cst-selects']['context-select'].get_selected_context();
-    if (visible_ctx_id === ctx_id) this._render();
-  };
-
-  this._on_context_change = function(ctx_id)
-  {
-    this._current_context = ctx_id;
-    var buffers = window.webgl.data[ctx_id].buffers;
-    if (buffers != null && this._table)
-    {
-      this._table.set_data(this._format_buffer_table(buffers));
-    }
 
     this._render();
   };
-
 
   this._format_buffer_table = function(buffers)
   {
@@ -172,8 +158,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   eh.click["refresh-webgl-buffer"] = this._on_refresh.bind(this);
   eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
 
-  messages.addListener('webgl-new-buffers', this._on_new_buffers.bind(this));
-  messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
+  messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };

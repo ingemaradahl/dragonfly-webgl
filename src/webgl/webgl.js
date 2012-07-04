@@ -191,7 +191,7 @@ cls.WebGL.WebGLDebugger = function ()
 
       var scoper = new cls.Scoper(revive_interface, this, [this.runtime_id]);
       var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
-      scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
+      scoper.set_reviver_tree({_action: cls.Scoper.ACTIONS.EXAMINE});
       scoper.eval_script(this.runtime_id, script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]], false);
     }
   };

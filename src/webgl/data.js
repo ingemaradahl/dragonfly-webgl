@@ -165,47 +165,4 @@ cls.WebGLData = function (context_id)
       snapshot.downloading = false;
     }
   };
-
-  this.add_buffer = function(buffer)
-  {
-    this.buffers[buffer.index] = new Buffer(buffer);
-  };
-
-  function Buffer(buf)
-  {
-    this.index = buf.index;
-    this.target = buf.target;
-    this.usage = buf.usage;
-    this.size = buf.size;
-    this.buffer = buf.buffer;
-    this.object_id = buf.object_id;
-    this.runtime_id = buf.runtime_id;
-  }
-
-  Buffer.prototype.available = function()
-  {
-    return this.values !== undefined;
-  };
-
-  Buffer.prototype.update = function(buf)
-  {
-    this.target = buf.target;
-    this.usage = buf.usage;
-    this.size = buf.size;
-  };
-
-  Buffer.prototype.set_data = function(data)
-  {
-    this.values = data;
-  };
-
-  Buffer.prototype.usage_string = function()
-  {
-    return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
-  };
-
-  Buffer.prototype.target_string = function()
-  {
-    return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
-  };
 };

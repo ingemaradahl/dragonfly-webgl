@@ -35,8 +35,10 @@ cls.WebGLBuffer = function()
     };
 
     var scoper = new cls.Scoper(finalize, this);
-    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
-    scoper.set_reviver(scoper.reviver_typed);
+    scoper.set_reviver_tree({
+      _action: cls.Scoper.ACTIONS.EXAMINE,
+      _reviver: scoper.reviver_typed
+    });
     scoper.examine_object(buffer, false);
   };
 

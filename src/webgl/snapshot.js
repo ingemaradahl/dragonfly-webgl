@@ -4,7 +4,7 @@ window.cls || (window.cls = {});
 
 /**
  * Governs snapshots of a WebGL context
- * @extends Array 
+ * @extends Array
  */
 cls.WebGLSnapshotArray = function(context_id)
 {
@@ -32,10 +32,15 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var finalize = function (snapshots)
     {
-      for (var i = 0; i < snapshots.length; i++) 
+      for (var i = 0; i < snapshots.length; i++)
       {
         this.push(new Snapshot(snapshots[i], this));
         messages.post("webgl-new-trace");
+        var snapshot_info = {
+          context_id: ctx_id,
+          snapshot_index: this.length - 1
+        };
+        messages.post("webgl-changed-snapshot", snapshot_info);
         //snapshot.drawcalls.map(function(d) {
         //  var fbo = d.fbo;
 
@@ -50,13 +55,35 @@ cls.WebGLSnapshotArray = function(context_id)
     };
 
     var scoper = new cls.Scoper(finalize, this);
+    scoper.set_reviver_tree({
+      _array_elements: {
+        calls: {
+          _array_elements: {
+          }
+        },
+        buffers: {
+          _array_elements: {
+            _class: Buffer,
+            data: {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            }
+          }
+        },
+        drawcalls: {
+          _array_elements: {
+            fbo: {
+              pixels: {
+                _action: cls.Scoper.ACTIONS.NOTHING
+              }
+            }
+          }
+        }
+      },
+      _depth: 7,
+      _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
+    });
+
     var func = window.webgl.interfaces[ctx_id].get_snapshot;
-    scoper.set_object_action(function(key)
-        {
-          return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
-        });
-    scoper.set_max_depth(5);
-    scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
     scoper.execute_remote_function(func);
   };
 
@@ -92,7 +119,7 @@ cls.WebGLSnapshotArray = function(context_id)
         var args = parts.slice(3);
 
         // Revive the arguments
-        for (var k = 0; k < args.length; k++) 
+        for (var k = 0; k < args.length; k++)
         {
           var arg = args[k];
           if (object_index_regexp.test(arg))
@@ -134,7 +161,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
     }.bind(this);
 
-    init_trace(snapshot.calls, snapshot.call_refs)
+    init_trace(snapshot.calls, snapshot.call_refs);
   };
 
   // ---------------------------------------------------------------------------
@@ -161,6 +188,31 @@ cls.WebGLSnapshotArray = function(context_id)
     this.have_snapshot = true;
   };
 
+  function Buffer()
+  {
+    this.values = null;
+  }
+
+  Buffer.prototype.available = function()
+  {
+    return this.values !== undefined;
+  };
+
+  Buffer.prototype.set_data = function(data)
+  {
+    this.values = data;
+  };
+
+  Buffer.prototype.usage_string = function()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
+  };
+
+  Buffer.prototype.target_string = function()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
+  };
+
   /**
    * Creates a object that can be used to link in the UI to a WebGL object.
    */
@@ -180,7 +232,7 @@ cls.WebGLSnapshotArray = function(context_id)
         {
           window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
         };
-        this.tab = "buffer";
+        this.tab = "webgl_buffer";
         break;
       case "WebGLTexture":
         this.texture = snapshot.texture_container[this.texture_index];
@@ -194,7 +246,7 @@ cls.WebGLSnapshotArray = function(context_id)
         {
           window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
         };
-        this.tab = "texture";
+        this.tab = "webgl_texture";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
@@ -212,7 +264,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     if (this.tab)
     {
-      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + this.tab);
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.tab);
     }
 
     if (this.action)

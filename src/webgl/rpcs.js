@@ -1067,7 +1067,6 @@ cls.WebGL.RPCs.injection = function () {
           var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
           if (re != null && re[1] != null) type = re[1];
         }
-        var target = obj;
 
         var arg = {};
         arg.type = type;
@@ -1089,7 +1088,7 @@ cls.WebGL.RPCs.injection = function () {
         else if (obj instanceof WebGLProgram)
         {
           var program = handler.lookup_program(obj);
-          target = program.index;
+          arg.program_index = program.index;
         }
         else if (obj instanceof WebGLTexture)
         {
@@ -1097,7 +1096,7 @@ cls.WebGL.RPCs.injection = function () {
           arg.texture_index = texture.index;
         }
         return arg;
-      }
+      };
 
       var call_args = [];
 
@@ -1150,7 +1149,7 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       this.buffers.push(buffer_state);
-    }
+    };
 
     /* Wraps up the frame in a complete package for transmission to DF */
     this.end = function()
@@ -1167,12 +1166,6 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     init();
-  }
-
-  function Trace()
-  {
-    this.calls = [];
-    this.objects = [];
   }
 
   return canvas_map;

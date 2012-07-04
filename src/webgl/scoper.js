@@ -6,6 +6,7 @@ window.cls || (window.cls = {});
  * Class that handles communication with Scope. Gives easy control of examination
  * of objects and takes care of the releasing of them as well. The default behavior
  * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
+ * TODO if the same object is requsted from multiple places only the last place will it be stored.
  */
 cls.Scoper = function(callback, callback_that, callback_arguments)
 {
@@ -18,13 +19,15 @@ cls.Scoper = function(callback, callback_that, callback_arguments)
   this.error_callback_that;
   this.callback_arguments;
 
-  this.default_object_action = cls.Scoper.ACTIONS.EXAMINE_RELEASE;
-  this.object_action;
-
-  this.max_depth = 20;
   this.current_depth = 0;
 
-  this.reviver = this.reviver_basic;
+  this._default_reviver_tree = {
+    _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE,
+    _depth: 20,
+    _reviver: this.reviver_basic
+  };
+
+  this.reviver_tree = this._default_reviver_tree;
 };
 
 /**
@@ -43,45 +46,27 @@ cls.Scoper.prototype.set_callback = function(callback, callback_that, callback_a
 };
 
 /**
- * Sets an action to take on an object when examined or a function that
- * determines what action to take on an object based on the property name and object type.
+ * Sets the reviver tree which should be formed as the actual structure of the
+ * examined data. The tree should contain properties from the list below. Only
+ * the parts of the tree that should differ needs to be set. Some properties
+ * are valid recursivly.
  *
- * @param {Function, Number} object_action either a default action or a
- * function that will determine the action based on the property name and type
- * of the object.
+ * Properties:
+ * _ignore: {Boolean} if true a non-object value should be ignored.
+ * _class: {Function} the class of the object that will be created.
+ * _action: {Number} the action to takee on the object, should be a value from
+ *   cls.Scoper.ACTIONS. Recursive.
+ * _array_elements: {Object} when the object is a Array the specified object is
+ *   then used for all the elements. If the property key is specified then this
+ *   will be ignored for that key.
+ * _reviver: {Function} the reviver to use, recursive.
+ * _depth: {Number} specifies the maximum depth from a particular point in the
+ *   tree, recursive.
  */
-cls.Scoper.prototype.set_object_action = function(object_action)
+cls.Scoper.prototype.set_reviver_tree = function(reviver_tree)
 {
-  switch (typeof(object_action))
-  {
-    case "number":
-      this.default_object_action = object_action;
-      this.object_action = null;
-      break;
-    case "function":
-      this.object_action = object_action;
-      break;
-    default:
-      throw "Type must be a function or a number from the enum cls.Scoper.ACTIONS";
-  }
-  return this;
-};
-
-/**
- * @param {Number} max_depth maximum depth that should be examined.
- */
-cls.Scoper.prototype.set_max_depth = function(max_depth)
-{
-  this.max_depth = max_depth;
-  return this;
-};
-
-/**
- * @param {Function} reviver Reviver to be used.
- */
-cls.Scoper.prototype.set_reviver = function(reviver)
-{
-  this.reviver = reviver;
+  this.reviver_tree = reviver_tree;
+  this._inherit_reviver_properties(this._default_reviver_tree, reviver_tree);
   return this;
 };
 
@@ -154,9 +139,9 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
       var object_id = message[OBJECT][OBJECT_ID];
 
       var targets = {};
-      targets[object_id] = this._object_reviver(this, "result", release);
+      targets[object_id] = this._object_reviver(this, "result", release, this.reviver_tree);
 
-      if (this.max_depth > 0)
+      if (this.reviver_tree._depth > 0)
       {
         this._examine_level([object_id], targets);
       }
@@ -206,8 +191,9 @@ cls.Scoper.prototype.examine_object = function(object, release)
   typeof(release) === "boolean" || (release = true);
   this.runtime_id = object.runtime_id;
   this.current_depth = 0;
+
   var targets = {};
-  targets[object.object_id] = this._object_reviver(this, "result", release);
+  targets[object.object_id] = this._object_reviver(this, "result", release, this.reviver_tree);
 
   var args = [this.runtime_id, targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
@@ -232,7 +218,7 @@ cls.Scoper.prototype.examine_objects = function(runtime_id, object_ids, release)
   var base = [];
   for (var i = 0; i < object_ids.length; i++)
   {
-    targets[object_ids[i]] = this._object_reviver(base, i, release);
+    targets[object_ids[i]] = this._object_reviver(base, i, release, this.reviver_tree);
   }
 
   var args = [this.runtime_id, targets];
@@ -319,11 +305,11 @@ cls.Scoper.prototype.value_reviver = function(type, value)
 /**
  * Sets up the reviver to revive an object when the data is available.
  */
-cls.Scoper.prototype._object_reviver = function(target_object, target_key, release)
+cls.Scoper.prototype._object_reviver = function(target_object, target_key, release, reviver_tree)
 {
   return function(message, release_ids, object_ids, object_targets)
   {
-    this.reviver.call(this, target_object, target_key, release, message, release_ids, object_ids, object_targets);
+    reviver_tree._reviver.call(this, target_object, target_key, release, message, release_ids, object_ids, object_targets, reviver_tree);
   };
 };
 
@@ -342,7 +328,7 @@ cls.Scoper.ACTIONS =
  * Revives the result of a examine of a single object. Determines if it should be released, and what action to take on sub objects.
  */
 cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release,
-    message, release_ids, object_ids, object_targets)
+    message, release_ids, object_ids, object_targets, reviver_tree)
 {
   var NAME = 0,
       TYPE = 1,
@@ -354,7 +340,16 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
   var obj_info = message[0];
   var msg_vars = message[1];
 
-  var target = target_object[target_key] = obj_info[4].indexOf("Array") !== -1 ? [] : {};
+  var target;
+  if (reviver_tree._class)
+  {
+    target = new reviver_tree._class();
+  }
+  else
+  {
+    target = obj_info[4].indexOf("Array") !== -1 ? [] : {};
+  }
+  target_object[target_key] = target;
 
   if (release)
   {
@@ -368,17 +363,43 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
 
   if (msg_vars === undefined) return;
 
+  if (reviver_tree._array_elements && reviver_tree._array_elements._depth)
+  {
+    reviver_tree._array_elements._depth += this.current_depth;
+  }
+
   for (var j = 0; j < msg_vars.length; j++)
   {
     var key = msg_vars[j][NAME];
     var type = msg_vars[j][TYPE];
+
+    var property_reviver_tree;
+    if (reviver_tree[key])
+    {
+      property_reviver_tree = reviver_tree[key];
+
+      if (property_reviver_tree._depth)
+      {
+        property_reviver_tree._depth += this.current_depth;
+      }
+    }
+    else if (reviver_tree._array_elements && !isNaN(key))
+    {
+      property_reviver_tree = reviver_tree._array_elements;
+    }
+    else
+    {
+      property_reviver_tree = {};
+    }
+    this._inherit_reviver_properties(reviver_tree, property_reviver_tree);
+
     if (type === "object")
     {
       var id = msg_vars[j][OBJECT][OBJECT_ID];
 
-      this._perform_object_action(key, type, target, id, object_ids, object_targets, release_ids);
+      this._perform_object_action(key, type, target, id, object_ids, object_targets, release_ids, property_reviver_tree);
     }
-    else
+    else if (property_reviver_tree._ignore !== true)
     {
       target[key] = this.value_reviver(msg_vars[j][TYPE], msg_vars[j][VALUE]);
     }
@@ -386,10 +407,20 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
 };
 
 /**
+ * Copies over some properties from the parent reviver tree to the child reviver tree.
+ */
+cls.Scoper.prototype._inherit_reviver_properties = function(parent, child)
+{
+  if (child._action == null) child._action = parent._action;
+  if (child._depth == null) child._depth = parent._depth;
+  if (child._reviver == null) child._reviver = parent._reviver;
+};
+
+/**
  * Same as reviver_basic but will revive typed arrays correctly.
  */
 cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release,
-    message, release_ids, object_ids, object_targets)
+    message, release_ids, object_ids, object_targets, reviver_tree)
 {
   var NAME = 0,
       TYPE = 1,
@@ -406,7 +437,11 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
   var j;
   var idx;
   // Determine if it is an array or another type of object.
-  if ((idx = obj_class_name.indexOf("Array")) !== -1)
+  if (reviver_tree._class)
+  {
+    target = new reviver_tree._class();
+  }
+  else if ((idx = obj_class_name.indexOf("Array")) !== -1)
   {
     if (idx === 0 && obj_class_name === "Array") // Regular array
     {
@@ -483,19 +518,45 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
 
   if (msg_vars === undefined) return;
 
+  if (reviver_tree._array_elements && reviver_tree._array_elements._depth)
+  {
+    reviver_tree._array_elements._depth += this.current_depth;
+  }
+
   for (j = 0; j < msg_vars.length; j++) {
     var key = msg_vars[j][NAME];
     var type = msg_vars[j][TYPE];
     // Do not try to set keys that are already defined.
     if (isNaN(key) && key in target) continue;
 
+    var property_reviver_tree;
+    if (reviver_tree[key])
+    {
+      property_reviver_tree = reviver_tree[key];
+
+      if (property_reviver_tree._depth)
+      {
+        property_reviver_tree._depth += this.current_depth;
+      }
+    }
+    else if (reviver_tree._array_elements && !isNaN(key))
+    {
+      property_reviver_tree = reviver_tree._array_elements;
+    }
+    else
+    {
+      property_reviver_tree = {};
+    }
+    this._inherit_reviver_properties(reviver_tree, property_reviver_tree);
+
     if (type === "object")
     {
       var id = msg_vars[j][OBJECT][OBJECT_ID];
 
-      this._perform_object_action(key, type, target, id, object_ids, object_targets, release_ids);
+      this._perform_object_action(key, type, target, id, object_ids,
+          object_targets, release_ids, property_reviver_tree);
     }
-    else
+    else if (property_reviver_tree._ignore !== true)
     {
       target[key] = this.value_reviver(msg_vars[j][TYPE], msg_vars[j][VALUE]);
     }
@@ -506,20 +567,31 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
  * Determines what action to take on an object and perform it.
  */
 cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
-    object_ids, object_targets, release_ids)
+    object_ids, object_targets, release_ids, reviver_tree)
 {
   var action;
-  if (this.current_depth >= this.max_depth)
+  if (reviver_tree._depth != null && this.current_depth >= reviver_tree._depth ||
+      this.current_depth >= this.max_depth)
   {
     action = cls.Scoper.ACTIONS.NOTHING;
   }
-  else if (this.object_action == null)
+  else if (reviver_tree._action != null)
   {
-    action = this.default_object_action;
+    action = reviver_tree._action;
   }
   else
   {
-    action = this.object_action(key, type);
+    action = this.default_object_action;
+  }
+
+  var reviver;
+  if (reviver_tree._reviver)
+  {
+    reviver = reviver_tree._reviver;
+  }
+  else
+  {
+    reviver = this._object_reviver;
   }
 
   switch (action)
@@ -535,12 +607,12 @@ cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
       break;
     case cls.Scoper.ACTIONS.EXAMINE:
       object_ids.push(id);
-      target[key] = this._object_reviver(target, key, false);
+      target[key] = this._object_reviver(target, key, false, reviver_tree);
       object_targets[id] = target[key];
       break;
     default:
       object_ids.push(id);
-      target[key] = this._object_reviver(target, key, true);
+      target[key] = this._object_reviver(target, key, true, reviver_tree);
       object_targets[id] = target[key];
       release_ids.push(id);
   }
@@ -612,8 +684,7 @@ function scoper_examine(rt_id, obj_id){
 function scoper_eval(rt_id, depth){
   var scoper = new cls.Scoper(console.log, console);
   var script = "return [{typed: new Int32Array(100), untyped: [1,2,3]},{obj: {num: 2, sobj: {}}, num: 0, other: {bla: \"bla\"}, noexamine: {hidden: 1337}}, 2, {art: 42}];";
-  scoper.set_object_action(function(key, type){return key === "noexamine" ? cls.Scoper.ACTIONS.NOTHING : cls.Scoper.ACTIONS.EXAMINE_RELEASE;});
-  scoper.set_max_depth(depth);
+  scoper.set_reviver_tree({_reviver: scoper.reviver_typed});
   scoper.eval_script(rt_id, script, []);
   return scoper;
 }
