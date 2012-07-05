@@ -69,8 +69,8 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   this._render = function()
   {
     if(!this._container) return;
-    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
-    if (ctx_id != null && this._table_data != null)
+
+    if (this._table_data != null)
     {
       this._table.set_data(this._table_data);
       this._container.clearAndRender(this._table.render());
@@ -99,9 +99,9 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   {
   };
 
-  this._on_changed_snapshot = function(snapshot_info)
+  this._on_changed_snapshot = function(snapshot)
   {
-    var buffers = window.webgl.snapshots[snapshot_info.context_id][snapshot_info.snapshot_index].buffers;
+    var buffers = snapshot.buffers;
     this._table_data = this._format_buffer_table(buffers);
 
     this._render();

@@ -89,7 +89,7 @@ window.templates.webgl.buffer_base = function(buffer)
             "table",
             info_table_rows,
             "class",
-            "buffer-info"
+            "table-info"
           ]
         ]
       ],
@@ -173,38 +173,45 @@ window.templates.webgl.trace_table = function(calls, view_id)
 
 window.templates.webgl.texture = function(obj)
 {
-  return ([["table",
-            ["tr",  
-              ["td", ["h2" , obj.element_type]]
-            ],
-            ["tr",
-              ["td", ["img", "src", obj.img]]
-            ],
-            ["tr",  
-              ["td", "Texture id:"],
-              ["td", String(obj.index)]
-            ],
-            ["tr", 
-              ["td", "Source:"],
-              ["td", obj.source ? obj.source : obj.element_type ]
-            ],
-            ["tr",
-              ["td", "TEXTURE_WRAP_S:"],
-              ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
-            ],
-            ["tr",
-              ["td", "TEXTURE_WRAP_T:"] ,
-              ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
-            ],
-            ["tr",
-              ["td", "TEXTURE_MIN_FILTER:"],
-              ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
-            ],
-            ["tr",
-              ["td", "TEXTURE_MAG_FILTER:"],
-              ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
-            ], 
-          ]
-         ]
-        );
+  var image_source = [];
+  if (obj.source)
+  {
+    image_source = [
+      "tr",
+      ["th", "Image source"],
+      ["td", obj.source]
+    ];
+  }
+
+  var info_table = [
+    "table",
+    ["tr",
+      ["th", "Source"],
+      ["td", obj.element_type]
+    ],
+    image_source,
+    ["tr",
+      ["th", "TEXTURE_WRAP_S"],
+      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
+    ],
+    ["tr",
+      ["th", "TEXTURE_WRAP_T"] ,
+      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
+    ],
+    ["tr",
+      ["th", "TEXTURE_MIN_FILTER"],
+      ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
+    ],
+    ["tr",
+      ["th", "TEXTURE_MAG_FILTER"],
+      ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
+    ],
+    "class", "table-info"
+  ];
+
+  return [
+    ["h2", "Texture " + String(obj.index)],
+    ["img", "src", obj.img],
+    info_table
+  ];
 };

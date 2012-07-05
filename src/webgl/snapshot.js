@@ -34,8 +34,10 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       for (var i = 0; i < snapshots.length; i++)
       {
-        this.push(new Snapshot(snapshots[i], this));
+        var snapshot = new Snapshot(snapshots[i], this);
+        this.push(snapshot);
         messages.post("webgl-new-trace");
+        messages.post("webgl-changed-snapshot", snapshot);
       }
     };
 

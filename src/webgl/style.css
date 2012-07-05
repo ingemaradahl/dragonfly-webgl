@@ -3,38 +3,33 @@
   width: 40%;
 }
 
-/* Texture */
-.webgl_view.texture div
-{
-  text-align: left;
-  padding: 10px;
-}
 
-/* Buffer */
-
-.webgl_view.buffer > div
+.webgl_view.buffer > div,
+.webgl_view.texture > div
 {
   padding: 10px;
 }
 
-.buffer-info table
+.webgl_view .table-info table
 {
   border-collapse: collapse;
 }
 
-.buffer-info td,
-.buffer-info th
+.webgl_view .table-info td,
+.webgl_view .table-info th
 {
   vertical-align: top;
   word-wrap: break-word;
 }
 
-.buffer-info th
+.webgl_view .table-info th
 {
   text-align: left;
   padding-right: 30px;
   width: 140px;
 }
+
+/* Buffer */
 
 .buffer-data-table
 {
