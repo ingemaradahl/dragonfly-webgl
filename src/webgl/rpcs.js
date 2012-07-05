@@ -1196,7 +1196,7 @@ cls.WebGL.RPCs.injection = function () {
         texture_state.height = texture.height;
         texture_state.format = texture.format;
       }
-      else 
+      else
       {
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
@@ -1219,7 +1219,7 @@ cls.WebGL.RPCs.injection = function () {
         programs : this.programs,
         textures : this.textures,
         drawcalls : this.drawcalls
-      }
+      };
     };
 
     init();

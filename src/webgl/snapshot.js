@@ -43,6 +43,7 @@ cls.WebGLSnapshotArray = function(context_id)
     scoper.set_reviver_tree({
       _array_elements: {
         buffers: {
+          _action: cls.Scoper.ACTIONS.EXAMINE,
           _array_elements: {
             _class: Buffer,
             data: {
