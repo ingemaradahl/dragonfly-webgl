@@ -208,3 +208,15 @@ window.templates.webgl.texture = function(obj)
          ]
         );
 };
+
+window.templates.webgl.drawcall = function(fbo)
+{
+  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.img];
+  
+  if (fbo.flipped)
+  {
+    img.push("class");
+    img.push("flipped");
+  }
+    return ([img]);
+};

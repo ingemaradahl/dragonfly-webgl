@@ -57,7 +57,7 @@ cls.WebGLSnapshotArray = function(context_id)
         drawcalls: {
           _array_elements: {
             fbo: {
-              pixels: {
+              img: {
                 _action: cls.Scoper.ACTIONS.NOTHING
               }
             }
@@ -152,35 +152,10 @@ cls.WebGLSnapshotArray = function(context_id)
 
     }.bind(this);
 
-    var init_drawcall = function (drawcall)
-    {
-      var call_index = drawcall.call_index;
-      var fbo = drawcall.fbo;
-      fbo.downloading = true;
-
-      var finalize_fbo = function (pixels)
-      {
-        var array_buffer = new ArrayBuffer(this.size);
-        this.pixels = new Uint8Array(array_buffer);
-
-        for (var i=0; i<this.size; i++)
-        {
-          this.pixels[i] = pixels[i];
-        }
-
-        this.downloading = false;
-      };
-
-      var scoper = new cls.Scoper(finalize_fbo, fbo);
-      scoper.examine_object(fbo.pixels);
-
-      this.drawcalls.push(drawcall);
-    }.bind(this);
-
     init_trace(snapshot.calls, snapshot.call_refs);
 
     // Init draw calls
-    snapshot.drawcalls.forEach(init_drawcall, this);
+    this.drawcalls = snapshot.drawcalls;
     this.drawcalls.get_call_by_call = function(call)
     {
       var c = -1;

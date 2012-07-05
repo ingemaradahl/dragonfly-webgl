@@ -115,13 +115,14 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
+          handler.snapshot.add_call(function_name, error, arguments, result, redundant);
+
           var snapshot_function = snapshot_functions[function_name];
           if (snapshot_function)
           {
             snapshot_function.call(handler, result, arguments);
           }
 
-          handler.snapshot.add_call(function_name, error, arguments, result, redundant);
         }
         return result;
       };
@@ -407,11 +408,26 @@ cls.WebGL.RPCs.injection = function () {
 
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
+      // Encode to PNG
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext("2d");
+
+      var img_data = ctx.createImageData(width, height);
+
+      for (var i=0; i<size; i++)
+      {
+        img_data.data[i] = pixels[i];
+      }
+
+      ctx.putImageData(img_data, 0, 0);
+
       var snapshot = {
-        pixels : Array.prototype.slice.call(pixels),
-        size : size,
+        img : canvas.toDataURL("image/png"),
         width : width,
-        height : height
+        height : height,
+        flipped : true
       };
 
       this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM));
