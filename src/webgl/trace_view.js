@@ -105,7 +105,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     var call_number = target["data-call-number"];
 
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_draw_call");
-    window.views.webgl_draw_call.display_snapshot_by_call(call_number);
+    window.views.webgl_draw_call.display_by_call(call_number);
   };
 
   this._on_argument_click = function(evt, target)
@@ -152,7 +152,18 @@ cls.WebGLTraceView.create_ui_widgets = function()
         title: "Refresh the trace",
         icon: 'reload-webgl-trace'
       }
-    ]
+    ],
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-context',
+        title: 'Select Snapshot',
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['context-select'].getTemplate()
+      }
+    ] 
   );
 };
 
