@@ -201,7 +201,7 @@ cls.WebGL.RPCs.injection = function () {
       this.texture_binding[args[0]] = args[1];
     };
 
-    innerFuns.createTexture = function(result, args)
+    innerFuns.createTexture = function(texture, args)
     {
       var tex = {};
       tex.texture = texture;

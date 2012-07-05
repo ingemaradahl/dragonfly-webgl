@@ -36,16 +36,6 @@ cls.WebGLSnapshotArray = function(context_id)
       {
         this.push(new Snapshot(snapshots[i], this));
         messages.post("webgl-new-trace");
-        //snapshot.drawcalls.map(function(d) {
-        //  var fbo = d.fbo;
-
-        //  fbo.pixels_object = fbo.pixels.object_id;
-        //  fbo.pixels = null;)
-        //  fbo.downloading = false;
-        //  [ctx_id].add_fbo(fbo);
-        //});
-
-        //window.webgl.trace.new_trace(ctx_id, snapshot.call_trace, snapshot.fbos);
       }
     };
 
