@@ -177,13 +177,16 @@ window.templates.webgl.texture = function(obj)
             ["tr",  
               ["td", ["h2" , obj.element_type]]
             ],
+            ["tr",
+              ["td", ["img", "src", obj.img]]
+            ],
             ["tr",  
               ["td", "Texture id:"],
-              ["td", String(obj.id)]
+              ["td", String(obj.index)]
             ],
-            ["tr",
+            ["tr", 
               ["td", "Source:"],
-              ["td", obj.source]
+              ["td", obj.source ? obj.source : obj.element_type ]
             ],
             ["tr",
               ["td", "TEXTURE_WRAP_S:"],
@@ -201,8 +204,7 @@ window.templates.webgl.texture = function(obj)
               ["td", "TEXTURE_MAG_FILTER:"],
               ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
             ], 
-          ],
-          ["img", "src", obj.img],
+          ]
          ]
         );
 };

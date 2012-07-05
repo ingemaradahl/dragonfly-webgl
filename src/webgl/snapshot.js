@@ -62,6 +62,16 @@ cls.WebGLSnapshotArray = function(context_id)
               }
             }
           }
+        },
+        textures: {
+          _array_elements: {
+            get_data : {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            },
+            object : {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            }
+          }
         }
       },
       _depth: 7,

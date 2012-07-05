@@ -41,8 +41,8 @@ cls.WebGLTexture = function ()
   {
     var finalize = function (data)
     {
-      this.texture = data;
-      messages.post('webgl-new-texture-data', { id : texture.index });
+      texture = data;
+      messages.post('webgl-new-texture-data', { texture : texture });
     };
 
     var scoper = new cls.Scoper(finalize, this);
