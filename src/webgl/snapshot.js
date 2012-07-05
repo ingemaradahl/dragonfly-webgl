@@ -18,7 +18,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
   this.get_latest_trace = function()
   {
-    return this.length > 0 ? this[this.length-1].trace : null;
+    return this.last ? this.last.trace : null;
   };
 
   var on_snapshot_complete = function(msg)
@@ -36,21 +36,6 @@ cls.WebGLSnapshotArray = function(context_id)
       {
         this.push(new Snapshot(snapshots[i], this));
         messages.post("webgl-new-trace");
-        var snapshot_info = {
-          context_id: ctx_id,
-          snapshot_index: this.length - 1
-        };
-        messages.post("webgl-changed-snapshot", snapshot_info);
-        //snapshot.drawcalls.map(function(d) {
-        //  var fbo = d.fbo;
-
-        //  fbo.pixels_object = fbo.pixels.object_id;
-        //  fbo.pixels = null;)
-        //  fbo.downloading = false;
-        //  [ctx_id].add_fbo(fbo);
-        //});
-
-        //window.webgl.trace.new_trace(ctx_id, snapshot.call_trace, snapshot.fbos);
       }
     };
 
@@ -93,7 +78,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
-    this.texture_container = [];
+    this.textures = snapshot.textures;
     this.trace = [];
 
     var init_trace = function (calls, call_refs)
@@ -116,7 +101,8 @@ cls.WebGLSnapshotArray = function(context_id)
         var function_name = parts[0];
         var error_code = Number(parts[1]);
         var result = parts[2];
-        var args = parts.slice(3);
+        var redundant = parts[3];
+        var args = parts.slice(4);
 
         // Revive the arguments
         for (var k = 0; k < args.length; k++)
@@ -148,7 +134,7 @@ cls.WebGLSnapshotArray = function(context_id)
           result = Number(result);
         }
 
-        trace_list.push(new TraceEntry(function_name, error_code, result, args));
+        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args));
       }
 
       this.trace = trace_list;
@@ -169,11 +155,12 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Used to store a single function call in a frame trace.
    */
-  function TraceEntry(function_name, error_code, result, args)
+  function TraceEntry(function_name, error_code, redundant, result, args)
   {
     this.function_name = function_name;
     this.error_code = error_code;
     this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
+    this.redundant = redundant;
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
@@ -235,16 +222,11 @@ cls.WebGLSnapshotArray = function(context_id)
         this.tab = "webgl_buffer";
         break;
       case "WebGLTexture":
-        this.texture = snapshot.texture_container[this.texture_index];
-        if (this.texture == null)
-        { // TODO temporary until texture is rebuilt
-          this.text = "Texture " + String(this.texture_index) + " (not loaded)";
-          return;
-        }
+        this.texture = snapshot.textures[this.texture_index];
         this.text = "Texture " + String(this.texture.index);
         this.action = function()
         {
-          window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
+          window.webgl.texture.get_texture_data(this.texture);
         };
         this.tab = "webgl_texture";
         break;

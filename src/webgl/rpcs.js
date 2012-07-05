@@ -88,7 +88,7 @@ cls.WebGL.RPCs.injection = function () {
     // When there have been no error it should have the value NO_ERROR
     var oldest_error = this.NO_ERROR;
 
-    function wrap_function(handler, function_name, original_function, innerFuns, postCaptureFuns)
+    function wrap_function(handler, function_name, original_function, innerFuns, snapshot_functions)
     {
       var gl = handler.gl;
 
@@ -115,17 +115,13 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          var postFunction = postCaptureFuns[function_name];
-
-          switch (function_name)
+          var snapshot_function = snapshot_functions[function_name];
+          if (snapshot_function)
           {
-            case "drawArrays":
-            case "drawElements":
-              postFunction.call(handler);
-              break;
+            snapshot_function.call(handler, result, arguments);
           }
 
-          handler.snapshot.add_call(function_name, error, arguments, result);
+          handler.snapshot.add_call(function_name, error, arguments, result, redundant);
         }
         return result;
       };
@@ -142,16 +138,21 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.bindBuffer = function(result, args)
     {
-      var buffer = args[1];
+      var target = args[0];
+      var buffer = this.lookup_buffer(args[1]);
       if (buffer == null) return;
-      this.bound_buffer = this.lookup_buffer(buffer);
-      // TODO: redundancy check
+
+      var redundant = this.buffer_binding.target === buffer;
+      this.buffer_binding.target = buffer;
+
+      return redundant;
     };
     innerFuns.bufferData = function(result, args)
     {
-      if (this.bound_buffer == null) return;
-      var buffer = this.bound_buffer;
-      buffer.target = args[0];
+      var target = args[0];
+      var buffer = this.buffer_binding.target;
+      if (!buffer) return;
+
       if (typeof(args[1]) === "number")
       {
         buffer.size = args[1];
@@ -170,11 +171,11 @@ cls.WebGL.RPCs.injection = function () {
     {
       // TODO: data array in buffer has to be cloned, otherwise "external" array
       // is modified as well
-      if (this.bound_buffer == null) return;
-      var buffer = this.bound_buffer;
-      buffer.target = args[0];
-
+      var target = args[0];
       var offset = args[1];
+      var buffer = this.buffer_binding.target;
+      if (!buffer) return;
+
       var end = args[2].length - offset;
       for (var i = 0; i < end; i++)
       {
@@ -183,22 +184,38 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.deleteBuffer = function(result, args)
     {
-      var buf = args[0];
-      var buffer = this.lookup_buffer(buf);
+      var buffer = this.lookup_buffer(args[0]);
       this.buffers[buffer.index] = null;
-      if (this.bound_buffer === buffer) this.bound_buffer = null;
+
+      for (var target in this.buffer_binding)
+      {
+        if (this.buffer_binding.target === buffer)
+        {
+          this.buffer_binding.target = null;
+        }
+      }
     };
 
 
     // Texture code
     innerFuns.activeTexture = function(result, args)
     {
-      this.active_texture = result;
+      var texture_unit = args[0];
+      var redundant = this.active_texture === texture_unit;
+      this.active_texture = texture_unit;
+
+      return redundant;
     };
 
     innerFuns.bindTexture = function(result, args)
     {
-      this.texture_binding[args[0]] = args[1];
+      var target = args[0];
+      var texture = args[1];
+
+      var redundant = this.texture_binding[target] === texture;
+      this.texture_binding[target] = texture;
+
+      return redundant;
     };
 
     innerFuns.createTexture = function(result, args)
@@ -207,11 +224,6 @@ cls.WebGL.RPCs.injection = function () {
       tex.texture = result;
       var i = this.textures.push(tex);
       tex.index = i - 1;
-
-      if (this.texture_update)
-      {
-        this.events["texture-created"].post(tex);
-      }
     };
 
     innerFuns.deleteTexture = function(result, args)
@@ -223,29 +235,24 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.texImage2D = function(result, args)
     {
       // Last argument is the one containing the texture data.
-      var texture_container_object = args[args.length -1];
-      if (texture_container_object === null)  //TODO improve
-        return;
+      var texture_container_object = args[args.length-1];
 
       var target = args[0];
-      var bound_texture = this.texture_binding[target].texture;
+      var bound_texture = this.texture_binding[target];
 
       for (var i=0; i<this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
           var texture = {
-            id : i,
+            index : i,
             texture : bound_texture,
-            target  : target,
             object : texture_container_object,
-            type : texture_container_object.toString(),
-            texture_wrap_s : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_S),
-            texture_wrap_t : gl.getTexParameter(gl.target, gl.TEXTURE_WRAP_T),
-            texture_min_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MIN_FILTER),
-            texture_mag_filter : gl.getTexParameter(gl.target, gl.TEXTURE_MAG_FILTER),
-
-            get_data : this.get_texture_data.bind(texture)
+            type : texture_container_object ? texture_container_object.toString() : null,
+            texture_wrap_s : gl.getTexParameter(target, gl.TEXTURE_WRAP_S),
+            texture_wrap_t : gl.getTexParameter(target, gl.TEXTURE_WRAP_T),
+            texture_min_filter : gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER),
+            texture_mag_filter : gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER),
           };
 
           // TODO Translate to ENUMs
@@ -368,8 +375,13 @@ cls.WebGL.RPCs.injection = function () {
       program_obj.attributes = attributes;
     };
 
-    var postCaptureFuns = {};
-    postCaptureFuns.drawArrays = function()
+    // -------------------------------------------------------------------------
+
+    /* Functions called only during a snapshot recording changes to the WebGL
+     * state
+     */
+    var snapshot_functions = {};
+    snapshot_functions.drawArrays = function(result, args)
     {
       var gl = this.gl;
 
@@ -404,7 +416,27 @@ cls.WebGL.RPCs.injection = function () {
 
       this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM));
     };
-    postCaptureFuns.drawElements = postCaptureFuns.drawArrays;
+    snapshot_functions.drawElements = snapshot_functions.drawArrays;
+
+    snapshot_functions.bufferData = function (result, args)
+    {
+      var target = args[0];
+      var buffer = this.buffer_binding.target;
+      if (!buffer) return;
+
+      this.snapshot.add_buffer(buffer);
+    };
+    snapshot_functions.bufferSubData = snapshot_functions.bufferData;
+
+    snapshot_functions.texImage2D = function (result, args)
+    {
+      var target = args[0];
+      var texture = this.texture_binding[target];
+
+      this.snapshot.add_texture(texture);
+    };
+
+    // -------------------------------------------------------------------------
 
     // Copy enumerators and wrap functions
     for (var i in this)
@@ -412,7 +444,7 @@ cls.WebGL.RPCs.injection = function () {
       if (typeof this[i] === "function")
       {
         gl[i] = this[i].bind(this);
-        this[i] = wrap_function(handler, i, this[i], innerFuns, postCaptureFuns);
+        this[i] = wrap_function(handler, i, this[i], innerFuns, snapshot_functions);
       }
       else
       {
@@ -488,7 +520,7 @@ cls.WebGL.RPCs.injection = function () {
     this.bound_program = null;
 
     this.buffers = [];
-    this.bound_buffer = null;
+    this.buffer_binding = {};
 
 
     this.textures = [];
@@ -678,52 +710,6 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
-    this.enable_buffers_update = function()
-    {
-      this.buffers_update = true;
-    };
-    this._interface.enable_buffers_update = this.enable_buffers_update.bind(this);
-
-    this.disable_buffers_update = function()
-    {
-      this.buffers_update = false;
-    };
-    this._interface.disable_buffers_update = this.disable_buffers_update.bind(this);
-
-    this.get_new_buffers = function()
-    {
-      var buffers = this.events["buffer-created"].get();
-      var out = [];
-      for (var i = 0; i < buffers.length; i++)
-      {
-        var buffer = buffers[i];
-        if (buffer === undefined) continue;
-        out.push(buffer);
-      }
-      return out;
-    };
-    this._interface.get_new_buffers = this.get_new_buffers.bind(this);
-
-    this.get_buffers = function()
-    {
-      var buffers = this.buffers;
-      var out = [];
-      for (var i = 0; i < buffers.length; i++)
-      {
-        var buffer = buffers[i];
-        if (buffer === undefined || buffer.data === undefined) continue;
-        out.push(buffer);
-      }
-      return out;
-    };
-    this._interface.get_buffers = this.get_buffers.bind(this);
-
-    this.get_texture_names = function()
-    {
-      return this.textures;
-    };
-    this._interface.get_texture_names = this.get_texture_names.bind(this);
-
 
     this.lookup_buffer = function(buffer)
     {
@@ -884,7 +870,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       else
       {
-        console.log("WebGLDebugger ERROR, unknown texture type. Type is:" + this.toString());
+        // TODO: Draw texture to a new FBO, thes same as Uint8Array
       }
 
       return this;
@@ -906,7 +892,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_program_state = function(program)
     {
-      var gl = this.context;
+      var gl = this.gl;
 
       program = program || gl.getParameter(gl.CURRENT_PROGRAM);
 
@@ -919,7 +905,7 @@ cls.WebGL.RPCs.injection = function () {
 
       var state =
       {
-        program : program_obj.index,
+        index : program_obj.index,
         shaders : program_obj.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
         attributes : [],
         uniforms : []
@@ -1030,29 +1016,25 @@ cls.WebGL.RPCs.injection = function () {
         for (var i=0; i<h.programs.length; i++)
         {
           var prg = h.programs[i];
+          var state = this.handler.get_program_state(prg.program);
+          state.call_index = this.call_index;
 
-          var program_state = {
-            call_index : this.call_index,
-            index : prg.index,
-            shaders : prg.shaders,
-            attributes : prg.attributes,
-            uniforms : prg.uniforms
-          };
-
-          this.programs.push(program_state);
+          this.programs.push(state);
         }
       }.bind(this);
 
       init_buffers();
       init_programs();
-      //init_textures();
+
+      // Init textures
+      this.handler.textures.forEach(this.add_texture, this);
       //init_fbos();
 
       this.call_index++;
     }.bind(this);
 
     /* Adds a WebGL function call to the snapshot */
-    this.add_call = function (function_name, error, args, result)
+    this.add_call = function (function_name, error, args, result, redundant)
     {
       /**
        * Pairs a trace argument with a WebGL object.
@@ -1115,9 +1097,23 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
 
+      // TODO: better fix
+      // http://www.glge.org/demos/canvasdemo/ (and possibly all GLGE
+      // applications?) adds an extra parameter to texImage2D, rendering the
+      // arguments "decoding" heuristic in DF invalid
+      if (function_name === "texImage2D")
+      {
+        call_args = call_args.slice(0, 9);
+        if (call_args.length > 6 && call_args.length < 9)
+        {
+          call_args = call_args.slice(0, 6);
+        }
+      }
+
       var res = result === undefined ? "" : result;
 
-      this.call_index = this.calls.push([function_name, error, res].concat(call_args).join("|")) - 1;
+      // Ternary expression below casts redundant, which may be undefined, to a boolean,
+      this.call_index = this.calls.push([function_name, error, res, redundant ? true : false].concat(call_args).join("|")) - 1;
     };
 
     this.add_drawcall = function (fbo, program)
@@ -1144,11 +1140,45 @@ cls.WebGL.RPCs.injection = function () {
       {
         buffer_state.data = buffer.data;
         buffer_state.size = buffer.size;
-        buffer_state.target = buffer.target;
         buffer_state.usage = buffer.usage;
       }
 
       this.buffers.push(buffer_state);
+    };
+
+    this.add_texture = function (texture)
+    {
+      texture = texture instanceof WebGLTexture ? this.handler.lookup_texture(texture) : texture;
+
+      if (!texture)
+        return;
+
+      var texture_state = {
+        call_index : this.call_index,
+        index : texture.index,
+        object : texture.object // Needed for data retrieval
+      };
+
+      // Add texture data getter, and bind it to the object
+      texture_state.get_data = this.handler.get_texture_data.bind(texture_state);
+
+      if (texture.internalFormat)
+      {
+        texture_state.internalFormat = texture.internalFormat;
+        texture_state.width = texture.width;
+        texture_state.height = texture.height;
+        texture_state.format = texture.format;
+      }
+      else 
+      {
+        texture_state.texture_mag_filter = texture.texture_mag_filter;
+        texture_state.texture_min_filter = texture.texture_min_filter;
+        texture_state.texture_min_filter = texture.texture_min_filter;
+        texture_state.texture_wrap_s = texture.texture_wrap_s;
+        texture_state.texture_wrap_t = texture.texture_wrap_s;
+      }
+
+      this.textures.push(texture_state);
     };
 
     /* Wraps up the frame in a complete package for transmission to DF */
@@ -1166,6 +1196,12 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     init();
+  }
+
+  function Trace()
+  {
+    this.calls = [];
+    this.objects = [];
   }
 
   return canvas_map;

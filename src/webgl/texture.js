@@ -37,19 +37,20 @@ cls.WebGLTexture = function ()
 
 
   // Retrieves the image data of a choosen texture.
-  this._get_texture_data = function(ctx_id, texture_identifier)
+  this.get_texture_data = function(texture)
   {
-    var texture = this.resolve_texture(ctx_id, texture_identifier);
-
     var finalize = function (data)
     {
-      window.webgl.data[ctx_id].texture_data[data.id] = data;
-      messages.post('webgl-new-texture-data', { id : data.id });
+      this.texture = data;
+      messages.post('webgl-new-texture-data', { id : texture.index });
     };
 
     var scoper = new cls.Scoper(finalize, this);
-    scoper.set_max_depth(2);
-    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
+    scoper.set_reviver_tree({
+      _action: cls.Scoper.ACTIONS.EXAMINE,
+      _depth: 2,
+      _reviver: scoper.reviver_basic
+    });
     scoper.execute_remote_function(texture.get_data, false);
   };
 };

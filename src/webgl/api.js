@@ -488,6 +488,27 @@ cls.WebGLAPI = function ()
     return text + arrs.join(", ") + ")";
   };
 
+  GLFunctionMulti.prototype.get_argument_objects = function(args)
+  {
+    var arrs = [];
+    for (var i = 0; i < this.args.length; i++)
+    {
+      if (this.args[i].length === args.length)
+      {
+        for (var j = 0; j < args.length; j++)
+        {
+          var arr = this.args[i][j];
+          var value = args[j];
+
+          arrs.push(arr.get_object(value));
+        }
+        break;
+      }
+    }
+
+    return arrs;
+  };
+
   // --------------------------
 
   function GLParam(name, type)
