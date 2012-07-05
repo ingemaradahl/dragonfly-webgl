@@ -77,6 +77,17 @@ cls.WebGLSnapshotArray = function(context_id)
               }
             }
           }
+        },
+        programs: {
+          _array_elements: {
+            uniforms: {
+              _array_elements: {
+                locations: {
+                  _action: cls.Scoper.ACTIONS.RELEASE
+                }
+              }
+            }
+          }
         }
       },
       _depth: 7,
@@ -93,6 +104,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
+    this.programs = snapshot.programs;
     this.texture_container = [];
     this.trace = [];
 
@@ -247,6 +259,11 @@ cls.WebGLSnapshotArray = function(context_id)
           window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
         };
         this.tab = "webgl_texture";
+        break;
+      case "WebGLUniformLocation":
+        this.program = snapshot.programs[this.program_index];
+        this.uniform = this.program.uniforms[this.uniform_index];
+        this.text = this.uniform.name;
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
