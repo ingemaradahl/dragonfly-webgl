@@ -89,6 +89,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
     this.textures = snapshot.textures;
+    this.drawcalls = [];
     this.trace = [];
 
     var init_trace = function (calls, call_refs)
@@ -151,13 +152,49 @@ cls.WebGLSnapshotArray = function(context_id)
 
     }.bind(this);
 
-    var init_fbos = function (fbo)
+    var init_drawcall = function (drawcall)
     {
+      var call_index = drawcall.call_index;
+      var fbo = drawcall.fbo;
+      fbo.downloading = true;
 
+      var finalize_fbo = function (pixels)
+      {
+        var array_buffer = new ArrayBuffer(this.size);
+        this.pixels = new Uint8Array(array_buffer);
 
+        for (var i=0; i<this.size; i++)
+        {
+          this.pixels[i] = pixels[i];
+        }
+
+        this.downloading = false;
+      };
+
+      var scoper = new cls.Scoper(finalize_fbo, fbo);
+      scoper.examine_object(fbo.pixels);
+
+      this.drawcalls.push(drawcall);
     }.bind(this);
 
     init_trace(snapshot.calls, snapshot.call_refs);
+
+    // Init draw calls
+    snapshot.drawcalls.forEach(init_drawcall, this);
+    this.drawcalls.get_call_by_call = function(call)
+    {
+      var c = -1;
+      var result = null;
+      for (var i=0; i<this.length; i++)
+      {
+        if (this[i].call_index <= call && this[i].call_index > c)
+        {
+          result = this[i];
+        }
+      }
+
+      return result;
+    }.bind(this.drawcalls);
   };
 
   // ---------------------------------------------------------------------------

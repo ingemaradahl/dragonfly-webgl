@@ -27,18 +27,21 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     this._container = null;
   };
 
-  this.display_snapshot_by_call = function(call)
+  this.display_by_call = function(call)
   {
     var ctx_id = window['cst-selects']['context-select'].get_selected_context();
 
-    var snapshot = webgl.data[ctx_id].get_snapshot_by_call(0, call);
-    if (!snapshot)
+    // TODO: TEMPORARY
+    var drawcall = webgl.snapshots[ctx_id][0].drawcalls.get_call_by_call(call);
+    if (!drawcall)
     {
-      this._container.innerHTML = "No snapshot for call " + call;
+      this._container.innerHTML = "No framebuffer snapshot for call " + call;
       return;
     }
 
-    if (snapshot.downloading)
+    var fbo = drawcall.fbo;
+
+    if (fbo.downloading)
     {
       this._container.innerHTML = "Snapshot still downloading...";
       return;
@@ -54,20 +57,20 @@ cls.WebGLDrawCallView = function(id, name, container_class)
       return;
     }
 
-    gl.canvas.width = snapshot.width;
-    gl.canvas.height = snapshot.height;
-    gl.viewport(0, 0, snapshot.width, snapshot.height);
+    gl.canvas.width = fbo.width;
+    gl.canvas.height = fbo.height;
+    gl.viewport(0, 0, fbo.width, fbo.height);
 
     var program = gl.programs["texture"];
 
     // Make sure we don't upload texture to GPU unnecessarily
-    if (!snapshot.texture || snapshot.texture.gl !== gl)
+    if (!fbo.texture || fbo.texture.gl !== gl)
     {
-      snapshot.texture = {};
-      snapshot.texture.gl = gl;
-      snapshot.texture.tex = gl.createTexture();
+      fbo.texture = {};
+      fbo.texture.gl = gl;
+      fbo.texture.tex = gl.createTexture();
 
-      gl.bindTexture(gl.TEXTURE_2D, snapshot.texture.tex);
+      gl.bindTexture(gl.TEXTURE_2D, fbo.texture.tex);
 
       // WebGL has limited NPOT texturing support
       // http://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
@@ -76,11 +79,14 @@ cls.WebGLDrawCallView = function(id, name, container_class)
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, snapshot.width, snapshot.height,
-                    0, gl.RGBA, gl.UNSIGNED_BYTE, snapshot.pixels);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fbo.width, fbo.height,
+                    0, gl.RGBA, gl.UNSIGNED_BYTE, fbo.pixels);
+
+      // Free pixels object
+      fbo.pixels = null;
     }
 
-    WebGLUtils.draw_texture(program, snapshot.texture.tex);
+    WebGLUtils.draw_texture(program, fbo.texture.tex);
   };
 
   this.init(id, name, container_class);

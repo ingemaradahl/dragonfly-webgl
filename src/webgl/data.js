@@ -121,7 +121,7 @@ cls.WebGLData = function (context_id)
       var snapshot = this.snapshots[trace][s];
       if (snapshot.call_idx <= call && snapshot.call_idx > c)
       {
-        result = snapshot;
+        result = this[i];
       }
     }
 

@@ -45,6 +45,8 @@ cls.WebGLTexture = function ()
       messages.post('webgl-new-texture-data', { texture : texture });
     };
 
+    // TODO cache image
+
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
       _action: cls.Scoper.ACTIONS.EXAMINE,
