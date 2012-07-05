@@ -29,7 +29,6 @@ cls.WebGLBuffer = function()
   {
     var finalize = function (updated_buffer)
     {
-      buffer.update(updated_buffer);
       buffer.set_data(updated_buffer.data);
       messages.post('webgl-buffer-data', buffer);
     };

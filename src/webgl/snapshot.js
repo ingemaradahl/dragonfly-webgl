@@ -42,11 +42,8 @@ cls.WebGLSnapshotArray = function(context_id)
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
       _array_elements: {
-        calls: {
-          _array_elements: {
-          }
-        },
         buffers: {
+          _action: cls.Scoper.ACTIONS.EXAMINE,
           _array_elements: {
             _class: Buffer,
             data: {
@@ -63,12 +60,23 @@ cls.WebGLSnapshotArray = function(context_id)
             }
           }
         },
+        programs: {
+          _array_elements: {
+            uniforms: {
+              _array_elements: {
+                locations: {
+                  _action: cls.Scoper.ACTIONS.RELEASE
+                }
+              }
+            }
+          }
+        },
         textures: {
           _array_elements: {
-            get_data : {
+            get_data: {
               _action: cls.Scoper.ACTIONS.NOTHING
             },
-            object : {
+            object: {
               _action: cls.Scoper.ACTIONS.NOTHING
             }
           }
@@ -88,6 +96,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
+    this.programs = snapshot.programs;
     this.textures = snapshot.textures;
     this.drawcalls = [];
     this.trace = [];
@@ -251,6 +260,16 @@ cls.WebGLSnapshotArray = function(context_id)
           window.webgl.texture.get_texture_data(this.texture);
         };
         this.tab = "webgl_texture";
+        break;
+      case "WebGLUniformLocation":
+        this.program = snapshot.programs[this.program_index];
+        this.uniform = this.program.uniforms[this.uniform_index];
+        this.text = this.uniform.name;
+        this.action = function()
+        {
+          messages.post("webgl-show-program", this.program);
+        };
+        this.tab = "webgl_program";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
