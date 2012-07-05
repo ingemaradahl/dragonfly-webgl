@@ -346,11 +346,10 @@ cls.WebGL.RPCs.injection = function () {
       for (var i=0; i<num_uniforms; i++)
       {
         var active_uniform = gl.getActiveUniform(program, i);
-        var loc = gl.getUniformLocation(program, active_uniform.name);
         uniforms.push({
           name : active_uniform.name,
           index : i,
-          loc  : loc,
+          locations : [],
           type : active_uniform.type,
           size : active_uniform.size,
           program_index : program_obj.index
@@ -373,6 +372,24 @@ cls.WebGL.RPCs.injection = function () {
         });
       }
       program_obj.attributes = attributes;
+    };
+    innerFuns.getUniformLocation = function(result, args)
+    {
+      // WebGLUniformLocation objects can not be compared in the way we want to,
+      // so therefore we need to store all the created objects and compare
+      // against them.
+      var program = this.lookup_program(args[0]);
+      if (program == null) return;
+
+      for (var i = 0; i < program.uniforms.length; i++)
+      {
+        var uniform = program.uniforms[i];
+        if (uniform.name === args[1])
+        {
+          program.uniforms[i].locations.push(result);
+          return;
+        }
+      }
     };
 
     // -------------------------------------------------------------------------
@@ -765,12 +782,17 @@ cls.WebGL.RPCs.injection = function () {
         var program = this.programs[p];
         for (var u in program.uniforms)
         {
-          if (program.uniforms[u].loc === uniform_location)
+          var locations = program.uniforms[u].locations;
+          for (var l in locations)
           {
-            return program;
+            if (locations[l] === uniform_location)
+            {
+              return {program_index: p, uniform_index: u};
+            }
           }
         }
       }
+      return null;
     };
 
     /* Calculates texture data in a scope transission friendly way.
@@ -1060,7 +1082,12 @@ cls.WebGL.RPCs.injection = function () {
         }
         else if (obj instanceof WebGLUniformLocation)
         {
-          var uniform = handler.lookup_uniform(obj);
+          var uniform_info = handler.lookup_uniform(obj);
+          if (uniform_info != null)
+          {
+            arg.program_index = uniform_info.program_index;
+            arg.uniform_index = uniform_info.uniform_index;
+          }
         }
         else if (obj instanceof WebGLBuffer)
         {
