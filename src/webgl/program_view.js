@@ -7,6 +7,7 @@ cls.WebGLProgramView = function(id, name, container_class)
 {
   this._context = null;
   this._container = null;
+  this._content = null;
 
   this.createView = function(container)
   {
@@ -15,7 +16,7 @@ cls.WebGLProgramView = function(id, name, container_class)
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     this._container = null;
   };
@@ -27,16 +28,8 @@ cls.WebGLProgramView = function(id, name, container_class)
 
   this._render = function()
   {
-    if (!this._container)
-    {
-      return;
-    }
-    this._container.clearAndRender(
-      ['pre',
-       'varying highp vec2 uv;\nuniform sampler2D uTexture;\n\nvoid main(void) {\n  gl_FragColor = texture2D(uTexture, uv);\n}',
-       'class', 'sh_glsl'
-      ]
-    );
+    if (this._container == null || this._content == null) return;
+    this._container.clearAndRender(this._content);
     sh_highlightDocument();
   };
 
@@ -49,12 +42,45 @@ cls.WebGLProgramView = function(id, name, container_class)
   {
   };
 
+  this._on_show_program = function(program)
+  {
+    var content = [];
+    for (var i = 0; i < program.shaders.length; i++) {
+      var shader = program.shaders[i];
+      var shader_source = [
+          "pre",
+          shader.src,
+          'class', 'sh_glsl'
+      ];
+
+      var shader_type = window.webgl.api.constant_value_to_string(shader.type);
+      switch (shader_type)
+      {
+        case "VERTEX_SHADER":
+          shader_type = "Vertex";
+          break;
+        case "FRAGMENT_SHADER":
+          shader_type = "Fragment";
+          break;
+      }
+      content.push([
+        ["h2", shader_type + " shader " + String(shader.index)],
+        shader_source
+      ]);
+    }
+
+    this._content = content;
+    this._render();
+  };
+
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
 
+  messages.addListener('webgl-show-program', this._on_show_program.bind(this));
+
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLProgramView.prototype = ViewBase;
 
@@ -104,6 +130,5 @@ cls.WebGLProgramView.create_ui_widgets = function()
       }
     ]
   );
-
 };
 

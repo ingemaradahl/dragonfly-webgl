@@ -253,6 +253,11 @@ cls.WebGLSnapshotArray = function(context_id)
         this.program = snapshot.programs[this.program_index];
         this.uniform = this.program.uniforms[this.uniform_index];
         this.text = this.uniform.name;
+        this.action = function()
+        {
+          messages.post("webgl-show-program", this.program);
+        };
+        this.tab = "webgl_program";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")

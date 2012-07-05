@@ -3,7 +3,7 @@
 window.app.builders.EcmascriptDebugger || (window.app.builders.EcmascriptDebugger = {});
 
 /**
-  * @param {Object} service. The service description of 
+  * @param {Object} service. The service description of
   * the according service on the host side.
   */
 
@@ -40,15 +40,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* ECMA object inspection */
     var BaseView = new namespace.InspectionBaseView();
     namespace.InspectionView.prototype = BaseView;
-    new namespace.InspectionView('inspection', 
-                                 ui_strings.M_VIEW_LABEL_FRAME_INSPECTION, 
+    new namespace.InspectionView('inspection',
+                                 ui_strings.M_VIEW_LABEL_FRAME_INSPECTION,
                                  'scroll mono');
     namespace.InspectionView.create_ui_widgets();
 
     /* DOM object inspection */
     namespace.DOMAttrsView.prototype = BaseView;
-    new namespace.DOMAttrsView('dom_attrs', 
-                               ui_strings.M_VIEW_LABEL_DOM_ATTR, 
+    new namespace.DOMAttrsView('dom_attrs',
+                               ui_strings.M_VIEW_LABEL_DOM_ATTR,
                                'scroll dom-attrs mono');
     namespace.DOMAttrsView.create_ui_widgets();
 
@@ -64,14 +64,14 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.CommandLineRuntimeSelect('cmd-runtime-select', 'cmd-line-runtimes');
 
     cls.ReplView.create_ui_widgets();
-    new cls.ReplView('command_line', 
-                     ui_strings.M_VIEW_LABEL_COMMAND_LINE, 
-                     'scroll console mono', 
+    new cls.ReplView('command_line',
+                     ui_strings.M_VIEW_LABEL_COMMAND_LINE,
+                     'scroll console mono',
                      '', 'repl-focus');
 
     /* JS source */
     window.simple_js_parser = new window.cls.SimpleJSParser();
-    new cls.JsSourceView('js_source', 
+    new cls.JsSourceView('js_source',
                          ui_strings.M_VIEW_LABEL_SOURCE,
                          'scroll js-source mono');
     new cls.ScriptSelect('js-script-select', 'script-options');
@@ -79,12 +79,12 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* Watches */
     cls.WatchesView.prototype = ViewBase;
-    new cls.WatchesView('watches', 
+    new cls.WatchesView('watches',
                         ui_strings.M_VIEW_LABEL_WATCHES,
                         'scroll mono');
-   
+
     /* Runtime State */
-    new cls.JSSidePanelView('scripts-side-panel', 
+    new cls.JSSidePanelView('scripts-side-panel',
                             ui_strings.M_VIEW_LABEL_RUNTIME_STATE,
                             ['watches', 'callstack', 'inspection'],
                             // default expanded flags for the view list
@@ -92,14 +92,14 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* Callstack */
     cls.CallstackView.prototype = ViewBase;
-    new cls.CallstackView('callstack', 
-                          ui_strings.M_VIEW_LABEL_CALLSTACK, 
+    new cls.CallstackView('callstack',
+                          ui_strings.M_VIEW_LABEL_CALLSTACK,
                           'scroll mono');
 
     /* Threads */
     cls.ThreadsView.prototype = ViewBase;
-    new cls.ThreadsView('threads', 
-                        ui_strings.M_VIEW_LABEL_THREAD_LOG, 
+    new cls.ThreadsView('threads',
+                        ui_strings.M_VIEW_LABEL_THREAD_LOG,
                         'scroll threads');
     //cls.ThreadsView.create_ui_widgets();
 
@@ -121,14 +121,14 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* CSS inspector */
     cls.CSSInspectorView.prototype = ViewBase;
-    new cls.CSSInspectorView('css-inspector', 
-                             ui_strings.M_VIEW_LABEL_STYLES, 
+    new cls.CSSInspectorView('css-inspector',
+                             ui_strings.M_VIEW_LABEL_STYLES,
                              'scroll css-inspector mono');
     new cls.CSSInspectorView.create_ui_widgets();
 
     cls.CSSInspectorCompStyleView.prototype = ViewBase;
-    new cls.CSSInspectorCompStyleView('css-comp-style', 
-                                      ui_strings.M_VIEW_LABEL_COMPUTED_STYLE, 
+    new cls.CSSInspectorCompStyleView('css-comp-style',
+                                      ui_strings.M_VIEW_LABEL_COMPUTED_STYLE,
                                       'scroll css-inspector mono');
 
     cls.NewStyle.prototype = ViewBase;
@@ -148,12 +148,12 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* Layout */
     window.element_layout = new cls.ElementLayout();
     cls.CSSLayoutView.prototype = ViewBase;
-    new cls.CSSLayoutView('css-layout', 
-                          ui_strings.M_VIEW_LABEL_LAYOUT, 
+    new cls.CSSLayoutView('css-layout',
+                          ui_strings.M_VIEW_LABEL_LAYOUT,
                           'scroll css-layout');
 
     /* Runtime State */
-    new cls.JSSidePanelView('breakpoints-side-panel', 
+    new cls.JSSidePanelView('breakpoints-side-panel',
                             ui_strings.M_VIEW_LABEL_BREAKPOINTS,
                             ['breakpoints', 'event-breakpoints'],
                             // default expanded flags for the view list
@@ -176,8 +176,8 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* JS Search */
     cls.JSSearchView.prototype = ViewBase;
-    new cls.JSSearchView('js-search', 
-                         ui_strings.M_VIEW_LABEL_SEARCH, 
+    new cls.JSSearchView('js-search',
+                         ui_strings.M_VIEW_LABEL_SEARCH,
                          'scroll js-search');
 
     /* adjust the base class */
@@ -208,14 +208,14 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
       'cookies',
       ui_strings.M_VIEW_LABEL_COOKIES));
 
-    new cls.StorageView("local_storage", 
-                        ui_strings.M_VIEW_LABEL_LOCAL_STORAGE, 
+    new cls.StorageView("local_storage",
+                        ui_strings.M_VIEW_LABEL_LOCAL_STORAGE,
                         "scroll storage_view local_storage",
                         "local_storage");
     new cls.StorageViewActions("local_storage");
 
     new cls.StorageView("session_storage",
-                        ui_strings.M_VIEW_LABEL_SESSION_STORAGE, 
+                        ui_strings.M_VIEW_LABEL_SESSION_STORAGE,
                         "scroll storage_view session_storage",
                         "session_storage");
     new cls.StorageViewActions("session_storage");
@@ -226,8 +226,8 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                         "cookies");
     new cls.StorageViewActions("cookies");
 
-    new cls.StorageView("widget_preferences", 
-                        ui_strings.M_VIEW_LABEL_WIDGET_PREFERNCES, 
+    new cls.StorageView("widget_preferences",
+                        ui_strings.M_VIEW_LABEL_WIDGET_PREFERNCES,
                         "scroll storage_view widget_preferences",
                         "widget_preferences");
     new cls.StorageViewActions("widget_preferences");
@@ -259,6 +259,26 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
 
+    new cls.WebGLBufferView("webgl_buffer",
+                            "Buffer", // TODO
+                            "scroll webgl_view buffer");
+
+    new cls.WebGLProgramView("webgl_program",
+                             "Program", // TODO
+                             "scroll webgl_view program");
+    cls.WebGLProgramView.create_ui_widgets();
+
+    new cls.WebGLTestView("webgl_test",
+                           "Payload Test",
+                           "scroll webgl_view test");
+    cls.WebGLTestView.create_ui_widgets();
+
+    new cls.WebGLTextureView("webgl_texture",
+                             "Texture",
+                             "scroll webgl_view texture");
+
+    // Tabs to the right
+
     new cls.WebGLTraceView("trace-side-panel",
                            "Trace", // TODO
                            "scroll webgl_view trace");
@@ -269,30 +289,13 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "scroll webgl_view state");
     cls.WebGLStateView.create_ui_widgets();
 
-    new cls.WebGLBufferView("webgl_buffer",
-                           "Buffers", // TODO
-                           "scroll webgl_view buffer");
-
-    new cls.WebGLProgramView("webgl_program",
-                             "Programs", // TODO
-                             "scroll webgl_view program");
-    cls.WebGLProgramView.create_ui_widgets();
-
-    new cls.WebGLTestView("webgl_test",
-                           "Payload Test",
-                           "scroll webgl_view test");
-    cls.WebGLTestView.create_ui_widgets();
-
-    new cls.WebGLTextureView("webgl_texture",
-                             "Textures",
-                             "scroll webgl_view texture");
 
     /* the following views must be created to get entry in the Settings tab */
 
     /* Environment */
     cls.EnvironmentView.prototype = ViewBase;
-    new cls.EnvironmentView('environment', 
-                            ui_strings.M_VIEW_LABEL_ENVIRONMENT, 
+    new cls.EnvironmentView('environment',
+                            ui_strings.M_VIEW_LABEL_ENVIRONMENT,
                             'scroll');
     cls.EnvironmentView.create_ui_widgets();
 
@@ -303,7 +306,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* Hostspotlighter */
     cls.HostSpotlightView.prototype = ViewBase;
-    new cls.HostSpotlightView('host-spotlight', 
+    new cls.HostSpotlightView('host-spotlight',
                               ui_strings.S_LABEL_SPOTLIGHT_TITLE);
     cls.HostSpotlightView.create_ui_widgets();
 
