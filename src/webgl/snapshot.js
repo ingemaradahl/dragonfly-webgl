@@ -4,7 +4,7 @@ window.cls || (window.cls = {});
 
 /**
  * Governs snapshots of a WebGL context
- * @extends Array 
+ * @extends Array
  */
 cls.WebGLSnapshotArray = function(context_id)
 {
@@ -18,7 +18,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
   this.get_latest_trace = function()
   {
-    return this.length > 0 ? this[this.length-1].trace : null;
+    return this.last ? this.last.trace : null;
   };
 
   var on_snapshot_complete = function(msg)
@@ -32,7 +32,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var finalize = function (snapshots)
     {
-      for (var i = 0; i < snapshots.length; i++) 
+      for (var i = 0; i < snapshots.length; i++)
       {
         this.push(new Snapshot(snapshots[i], this));
         messages.post("webgl-new-trace");
@@ -40,13 +40,53 @@ cls.WebGLSnapshotArray = function(context_id)
     };
 
     var scoper = new cls.Scoper(finalize, this);
+    scoper.set_reviver_tree({
+      _array_elements: {
+        buffers: {
+          _action: cls.Scoper.ACTIONS.EXAMINE,
+          _array_elements: {
+            _class: Buffer,
+            data: {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            }
+          }
+        },
+        drawcalls: {
+          _array_elements: {
+            fbo: {
+              img: {
+                _action: cls.Scoper.ACTIONS.NOTHING
+              }
+            }
+          }
+        },
+        programs: {
+          _array_elements: {
+            uniforms: {
+              _array_elements: {
+                locations: {
+                  _action: cls.Scoper.ACTIONS.RELEASE
+                }
+              }
+            }
+          }
+        },
+        textures: {
+          _array_elements: {
+            get_data: {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            },
+            object: {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            }
+          }
+        }
+      },
+      _depth: 7,
+      _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
+    });
+
     var func = window.webgl.interfaces[ctx_id].get_snapshot;
-    scoper.set_object_action(function(key)
-        {
-          return cls.Scoper.ACTIONS[key === "pixels" ? "NOTHING" : "EXAMINE_RELEASE"];
-        });
-    scoper.set_max_depth(5);
-    scoper.set_reviver(cls.Scoper.prototype.reviver_typed);
     scoper.execute_remote_function(func);
   };
 
@@ -56,7 +96,9 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.parent_ = parent_;
     this.buffers = snapshot.buffers;
-    this.texture_container = [];
+    this.programs = snapshot.programs;
+    this.textures = snapshot.textures;
+    this.drawcalls = [];
     this.trace = [];
 
     var init_trace = function (calls, call_refs)
@@ -79,10 +121,11 @@ cls.WebGLSnapshotArray = function(context_id)
         var function_name = parts[0];
         var error_code = Number(parts[1]);
         var result = parts[2];
-        var args = parts.slice(3);
+        var redundant = parts[3];
+        var args = parts.slice(4);
 
         // Revive the arguments
-        for (var k = 0; k < args.length; k++) 
+        for (var k = 0; k < args.length; k++)
         {
           var arg = args[k];
           if (object_index_regexp.test(arg))
@@ -111,20 +154,31 @@ cls.WebGLSnapshotArray = function(context_id)
           result = Number(result);
         }
 
-        trace_list.push(new TraceEntry(function_name, error_code, result, args));
+        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args));
       }
 
       this.trace = trace_list;
 
     }.bind(this);
 
-    var init_fbos = function (fbo)
+    init_trace(snapshot.calls, snapshot.call_refs);
+
+    // Init draw calls
+    this.drawcalls = snapshot.drawcalls;
+    this.drawcalls.get_call_by_call = function(call)
     {
+      var c = -1;
+      var result = null;
+      for (var i=0; i<this.length; i++)
+      {
+        if (this[i].call_index <= call && this[i].call_index > c)
+        {
+          result = this[i];
+        }
+      }
 
-
-    }.bind(this);
-
-    init_trace(snapshot.calls, snapshot.call_refs)
+      return result;
+    }.bind(this.drawcalls);
   };
 
   // ---------------------------------------------------------------------------
@@ -132,11 +186,12 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Used to store a single function call in a frame trace.
    */
-  function TraceEntry(function_name, error_code, result, args)
+  function TraceEntry(function_name, error_code, redundant, result, args)
   {
     this.function_name = function_name;
     this.error_code = error_code;
     this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
+    this.redundant = redundant;
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
@@ -149,6 +204,31 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     this.snapshot = snapshot;
     this.have_snapshot = true;
+  };
+
+  function Buffer()
+  {
+    this.values = null;
+  }
+
+  Buffer.prototype.available = function()
+  {
+    return this.values !== undefined;
+  };
+
+  Buffer.prototype.set_data = function(data)
+  {
+    this.values = data;
+  };
+
+  Buffer.prototype.usage_string = function()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
+  };
+
+  Buffer.prototype.target_string = function()
+  {
+    return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
   };
 
   /**
@@ -170,21 +250,26 @@ cls.WebGLSnapshotArray = function(context_id)
         {
           window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
         };
-        this.tab = "buffer";
+        this.tab = "webgl_buffer";
         break;
       case "WebGLTexture":
-        this.texture = snapshot.texture_container[this.texture_index];
-        if (this.texture == null)
-        { // TODO temporary until texture is rebuilt
-          this.text = "Texture " + String(this.texture_index) + " (not loaded)";
-          return;
-        }
+        this.texture = snapshot.textures[this.texture_index];
         this.text = "Texture " + String(this.texture.index);
         this.action = function()
         {
-          window.webgl.texture._get_texture_data(window.webgl.runtime_id, ctx_id, "Texture" + String(this.texture.index));
+          window.webgl.texture.get_texture_data(this.texture);
         };
-        this.tab = "texture";
+        this.tab = "webgl_texture";
+        break;
+      case "WebGLUniformLocation":
+        this.program = snapshot.programs[this.program_index];
+        this.uniform = this.program.uniforms[this.uniform_index];
+        this.text = this.uniform.name;
+        this.action = function()
+        {
+          messages.post("webgl-show-program", this.program);
+        };
+        this.tab = "webgl_program";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
@@ -202,7 +287,7 @@ cls.WebGLSnapshotArray = function(context_id)
   {
     if (this.tab)
     {
-      window.views.webgl_panel.cell.children[0].tab.setActiveTab("webgl_" + this.tab);
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.tab);
     }
 
     if (this.action)

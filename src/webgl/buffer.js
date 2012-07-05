@@ -29,14 +29,15 @@ cls.WebGLBuffer = function()
   {
     var finalize = function (updated_buffer)
     {
-      buffer.update(updated_buffer);
       buffer.set_data(updated_buffer.data);
       messages.post('webgl-buffer-data', buffer);
     };
 
     var scoper = new cls.Scoper(finalize, this);
-    scoper.set_object_action(cls.Scoper.ACTIONS.EXAMINE);
-    scoper.set_reviver(scoper.reviver_typed);
+    scoper.set_reviver_tree({
+      _action: cls.Scoper.ACTIONS.EXAMINE,
+      _reviver: scoper.reviver_typed
+    });
     scoper.examine_object(buffer, false);
   };
 
