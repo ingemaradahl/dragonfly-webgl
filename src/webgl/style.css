@@ -3,6 +3,14 @@
   width: 40%;
 }
 
+/* Flipped images */
+
+img.flipped
+{ 
+  -o-transform: scaleY(-1);
+}
+
+
 /* Texture */
 .webgl_view.texture div
 {
@@ -55,9 +63,32 @@
   background: rgba(255,0,0, 0.4);
 }
 
-/* Flipped images */
-
-img.flipped
-{ 
-  -o-transform: scaleY(-1);
+/* Draw Call */
+.webgl_view.draw-call > div
+{
+  padding: 10px;
 }
+
+.draw-call-info td,
+.draw-call-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.draw-call-info th
+{
+  text-align: left;
+  padding-right: 30px;
+}
+
+.draw-call-info table
+{
+  border-collapse: collapse;
+}
+
+.draw-call-info span.link
+{
+  color: blue;
+};
+

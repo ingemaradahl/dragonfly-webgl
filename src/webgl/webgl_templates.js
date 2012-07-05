@@ -180,7 +180,7 @@ window.templates.webgl.texture = function(obj)
             ["tr",
               ["td", ["img", "src", obj.img]]
             ],
-            ["tr",  
+            ["t]",  
               ["td", "Texture id:"],
               ["td", String(obj.index)]
             ],
@@ -209,8 +209,9 @@ window.templates.webgl.texture = function(obj)
         );
 };
 
-window.templates.webgl.drawcall = function(fbo)
+window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
+  var fbo = draw_call.fbo;
   var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.img];
   
   if (fbo.flipped)
@@ -218,5 +219,38 @@ window.templates.webgl.drawcall = function(fbo)
     img.push("class");
     img.push("flipped");
   }
-    return ([img]);
+
+  var buffer_link = [ "span",
+    draw_call.buffer.link.text, 
+    "handler", "webgl-drawcall-buffer", 
+    "class", "link",
+    "buffer", draw_call.buffer
+  ];
+
+  var state = [
+    "table",
+      [
+        [ "tr", 
+          ["th", window.webgl.api.constant_value_to_string(draw_call.buffer_target)],
+          ["td", buffer_link ]
+        ],
+        [ "tr",
+          [ "th", "Program" ],
+          [ "td", String(draw_call.program_index)]
+        ],
+      ],
+      "class", "draw-call-info"
+  ];
+
+  var html = 
+  [ 
+    "div", 
+      [ "div", 
+        ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)]
+      ],
+      state,
+      img
+  ];
+
+  return html;
 };

@@ -101,6 +101,23 @@ cls.WebGLSnapshotArray = function(context_id)
     this.drawcalls = [];
     this.trace = [];
 
+    // Finds a buffer denoted by it's index and call_index
+    this.buffers.lookup = function (index, call_index)
+    {
+      var res = null;
+      var highest_call = -1;
+      for (var i=0; i<this.length; i++)
+      {
+        if (this[i].index === index && this[i].call_index <= call_index && this[i].call_index >= highest_call)
+        {
+          res = this[i];
+        }
+      }
+
+      return res;
+    }.bind(this.buffers);
+
+
     var init_trace = function (calls, call_refs)
     {
       var trace_list = [];
@@ -121,7 +138,7 @@ cls.WebGLSnapshotArray = function(context_id)
         var function_name = parts[0];
         var error_code = Number(parts[1]);
         var result = parts[2];
-        var redundant = parts[3];
+        var redundant = parts[3] === "true" ? true : false;
         var args = parts.slice(4);
 
         // Revive the arguments
@@ -164,8 +181,16 @@ cls.WebGLSnapshotArray = function(context_id)
     init_trace(snapshot.calls, snapshot.call_refs);
 
     // Init draw calls
-    this.drawcalls = snapshot.drawcalls;
-    this.drawcalls.get_call_by_call = function(call)
+    var init_drawcall = function(drawcall)
+    {
+      drawcall.buffer = this.buffers.lookup(drawcall.buffer_index, drawcall.call_index);
+      // TODO: Same for programs
+
+      this.drawcalls.push(drawcall);
+    };
+
+    snapshot.drawcalls.forEach(init_drawcall, this);
+    this.drawcalls.get_by_call = function(call)
     {
       var c = -1;
       var result = null;
@@ -179,6 +204,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
       return result;
     }.bind(this.drawcalls);
+
   };
 
   // ---------------------------------------------------------------------------
@@ -251,6 +277,7 @@ cls.WebGLSnapshotArray = function(context_id)
           window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
         };
         this.tab = "webgl_buffer";
+        this.buffer.link = this;
         break;
       case "WebGLTexture":
         this.texture = snapshot.textures[this.texture_index];
