@@ -138,7 +138,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   this._on_table_click = function(evt, target)
   {
     var buffer_index = target.getAttribute("data-object-id");
-    var snapshot = window['cst-selects']['context-select'].get_selected_snapshot();
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var buffer = snapshot.buffers[buffer_index];
     window.views.webgl_buffer.show_buffer(buffer);
   };
@@ -193,11 +193,11 @@ cls.WebGLBufferSideView.create_ui_widgets = function()
     null,
     [
       {
-        handler: 'select-webgl-context',
-        title: "Select WebGL context", // TODO
+        handler: 'select-webgl-snapshot',
+        title: "Select WebGL snapshot", // TODO
         type: 'dropdown',
         class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
+        template: window['cst-selects']['snapshot-select'].getTemplate()
       }
     ]
   );
