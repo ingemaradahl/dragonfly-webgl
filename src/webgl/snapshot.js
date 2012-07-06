@@ -103,6 +103,23 @@ cls.WebGLSnapshotArray = function(context_id)
     this.drawcalls = [];
     this.trace = [];
 
+    // Finds a buffer denoted by it's index and call_index
+    this.buffers.lookup = function (index, call_index)
+    {
+      var res = null;
+      var highest_call = -1;
+      for (var i=0; i<this.length; i++)
+      {
+        if (this[i].index === index && this[i].call_index <= call_index && this[i].call_index >= highest_call)
+        {
+          res = this[i];
+        }
+      }
+
+      return res;
+    }.bind(this.buffers);
+
+
     var init_trace = function (calls, call_refs)
     {
       var trace_list = [];
@@ -166,8 +183,17 @@ cls.WebGLSnapshotArray = function(context_id)
     init_trace(snapshot.calls, snapshot.call_refs);
 
     // Init draw calls
-    this.drawcalls = snapshot.drawcalls;
-    this.drawcalls.get_call_by_call = function(call)
+    var init_drawcall = function(drawcall)
+    {
+      this.trace[drawcall.call_index].drawcall = true;
+      drawcall.buffer = this.buffers.lookup(drawcall.buffer_index, drawcall.call_index);
+      // TODO: Same for programs
+
+      this.drawcalls.push(drawcall);
+    };
+
+    snapshot.drawcalls.forEach(init_drawcall, this);
+    this.drawcalls.get_by_call = function(call)
     {
       var c = -1;
       var result = null;
@@ -194,6 +220,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.error_code = error_code;
     this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
     this.redundant = redundant;
+    this.drawcall = false;
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
@@ -252,6 +279,7 @@ cls.WebGLSnapshotArray = function(context_id)
           window.views.webgl_buffer.show_buffer(this.buffer);
         };
         this.tab = "webgl_buffer";
+        this.buffer.link = this;
         break;
       case "WebGLTexture":
         this.texture = snapshot.textures[this.texture_index];

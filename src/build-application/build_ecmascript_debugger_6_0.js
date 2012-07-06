@@ -235,8 +235,8 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* WebGL inspection */
     window.webgl = new cls.WebGL.WebGLDebugger();
 
-    cls.WebGLContextSelect.prototype = new CstSelect();
-    new cls.WebGLContextSelect('context-select', 'context-options');
+    cls.WebGLSnapshotSelect.prototype = new CstSelect();
+    new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
 
     new cls.WebGLView('webgl_panel',
                       'WebGL',// TODO: ui_strings.M_VIEW_LABEL_WEBGL,

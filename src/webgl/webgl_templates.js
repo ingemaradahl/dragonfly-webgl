@@ -165,6 +165,10 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   {
     row_class = "trace-redundant";
   }
+  else if (call.drawcall)
+  {
+    row_class = "trace-drawcall";
+  }
 
   return [
     "tr", [
@@ -194,53 +198,75 @@ window.templates.webgl.trace_table = function(calls, view_id)
 };
 
 
-window.templates.webgl.texture = function(obj)
+window.templates.webgl.texture = function(texture)
 {
+  var api = window.webgl.api;
   var image_source = [];
-  if (obj.source)
+  if (texture.source)
   {
     image_source = [
       "tr",
       ["th", "Image source"],
-      ["td", obj.source]
+      ["td", texture.source]
     ];
+  }
+
+  var img = ["img", "src", texture.img];
+  if (texture.flipped)
+  {
+    img.push("class");
+    img.push("flipped");
   }
 
   var info_table = [
     "table",
     ["tr",
       ["th", "Source"],
-      ["td", obj.element_type]
+      ["td", texture.element_type]
     ],
     image_source,
     ["tr",
+      ["th", "format"],
+      ["td", api.constant_value_to_string(texture.format) ]
+    ],
+    ["tr",
+      ["th", "internalFormat"],
+      ["td", api.constant_value_to_string(texture.internalFormat) ]
+    ],
+    ["tr",
+      ["th", "type"],
+      ["td", api.constant_value_to_string(texture.type) ]
+    ],
+    texture.border ? ["tr", ["th", "border"], ["td", String(texture.border)]] : [],
+    ["tr",
       ["th", "TEXTURE_WRAP_S"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_s)]
     ],
     ["tr",
       ["th", "TEXTURE_WRAP_T"] ,
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_t)]
     ],
     ["tr",
       ["th", "TEXTURE_MIN_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_min_filter)]
     ],
     ["tr",
       ["th", "TEXTURE_MAG_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_mag_filter)]
     ],
     "class", "table-info"
   ];
 
   return [
-    ["h2", "Texture " + String(obj.index)],
-    ["img", "src", obj.img],
+    ["h2", "Texture " + String(texture.index)],
+    img,
     info_table
   ];
 };
 
-window.templates.webgl.drawcall = function(fbo)
+window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
+  var fbo = draw_call.fbo;
   var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.img];
 
   if (fbo.flipped)
@@ -248,5 +274,77 @@ window.templates.webgl.drawcall = function(fbo)
     img.push("class");
     img.push("flipped");
   }
-    return ([img]);
+
+  var buffer_link = [ "span",
+    draw_call.buffer.link.text,
+    "handler", "webgl-drawcall-buffer",
+    "class", "link",
+    "buffer", draw_call.buffer
+  ];
+
+  var state = [
+    "table",
+      [
+        [ "tr",
+          ["th", window.webgl.api.constant_value_to_string(draw_call.buffer_target)],
+          ["td", buffer_link ]
+        ],
+        [ "tr",
+          [ "th", "Program" ],
+          [ "td", String(draw_call.program_index)]
+        ],
+      ],
+      "class", "draw-call-info"
+  ];
+
+  var html =
+  [
+    "div",
+      [ "div",
+        ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)]
+      ],
+      state,
+      img
+  ];
+
+  return html;
+};
+
+window.templates.webgl.program = function(program)
+{
+  var programs = [];
+
+  for (var i = 0; i < program.shaders.length; i++)
+  {
+    var shader = program.shaders[i];
+    var shader_source = [
+        "pre",
+        shader.src,
+        'class', 'sh_glsl'
+    ];
+
+    var shader_type = window.webgl.api.constant_value_to_string(shader.type);
+    switch (shader_type)
+    {
+      case "VERTEX_SHADER":
+        shader_type = "Vertex";
+        break;
+      case "FRAGMENT_SHADER":
+        shader_type = "Fragment";
+        break;
+    }
+    programs.push([
+      ["h2", shader_type + " shader " + String(shader.index)],
+      shader_source
+    ]);
+  }
+
+  var html =
+  [
+    "div",
+     programs
+  ];
+
+
+  return html;
 };

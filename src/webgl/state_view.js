@@ -170,11 +170,11 @@ cls.WebGLStateView.create_ui_widgets = function()
     null,
     [
       {
-        handler: 'select-webgl-context',
-        title: "Select WebGL context", // TODO
+        handler: 'select-webgl-snapshot',
+        title: "Select WebGL snapshot", // TODO
         type: 'dropdown',
         class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
+        template: window['cst-selects']['snapshot-select'].getTemplate()
       }
     ]
   );

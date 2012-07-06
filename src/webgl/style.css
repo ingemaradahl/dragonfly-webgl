@@ -5,8 +5,10 @@
 
 
 .webgl_view.buffer > div,
-.webgl_view.texture > div
+.webgl_view.texture > div,
+.webgl_view.program > div
 {
+  text-align: left;
   padding: 10px;
 }
 
@@ -28,6 +30,19 @@
   padding-right: 30px;
   width: 140px;
 }
+
+/* Program */
+pre.sh_sourceCode .webgl-hilight-uniform
+{
+  background-color: #9ee38a;
+  font-weight: bold;
+  font-style: normal;
+
+  border-style: dashed;
+  border-width: 1px;
+  border-color: #145e00;
+}
+
 
 /* Buffer */
 
@@ -60,9 +75,36 @@
   background-color: rgba(247,224,121, 0.4);
 }
 
-/* Flipped images */
-
-img.flipped
+.trace-table tr.trace-drawcall
 {
-  -o-transform: scaleY(-1);
+  background: rgba(0,255,0, 0.4);
 }
+
+/* Draw Call */
+.webgl_view.draw-call > div
+{
+  padding: 10px;
+}
+
+.draw-call-info td,
+.draw-call-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.draw-call-info th
+{
+  text-align: left;
+  padding-right: 30px;
+}
+
+.draw-call-info table
+{
+  border-collapse: collapse;
+}
+
+.draw-call-info span.link
+{
+  color: blue;
+};

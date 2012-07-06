@@ -3,7 +3,7 @@
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
-cls.WebGLContextSelect = function(id)
+cls.WebGLSnapshotSelect = function(id)
 {
   this._snapshot_list = [{}];
   this.disabled = true;
@@ -12,7 +12,7 @@ cls.WebGLContextSelect = function(id)
 
   this.getSelectedOptionText = function()
   {
-    if (!this.disabled && this._snapshot_list.length > 0)
+    if (!this.disabled)
     {
       return "WebGLSnapshot #" + this._selected_snapshot_index;
     }
@@ -24,10 +24,9 @@ cls.WebGLContextSelect = function(id)
 
   this.getSelectedOptionValue = function()
   {
-
   };
 
-  /** To become obsolete!
+  /**
    * Returns the id of the context that is currently selected.
    * Returns null if there is no context selected.
    */
@@ -53,7 +52,14 @@ cls.WebGLContextSelect = function(id)
   {
     if (window.webgl.available())
     {
-      return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
+      if (this._selected_context_id != undefined && this._selected_snapshot_index!= undefined)
+      {
+        return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
+      }
+      else
+      {
+        return window.webgl.snapshots[window.webgl.contexts[0]][0];
+      }
     }
     return null;
  };
@@ -79,8 +85,8 @@ cls.WebGLContextSelect = function(id)
     // Iterating the contexts.
     for(i=0; i<window.webgl.contexts.length; i++)
     {
-      ret[entries] =
-        ["cst-title",
+      ret[entries] = 
+        ["cst-webgl-title",
          "WebGLContext #" + i,
          "class", "js-dd-dir-path"
         ];
@@ -127,9 +133,10 @@ cls.WebGLContextSelect = function(id)
       messages.post('webgl-take-snapshot', context_id);
       return false;
     }
-    else if (this._selected_option_index != snapshot_index)
+    else if (this._selected_snapshot_index != snapshot_index)
     {
-      this._selected_option_index = snapshot_index;
+      this._selected_snapshot_index = snapshot_index;
+      this._selected_context_id = context_id;
       messages.post('webgl-changed-snapshot',
           window.webgl.snapshots[context_id][snapshot_index]);
       return true;
@@ -155,7 +162,7 @@ cls.WebGLContextSelect = function(id)
   this.init(id);
 };
 
-cls.WebGLContextSelect.prototype = new CstSelect();
+cls.WebGLSnapshotSelect.prototype = new CstSelect();
 
 
 cls.WebGLTraceSelect = function(id)

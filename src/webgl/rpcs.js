@@ -161,15 +161,15 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = this.lookup_buffer(args[1]);
       if (buffer == null) return;
 
-      var redundant = this.buffer_binding.target === buffer;
-      this.buffer_binding.target = buffer;
+      var redundant = this.buffer_binding[target] === buffer;
+      this.buffer_binding[target] = buffer;
 
       return redundant;
     };
     innerFuns.bufferData = function(result, args)
     {
       var target = args[0];
-      var buffer = this.buffer_binding.target;
+      var buffer = this.buffer_binding[target];
       if (!buffer) return;
 
       var redundant = false;
@@ -205,7 +205,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       var target = args[0];
       var offset = args[1];
-      var buffer = this.buffer_binding.target;
+      var buffer = this.buffer_binding[target];
       if (!buffer) return;
 
       var new_data = args[2];
@@ -228,9 +228,9 @@ cls.WebGL.RPCs.injection = function () {
 
       for (var target in this.buffer_binding)
       {
-        if (this.buffer_binding.target === buffer)
+        if (this.buffer_binding[target] === buffer)
         {
-          this.buffer_binding.target = null;
+          this.buffer_binding[target] = null;
         }
       }
     };
@@ -278,32 +278,37 @@ cls.WebGL.RPCs.injection = function () {
 
       var target = args[0];
       var bound_texture = this.texture_binding[target];
+      var internalFormat = args[2];
 
       for (var i=0; i<this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
           var texture = {
-            index : i,
+            index : this.textures[i].index,
             texture : bound_texture,
             object : texture_container_object,
             type : texture_container_object ? texture_container_object.toString() : null,
+            internalFormat : internalFormat,
             texture_wrap_s : gl.getTexParameter(target, gl.TEXTURE_WRAP_S),
             texture_wrap_t : gl.getTexParameter(target, gl.TEXTURE_WRAP_T),
             texture_min_filter : gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER),
             texture_mag_filter : gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER),
           };
 
-          // TODO Translate to ENUMs
-
-          // We need to save some extra information about the call when an
-          // ArrayBufferView is used.
           if (args.length === 9)
           {
             texture.internalFormat = args[2];
             texture.width = args[3];
             texture.height = args[4];
+            texture.border = args[5];
             texture.format = args[6];
+            texture.type = args[7];
+          }
+          else
+          {
+            texture.format = args[3];
+            texture.type = args[4];
           }
 
           this.textures[i] = texture;
@@ -500,62 +505,74 @@ cls.WebGL.RPCs.injection = function () {
      * state
      */
     var snapshot_functions = {};
-    snapshot_functions.drawArrays = function(result, args)
+    var draw_call = function (function_name)
     {
-      var gl = this.gl;
-
-      var width, height, fbo;
-      if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
+      return function(result, args)
       {
-        width = fbo.width;
-        height = fbo.height;
-      }
-      else
-      {
-        // The default FBO is being used, assume it has the same dimensions as
-        // the viewport.. TODO: Consider better heuristic for finding dimension.
-        var viewport = gl.getParameter(gl.VIEWPORT);
-        width = viewport[2];
-        height = viewport[3];
-      }
+        var gl = this.gl;
 
-      // Image data will be stored as RGBA - 4 bytes per pixel
-      var size = width * height * 4;
-      var arr = new ArrayBuffer(size);
-      var pixels = new Uint8Array(arr);
+        var width, height, fbo;
+        if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
+        {
+          width = fbo.width;
+          height = fbo.height;
+        }
+        else
+        {
+          // The default FBO is being used, assume it has the same dimensions as
+          // the viewport.. TODO: Consider better heuristic for finding dimension.
+          var viewport = gl.getParameter(gl.VIEWPORT);
+          width = viewport[2];
+          height = viewport[3];
+        }
 
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        // Image data will be stored as RGBA - 4 bytes per pixel
+        var size = width * height * 4;
+        var arr = new ArrayBuffer(size);
+        var pixels = new Uint8Array(arr);
 
-      // Encode to PNG
-      var canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      var ctx = canvas.getContext("2d");
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-      var img_data = ctx.createImageData(width, height);
+        // Encode to PNG
+        var canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext("2d");
 
-      for (var i=0; i<size; i++)
-      {
-        img_data.data[i] = pixels[i];
-      }
+        var img_data = ctx.createImageData(width, height);
 
-      ctx.putImageData(img_data, 0, 0);
+        for (var i=0; i<size; i+=4)
+        {
+          img_data.data[i] = pixels[i];
+          img_data.data[i+1] = pixels[i+1];
+          img_data.data[i+2] = pixels[i+2];
+          img_data.data[i+3] = pixels[i+3];
+        }
 
-      var snapshot = {
-        img : canvas.toDataURL("image/png"),
-        width : width,
-        height : height,
-        flipped : true
+        ctx.putImageData(img_data, 0, 0);
+
+        // Figure out buffer binding, which buffer we are drawing
+        var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
+        var buffer = this.buffer_binding[target];
+
+        var snapshot = {
+          img : canvas.toDataURL("image/png"),
+          width : width,
+          height : height,
+          flipped : true
+        };
+
+        this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM), target, buffer.index);
       };
-
-      this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM));
     };
-    snapshot_functions.drawElements = snapshot_functions.drawArrays;
+
+    snapshot_functions.drawArrays = draw_call("drawArrays");
+    snapshot_functions.drawElements = draw_call("drawElements");
 
     snapshot_functions.bufferData = function (result, args)
     {
       var target = args[0];
-      var buffer = this.buffer_binding.target;
+      var buffer = this.buffer_binding[target];
       if (!buffer) return;
 
       this.snapshot.add_buffer(buffer);
@@ -923,6 +940,7 @@ cls.WebGL.RPCs.injection = function () {
     this.get_texture_data = function ()
     {
       var element = this.object;
+      this.flipped = false;
 
       if (element instanceof HTMLImageElement)
       {
@@ -966,40 +984,28 @@ cls.WebGL.RPCs.injection = function () {
         var canvas_ctx = canvas.getContext("2d");
 
         var imgData = canvas_ctx.createImageData(this.width, this.height);
-        var height = this.height;
-        var width = this.width;
+        var size = this.width * this.height;
         var pix = imgData.data;
-        var format;
-        var alphaOffset=0;
 
-        // Flipping the image on the y-axis because
-        // imgData is drawn from top left to right.
-        // The UintArary is bottom left to right.
         if (this.format === gl.RGB)
         {
-          for (var i=0; i<height; i++)
+          for (var i=0; i<size; i += 4)
           {
-            for (var j=0; j<width*3; j += 3)
-            {
-              pix[j+i*width*3+alphaOffset] = element[j+(height-1-i)*width*3];
-              pix[j+i*width*3+1+alphaOffset] = element[j+(height-1-i)*width*3+1];
-              pix[j+i*width*3+2+alphaOffset] = element[j+(height-1-i)*width*3+2];
-              pix[j+i*width*3+3+alphaOffset] = 255; // Set alpha channel to opaque
-              alphaOffset += 1;
-            }
+            pix[i] = element[i];
+            pix[i+1] = element[i+1];
+            pix[i+2] = element[i+2];
+            pix[i+4] = 255 // Set alpha channel to opaque
+
           }
         }
         else if (this.format === gl.RGBA)
         {
-          for (var i=0; i<height; i++)
+          for (var i=0; i<size; i += 4)
           {
-            for (var j=0; j<width*4; j += 4)
-            {
-              pix[j+i*width*4] = element[j+(height-1-i)*width*4];
-              pix[j+i*width*4+1] = element[j+(height-1-i)*width*4+1];
-              pix[j+i*width*4+2] = element[j+(height-1-i)*width*4+2];
-              pix[j+i*width*4+3] = element[j+(height-1-i)*width*4+3];
-            }
+            pix[i] = element[i];
+            pix[i+1] = element[i+1];
+            pix[i+2] = element[i+2];
+            pix[i+3] = element[i+3];
           }
         }
         else
@@ -1009,6 +1015,7 @@ cls.WebGL.RPCs.injection = function () {
 
         canvas_ctx.putImageData(imgData, 0, 0);
         this.img = canvas.toDataURL("image/png");
+        this.flipped = true;
         this.element_type = "ArrayBufferView";
       }
       else
@@ -1264,13 +1271,15 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index = this.calls.push([function_name, error, res, redundant ? true : false].concat(call_args).join("|")) - 1;
     };
 
-    this.add_drawcall = function (fbo, program)
+    this.add_drawcall = function (fbo, program, buffer_target, buffer_index)
     {
       var program_obj = this.handler.lookup_program(program);
 
       this.drawcalls.push({
         call_index : this.call_index,
         fbo : fbo,
+        buffer_target : buffer_target,
+        buffer_index : buffer_index,
         program_index : program_obj.index
       });
     };
@@ -1304,26 +1313,28 @@ cls.WebGL.RPCs.injection = function () {
       var texture_state = {
         call_index : this.call_index,
         index : texture.index,
-        object : texture.object // Needed for data retrieval
       };
 
       // Add texture data getter, and bind it to the object
       texture_state.get_data = this.handler.get_texture_data.bind(texture_state);
 
-      if (texture.internalFormat)
+      if (texture.object)
       {
-        texture_state.internalFormat = texture.internalFormat;
-        texture_state.width = texture.width;
-        texture_state.height = texture.height;
-        texture_state.format = texture.format;
-      }
-      else
-      {
+        texture_state.object = texture.object; // Needed for data retrieval
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_wrap_s = texture.texture_wrap_s;
         texture_state.texture_wrap_t = texture.texture_wrap_s;
+        texture_state.internalFormat = texture.internalFormat;
+        texture_state.format = texture.format;
+        texture_state.type = texture.type;
+
+        if (texture.width)
+        {
+          texture_state.width = texture.width;
+          texture_state.height = texture.height;
+        }
       }
 
       this.textures.push(texture_state);
