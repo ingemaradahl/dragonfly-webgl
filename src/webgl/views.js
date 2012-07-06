@@ -12,7 +12,7 @@ cls.WebGLContextSelect = function(id)
 
   this.getSelectedOptionText = function()
   {
-    if (!this.disabled && this._snapshot_list.length > 0)
+    if (!this.disabled)
     {
       return "WebGLSnapshot #" + this._selected_snapshot_index;
     }
@@ -27,7 +27,7 @@ cls.WebGLContextSelect = function(id)
 
   };
 
-  /** To become obsolete!
+  /** TODO Delete, to become obsolete!
    * Returns the id of the context that is currently selected.
    * Returns null if there is no context selected.
    */
@@ -53,8 +53,6 @@ cls.WebGLContextSelect = function(id)
   {
     if (window.webgl.available())
     {
-      var ret = {contex_id: this._selected_context_id, 
-                 snapshot_index: this._selected_snapshot_index}
       return
         window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
     }
@@ -132,7 +130,7 @@ cls.WebGLContextSelect = function(id)
     }
     else if (this._selected_option_index != snapshot_index)
     {
-      this._selected_option_index = snapshot_index;
+      this._selected_snapshot_index = snapshot_index;
       messages.post('webgl-changed-snapshot',
           window.webgl.snapshots[context_id][snapshot_index]);
       return true;
