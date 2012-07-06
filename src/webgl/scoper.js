@@ -5,8 +5,8 @@ window.cls || (window.cls = {});
 /**
  * Class that handles communication with Scope. Gives easy control of examination
  * of objects and takes care of the releasing of them as well. The default behavior
- * is to examine recurivly until there is nothing more to examine or a certain depth have been found.
- * TODO if the same object is requsted from multiple places only the last place will it be stored.
+ * is to examine recursively until there is nothing more to examine or a certain depth have been found.
+ * TODO if the same object is requested from multiple places only the last place will it be stored.
  */
 cls.Scoper = function(callback, callback_that, callback_arguments)
 {
@@ -49,12 +49,12 @@ cls.Scoper.prototype.set_callback = function(callback, callback_that, callback_a
  * Sets the reviver tree which should be formed as the actual structure of the
  * examined data. The tree should contain properties from the list below. Only
  * the parts of the tree that should differ needs to be set. Some properties
- * are valid recursivly.
+ * are valid recursively.
  *
  * Properties:
  * _ignore: {Boolean} if true a non-object value should be ignored.
  * _class: {Function} the class of the object that will be created.
- * _action: {Number} the action to takee on the object, should be a value from
+ * _action: {Number} the action to take on the object, should be a value from
  *   cls.Scoper.ACTIONS. Recursive.
  * _array_elements: {Object} when the object is a Array the specified object is
  *   then used for all the elements. If the property key is specified then this
@@ -87,7 +87,7 @@ cls.Scoper.prototype.execute_remote_function = function(remote_function, release
 };
 
 /**
- * Evaluates a script and examies the result if its an object.
+ * Evaluates a script and examines the result if its an object.
  *
  * @param {Number} runtime_id Runtime id.
  * @param {String} script Script to be executed on the specified runtime.
@@ -170,7 +170,7 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
     }
     else
     {
-      this._retrive_stacktrace(error_id);
+      this._retrieve_stacktrace(error_id);
     }
   }
   else
@@ -570,8 +570,7 @@ cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
     object_ids, object_targets, release_ids, reviver_tree)
 {
   var action;
-  if (reviver_tree._depth != null && this.current_depth >= reviver_tree._depth ||
-      this.current_depth >= this.max_depth)
+  if (reviver_tree._depth != null && this.current_depth >= reviver_tree._depth)
   {
     action = cls.Scoper.ACTIONS.NOTHING;
   }
@@ -653,9 +652,9 @@ cls.Scoper.prototype._error = function(message)
 };
 
 /**
- * Retreives a stacktrace when an error have occurred.
+ * Retrieves a stacktrace when an error have occurred.
  */
-cls.Scoper.prototype._retrive_stacktrace = function(error_id)
+cls.Scoper.prototype._retrieve_stacktrace = function(error_id)
 {
   var callback = function(error)
   {
