@@ -18,6 +18,18 @@ img.flipped
   padding: 10px;
 }
 
+/* Program */
+pre.sh_sourceCode .webgl-hilight-uniform
+{
+  background-color: #9ee38a;
+  font-weight: bold;
+  font-style: normal;
+
+  border-style: dashed;
+  border-width: 1px;
+  border-color: #145e00;
+}
+
 /* Buffer */
 
 .webgl_view.buffer > div

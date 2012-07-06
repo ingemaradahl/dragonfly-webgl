@@ -294,7 +294,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.text = this.uniform.name;
         this.action = function()
         {
-          messages.post("webgl-show-program", this.program);
+          messages.post("webgl-show-uniform", {program: this.program, uniform: this.uniform});
         };
         this.tab = "webgl_program";
         break;
