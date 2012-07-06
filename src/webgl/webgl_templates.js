@@ -155,9 +155,19 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
 
   content.push(")");
 
+  var row_class = "";
   if (call.have_error)
   {
     content.push(" » ", ["span", "error: " + String(call.error_code)]);
+    row_class = "trace-error";
+  }
+  else if (call.redundant)
+  {
+    row_class = "trace-redundant";
+  }
+  else if (call.drawcall)
+  {
+    row_class = "trace-drawcall";
   }
 
   return [
@@ -166,7 +176,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
       ["td", content]
       //["td", call.is_drawcall()]
     ],
-    "class", call.have_error ? "trace-error" : call.redundant ? "trace-redundant" : call.drawcall ? "trace-drawcall" : "",
+    "class", row_class,
     "data-call-number", call_number,
     "handler", "webgl-trace-row"
   ];
@@ -277,8 +287,8 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   }
 
   var buffer_link = [ "span",
-    draw_call.buffer.link.text, 
-    "handler", "webgl-drawcall-buffer", 
+    draw_call.buffer.link.text,
+    "handler", "webgl-drawcall-buffer",
     "class", "link",
     "buffer", draw_call.buffer
   ];
@@ -286,7 +296,7 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   var state = [
     "table",
       [
-        [ "tr", 
+        [ "tr",
           ["th", window.webgl.api.constant_value_to_string(draw_call.buffer_target)],
           ["td", buffer_link ]
         ],
@@ -298,10 +308,10 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
       "class", "draw-call-info"
   ];
 
-  var html = 
-  [ 
-    "div", 
-      [ "div", 
+  var html =
+  [
+    "div",
+      [ "div",
         ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)]
       ],
       state,
@@ -341,8 +351,8 @@ window.templates.webgl.program = function(program)
   }
 
   var html =
-  [ 
-    "div", 
+  [
+    "div",
      programs
   ];
 

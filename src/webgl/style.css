@@ -3,17 +3,7 @@
   width: 40%;
 }
 
-.js-dd-dir-path,
-.webgl_snapshot_menu cst-webgl-title
-{
-  font-style: italic;
-  padding: 2px 8px;
-  color: #8f8f8f;
-  background-color: transparent;
-}
-
 /* Flipped images */
-
 img.flipped
 { 
   -o-transform: scaleY(-1);
@@ -27,7 +17,6 @@ img.flipped
   text-align: left;
   padding: 10px;
 }
-
 
 .webgl_view .table-info table
 {
@@ -100,12 +89,17 @@ pre.sh_sourceCode .webgl-hilight-uniform
 
 .trace-table tr.trace-error
 {
-  background: rgba(255,0,0, 0.4);
+  background-color: rgba(255,0,0, 0.4);
 }
 
-.trace-table tr.trace-redundant
+.trace-table > tr.trace-redundant:nth-child(2n)
 {
-  background: rgba(255,255,0, 0.4);
+  background-color: rgba(215,215,0, 0.4);
+}
+
+.trace-table > tr.trace-redundant
+{
+  background-color: rgba(240,240,0, 0.4);
 }
 
 .trace-table tr.trace-drawcall
@@ -141,4 +135,3 @@ pre.sh_sourceCode .webgl-hilight-uniform
 {
   color: blue;
 };
-

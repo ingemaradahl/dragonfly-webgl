@@ -290,7 +290,7 @@ cls.Scoper.prototype.value_reviver = function(type, value)
       value = Number(value);
       break;
     case "boolean":
-      value = value === "true" ? true : false;
+      value = value === "true";
       break;
     case "null":
       value = null;

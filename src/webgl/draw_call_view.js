@@ -29,10 +29,8 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
   this.display_by_call = function(call)
   {
-    var ctx_id = window['cst-selects']['context-select'].get_selected_context();
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    // TODO: TEMPORARY
-    var snapshot = webgl.snapshots[ctx_id][0];
     var draw_call = snapshot.drawcalls.get_by_call(call);
     var trace_call = snapshot.trace[call];
 

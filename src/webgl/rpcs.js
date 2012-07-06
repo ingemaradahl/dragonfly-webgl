@@ -74,6 +74,23 @@ cls.WebGL.RPCs.injection = function () {
   };
 
   /**
+   * Clone regular and typed arrays.
+   */
+  function clone_array(array)
+  {
+    if (array instanceof Array) return Array.prototype.slice.call(array);
+    else if (array instanceof Float32Array) return new Float32Array(array);
+    else if (array instanceof Float64Array) return new Float64Array(array);
+    else if (array instanceof Int16Array) return new Int16Array(array);
+    else if (array instanceof Int32Array) return new Int32Array(array);
+    else if (array instanceof Int8Array) return new Int8Array(array);
+    else if (array instanceof Uint16Array) return new Uint16Array(array);
+    else if (array instanceof Uint32Array) return new Uint32Array(array);
+    else if (array instanceof Uint8Array) return new Uint8Array(array);
+    return null;
+  }
+
+  /**
    * Wrap all WebGL functions, copy all other values and create a handler
    */
   function wrap_context(canvas)
@@ -136,6 +153,7 @@ cls.WebGL.RPCs.injection = function () {
       buf.buffer = buffer;
       var i = this.buffers.push(buf);
       buf.index = i - 1;
+      buf.data = [];
     };
     innerFuns.bindBuffer = function(result, args)
     {
@@ -154,34 +172,54 @@ cls.WebGL.RPCs.injection = function () {
       var buffer = this.buffer_binding[target];
       if (!buffer) return;
 
+      var redundant = false;
       if (typeof(args[1]) === "number")
       {
+        redundant = buffer.data.length === 0;
         buffer.size = args[1];
         buffer.data = [];
       }
       else
       {
-        buffer.size = args[1].byteLength;
-        buffer.data = args[1];
-        //buffer.data = Array.prototype.slice.call(args[1].slice(0); // Make sure we present correct data
+        var new_data = args[1];
+        if (new_data.length === buffer.length)
+        {
+          redundant = true;
+          for (var i in new_data)
+          {
+            if (new_data[i] !== buffer.data[i])
+            {
+              redundant = false;
+              break;
+            }
+          }
+        }
+        buffer.size = new_data.byteLength;
+        buffer.data = clone_array(new_data);
         // TODO: Make data cloning a selectable option?
       }
       buffer.usage = args[2];
+      return redundant;
     };
     innerFuns.bufferSubData = function(result, args)
     {
-      // TODO: data array in buffer has to be cloned, otherwise "external" array
-      // is modified as well
       var target = args[0];
       var offset = args[1];
       var buffer = this.buffer_binding[target];
       if (!buffer) return;
 
-      var end = args[2].length - offset;
+      var new_data = args[2];
+      var end = new_data.length - offset;
+      var redundant = true;
       for (var i = 0; i < end; i++)
       {
-        buffer.data[i + offset] = args[2][i];
+        if (buffer.data[i + offset] !== new_data[i])
+        {
+          redundant = false;
+          buffer.data[i + offset] = new_data[i];
+        }
       }
+      return redundant;
     };
     innerFuns.deleteBuffer = function(result, args)
     {
@@ -352,12 +390,26 @@ cls.WebGL.RPCs.injection = function () {
       for (var i=0; i<num_uniforms; i++)
       {
         var active_uniform = gl.getActiveUniform(program, i);
+        var loc = gl.getUniformLocation(program, active_uniform.name);
+        var uniform_value = gl.getUniform(program, loc);
+        var value;
+        if (typeof(uniform_value) === "object")
+        {
+          value = [];
+          value.length = uniform_value.length;
+        }
+        else
+        {
+          value = uniform_value;
+        }
+
         uniforms.push({
           name : active_uniform.name,
           index : i,
           locations : [],
           type : active_uniform.type,
           size : active_uniform.size,
+          value : value,
           program_index : program_obj.index
         });
       }
@@ -379,6 +431,8 @@ cls.WebGL.RPCs.injection = function () {
       }
       program_obj.attributes = attributes;
     };
+
+    // Uniforms
     innerFuns.getUniformLocation = function(result, args)
     {
       // WebGLUniformLocation objects can not be compared in the way we want to,
@@ -397,6 +451,53 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
     };
+    innerFuns.uniform1i = function(result, args)
+    {
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      var value = args[1];
+      if (uniform.value !== value)
+      {
+        uniform.value = value;
+        return false;
+      }
+      return true;
+    };
+    innerFuns.uniform1f = innerFuns.uniform1i;
+
+    innerFuns.uniform2i = function(result, args)
+    {
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      var values = Array.prototype.slice.call(args, 1);
+      var redundant = true;
+      var length = Math.min(uniform.value.length, values.length);
+      for (var i = 0; i < length; i++)
+      {
+        if (uniform.value[i] !== values[i])
+        {
+          uniform.value[i] = values[i];
+          redundant = false;
+        }
+      }
+      return redundant;
+    };
+    innerFuns.uniform2f = innerFuns.uniform2i;
+    innerFuns.uniform3i = innerFuns.uniform2f;
+    innerFuns.uniform3f = innerFuns.uniform3i;
+    innerFuns.uniform4i = innerFuns.uniform3f;
+    innerFuns.uniform4f = innerFuns.uniform4i;
+
+    innerFuns.uniform2iv = innerFuns.uniform2i;
+    innerFuns.uniform2fv = innerFuns.uniform2iv;
+    innerFuns.uniform3iv = innerFuns.uniform2fv;
+    innerFuns.uniform3fv = innerFuns.uniform3iv;
+    innerFuns.uniform4iv = innerFuns.uniform3fv;
+    innerFuns.uniform4fv = innerFuns.uniform4iv;
 
     // -------------------------------------------------------------------------
 
@@ -1012,9 +1113,7 @@ cls.WebGL.RPCs.injection = function () {
         arg.type = type;
         if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
         {
-          arg.data = new (eval(type))(obj);
-          // TODO quick temporary solution using eval, perhaps we can just transfer the data as a regular array.
-          //arg.data = obj;
+          arg.data = clone_array(obj);
         }
         else if (obj instanceof WebGLUniformLocation)
         {

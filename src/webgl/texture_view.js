@@ -100,7 +100,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   this._on_new_texture_list = function()
   {
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var ctx = window['cst-selects']['snapshot-select'].get_selected_context();
     var tbl_data = [];
     var ids = window.webgl.data[ctx].texture_container;
     var i = 0;
@@ -123,7 +123,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   {
     var tid = Number(target.getAttribute("data-object-id"));
 
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var ctx = window['cst-selects']['snapshot-select'].get_selected_context();
     window.webgl.request_texture_data(ctx, tid);
   };
 
@@ -178,11 +178,11 @@ cls.WebGLTextureSideView.create_ui_widgets = function()
     null,
     [
       {
-        handler: 'select-webgl-context',
-        title: "Select WebGL context", // TODO
+        handler: 'select-webgl-snapshot',
+        title: "Select WebGL snapshot", // TODO
         type: 'dropdown',
         class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
+        template: window['cst-selects']['snapshot-select'].getTemplate()
       }
     ]
   );
