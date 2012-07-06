@@ -25,20 +25,20 @@ cls.WebGLBuffer = function()
   };
 
   // Initiates a sequence of calls to update the metadata of a buffer and get the current data.
-  this.get_buffer_data = function(buffer_index, buffer)
+  this.get_buffer_data = function(buffer)
   {
-    var finalize = function (updated_buffer)
+    var finalize = function (data)
     {
-      buffer.set_data(updated_buffer.data);
+      buffer.set_data(data);
       messages.post('webgl-buffer-data', buffer);
     };
 
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
-      _action: cls.Scoper.ACTIONS.EXAMINE,
+      _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE,
       _reviver: scoper.reviver_typed
     });
-    scoper.examine_object(buffer, false);
+    scoper.examine_object(buffer.data, true);
   };
 
   // Runs when new buffers have been created on the host.

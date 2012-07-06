@@ -45,7 +45,6 @@ cls.WebGLSnapshotArray = function(context_id)
     scoper.set_reviver_tree({
       _array_elements: {
         buffers: {
-          _action: cls.Scoper.ACTIONS.EXAMINE,
           _array_elements: {
             _class: Buffer,
             data: {
@@ -211,17 +210,16 @@ cls.WebGLSnapshotArray = function(context_id)
 
   function Buffer()
   {
-    this.values = null;
   }
 
-  Buffer.prototype.available = function()
+  Buffer.prototype.data_is_loaded = function()
   {
-    return this.values !== undefined;
+    return this.data.object_id === undefined;
   };
 
   Buffer.prototype.set_data = function(data)
   {
-    this.values = data;
+    this.data = data;
   };
 
   Buffer.prototype.usage_string = function()
@@ -251,7 +249,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.text = "Buffer " + String(this.buffer.index);
         this.action = function()
         {
-          window.webgl.buffer.get_buffer_data(this.buffer_index, this.buffer);
+          window.views.webgl_buffer.show_buffer(this.buffer);
         };
         this.tab = "webgl_buffer";
         break;
