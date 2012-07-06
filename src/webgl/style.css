@@ -30,6 +30,11 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border-color: #145e00;
 }
 
+.webgl_view.program > div
+{
+  padding: 10px;
+}
+
 /* Buffer */
 
 .webgl_view.buffer > div

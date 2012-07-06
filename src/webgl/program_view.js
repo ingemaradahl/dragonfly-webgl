@@ -70,31 +70,7 @@ cls.WebGLProgramView = function(id, name, container_class)
   var on_show_program = function(program)
   {
     var content = [];
-    for (var i = 0; i < program.shaders.length; i++) {
-      var shader = program.shaders[i];
-      var shader_source = [
-          "pre",
-          shader.src,
-          'class', 'sh_glsl'
-      ];
-
-      var shader_type = window.webgl.api.constant_value_to_string(shader.type);
-      switch (shader_type)
-      {
-        case "VERTEX_SHADER":
-          shader_type = "Vertex";
-          break;
-        case "FRAGMENT_SHADER":
-          shader_type = "Fragment";
-          break;
-      }
-      content.push([
-        ["h2", shader_type + " shader " + String(shader.index)],
-        shader_source
-      ]);
-    }
-
-    this._content = content;
+    this._content= window.templates.webgl.program(program);
     this._render();
   }.bind(this);
 
