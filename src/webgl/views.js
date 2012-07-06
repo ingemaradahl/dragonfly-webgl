@@ -148,7 +148,7 @@ cls.WebGLContextSelect = function(id)
   
   this._on_take_snapshot = function(context_id)
   {
-    this.snapshots[context_id].send_snapshot_request();
+    webgl.request_snapshot(context_id);
     console.log("take snapshot");
   };
 
