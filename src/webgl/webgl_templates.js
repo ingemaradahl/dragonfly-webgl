@@ -6,58 +6,21 @@ window.templates.webgl = window.templates.webgl || {};
 window.templates.webgl.buffer_base = function(buffer)
 {
   var MAX_NUM_ELEMENTS = 1000;
-  var data_table_rows = [];
-  for (var i = 0; i < Math.min(buffer.values.length, MAX_NUM_ELEMENTS); i++) {
-    var value = buffer.values[i];
-    data_table_rows.push([
-      "tr",
-      [
-        [
-          "td",
-          String(i),
-          "style", // TODO make css class
-          "text-align: right"
-        ],
-        [
-          "td",
-          String(value)
-        ]
-      ]
-    ]);
-  }
-
-  // TODO temporary solution since Dragonfly will freeze when to many elements
-  var more_data = [];
-  if (buffer.values.length > MAX_NUM_ELEMENTS)
+  var data_table;
+  if (buffer.data_is_loaded())
   {
-    var diff = buffer.values.length - MAX_NUM_ELEMENTS;
-    more_data = [
-      "div",
-      "There are " + String(diff) + " more elements."
-    ];
+    data_table = window.templates.webgl.buffer_data_table(buffer);
   }
-
-  var data_table_head = [
-    "tr",
-    [
-      [
-        "td",
-        "Index"
-      ],
-      [
-        "td",
-        "value"
-      ]
-    ],
-    "class",
-    "header"
-  ];
+  else
+  {
+    data_table = ["div", "Loading buffer data."];
+  }
 
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
     {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.values.length)}
+    {name: "Length", value: String(buffer.data.length)}
   ];
   var info_table_rows = buffer_info.map(function(info){
     return [
@@ -93,18 +56,72 @@ window.templates.webgl.buffer_base = function(buffer)
           ]
         ]
       ],
-      [
-        "table",
-        [
-            data_table_head,
-            data_table_rows
-        ],
-        "class",
-        "sortable-table buffer-data-table"
-      ],
-      more_data
+      data_table
     ]
   ];
+};
+
+window.templates.webgl.buffer_data_table = function(buffer)
+{
+  var MAX_NUM_ELEMENTS = 1000;
+  var data_table_rows = [];
+  for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i++)
+  {
+    var value = buffer.data[i];
+    data_table_rows.push([
+      "tr",
+      [
+        [
+          "td",
+          String(i),
+          "style", // TODO make css class
+          "text-align: right"
+        ],
+        [
+          "td",
+          String(value)
+        ]
+      ]
+    ]);
+  }
+
+  // TODO temporary solution since Dragonfly will freeze when to many elements
+  var more_data = [];
+  if (buffer.data.length > MAX_NUM_ELEMENTS)
+  {
+    var diff = buffer.data.length - MAX_NUM_ELEMENTS;
+    more_data = [
+      "div",
+      "There are " + String(diff) + " more elements."
+    ];
+  }
+
+  var data_table_head = [
+    "tr",
+    [
+      [
+        "td",
+        "Index"
+      ],
+      [
+        "td",
+        "value"
+      ]
+    ],
+    "class",
+    "header"
+  ];
+
+  var data_table = [
+    "table",
+    [
+      data_table_head,
+      data_table_rows
+    ],
+    "class",
+    "sortable-table buffer-data-table"
+  ];
+  return [data_table, more_data];
 };
 
 window.templates.webgl.trace_row = function(call, call_number, view_id)
@@ -219,7 +236,7 @@ window.templates.webgl.texture = function(obj)
 window.templates.webgl.drawcall = function(fbo)
 {
   var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.img];
-  
+
   if (fbo.flipped)
   {
     img.push("class");
