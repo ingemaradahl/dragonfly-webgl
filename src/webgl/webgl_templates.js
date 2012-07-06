@@ -155,9 +155,15 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
 
   content.push(")");
 
+  var row_class = "";
   if (call.have_error)
   {
     content.push(" » ", ["span", "error: " + String(call.error_code)]);
+    row_class = "trace-error";
+  }
+  else if (call.redundant)
+  {
+    row_class = "trace-redundant";
   }
 
   return [
@@ -166,7 +172,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
       ["td", content]
       //["td", call.is_drawcall()]
     ],
-    "class", call.have_error ? "trace-error" : "", // TODO css, add is drawcall
+    "class", row_class,
     "data-call-number", call_number,
     "handler", "webgl-trace-row"
   ];

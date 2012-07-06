@@ -123,7 +123,7 @@ cls.WebGLSnapshotArray = function(context_id)
         var function_name = parts[0];
         var error_code = Number(parts[1]);
         var result = parts[2];
-        var redundant = parts[3];
+        var redundant = parts[3] === "true";
         var args = parts.slice(4);
 
         // Revive the arguments
