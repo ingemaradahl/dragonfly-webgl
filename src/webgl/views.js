@@ -27,7 +27,7 @@ cls.WebGLContextSelect = function(id)
 
   };
 
-  /**
+  /** To become obsolete!
    * Returns the id of the context that is currently selected.
    * Returns null if there is no context selected.
    */
@@ -44,6 +44,22 @@ cls.WebGLContextSelect = function(id)
     }
     return null;
   };
+
+  /**
+   * Return the snapshot that is currently selected.
+   *  
+   */
+  this.get_selected_snapshot = function()
+  {
+    if (window.webgl.available())
+    {
+      var ret = {contex_id: this._selected_context_id, 
+                 snapshot_index: this._selected_snapshot_index}
+      return
+        window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
+    }
+    return null
+ }; 
 
   this.getTemplate = function()
   {
@@ -86,6 +102,16 @@ cls.WebGLContextSelect = function(id)
         ];
         entries++;
       }
+      // TODO add handler
+      // Adding a take snapshot entry
+      ret[entries] =
+      [
+        "cst-option",
+        "Take snapshot",
+        "context-id", window.webgl.contexts[i],
+        "take-snapshot", true 
+      ]
+      entries++;
     }
 
     return ret;
@@ -95,26 +121,39 @@ cls.WebGLContextSelect = function(id)
   {
     // TODO The context should also be highlighted on the debuggee
     var context_id = target_ele['context-id'];
-    var snapshot_id = target_ele['snapshot-index'];
+    var snapshot_index = target_ele['snapshot-index'];
+    var take_snapshot = target_ele['take-snapshot'];    
     this._selected_contex_id = context_id;
-    if (snapshot_id === undefined) return false;
-
-    if (this._selected_option_index != snapshot_id)
+    
+    if (take_snapshot !== undefined)
     {
-      this._selected_option_index = snapshot_id;
-      messages.post('webgl-snapshot-selected', window.webgl.snapshots[context_id][snapshot_id]);
+      messages.post('webgl-take-snapshot', context_id);
+      return false;
+    }
+    else if (this._selected_option_index != snapshot_index)
+    {
+      this._selected_option_index = snapshot_index;
+      messages.post('webgl-changed-snapshot',
+          window.webgl.snapshots[context_id][snapshot_index]);
       return true;
     }
     return false;
-  }
+  };
 
   this._on_new_snapshot = function()
   {
     this.disabled = !window.webgl.available();
     this._snapshot_list = window.webgl.snapshots;
-  }
+  };
+  
+  this._on_take_snapshot = function(context_id)
+  {
+    webgl.request_snapshot(context_id);
+    console.log("take snapshot");
+  };
 
   messages.addListener('webgl-new-trace', this._on_new_snapshot.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id);
 };
