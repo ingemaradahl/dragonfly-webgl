@@ -832,99 +832,6 @@ cls.WebGL.RPCs.injection = function () {
       return null;
     };
 
-    /* Calculates texture data in a scope transission friendly way.
-     * This function is never bound to the Handler object, but a texture object,
-     * thus "this" refers to that object.
-     */
-    this.get_texture_data = function ()
-    {
-      var element = this.object;
-      this.flipped = false;
-
-      if (element instanceof HTMLImageElement)
-      {
-        var canvas = document.createElement("canvas");
-        canvas.height = element.height;
-        canvas.width = element.width;
-
-        var canvas_ctx = canvas.getContext("2d");
-        canvas_ctx.drawImage(element, 0, 0);
-        this.img = canvas.toDataURL("image/png");
-        this.source = element.src;
-        this.element_type = "HTMLImageElement";
-      }
-      else if (element instanceof HTMLCanvasElement)
-      {
-        this.img = element.toDataURL("image/png");
-        this.element_type = "HTMLCanvasElement";
-      }
-      else if (element instanceof HTMLVideoElement)
-      {
-        this.element_type = "HTMLVideoElement";
-        console.log("WebGLDebugger has no support for Video Textures");
-      }
-      else if (element instanceof ImageData)
-      {
-        var canvas = document.createElement("canvas");
-        canvas.height = element.height;
-        canvas.width = element.width;
-
-        var canvas_ctx = canvas.getContext("2d");
-        canvas_ctx.putImageData(element, 0, 0);
-
-        this.img = canvas.toDataURL("image/png");
-        this.element_type = "ImageData";
-      }
-      else if (element instanceof Uint8Array ||
-           element instanceof Uint16Array ||
-           element instanceof Uint32Array)
-      {
-        var canvas = document.createElement("canvas");
-        var canvas_ctx = canvas.getContext("2d");
-
-        var imgData = canvas_ctx.createImageData(this.width, this.height);
-        var size = this.width * this.height;
-        var pix = imgData.data;
-
-        if (this.format === gl.RGB)
-        {
-          for (var i=0; i<size; i += 4)
-          {
-            pix[i] = element[i];
-            pix[i+1] = element[i+1];
-            pix[i+2] = element[i+2];
-            pix[i+4] = 255 // Set alpha channel to opaque
-
-          }
-        }
-        else if (this.format === gl.RGBA)
-        {
-          for (var i=0; i<size; i += 4)
-          {
-            pix[i] = element[i];
-            pix[i+1] = element[i+1];
-            pix[i+2] = element[i+2];
-            pix[i+3] = element[i+3];
-          }
-        }
-        else
-        {
-          console.log("WebGLDebugger: Unknown texture format");
-        }
-
-        canvas_ctx.putImageData(imgData, 0, 0);
-        this.img = canvas.toDataURL("image/png");
-        this.flipped = true;
-        this.element_type = "ArrayBufferView";
-      }
-      else
-      {
-        // TODO: Draw texture to a new FBO, thes same as Uint8Array
-      }
-
-      return this;
-    };
-
     /* Get non-state specific program information
      * @param {WebGLProgram} program Program from which to get information
      */
@@ -1211,17 +1118,113 @@ cls.WebGL.RPCs.injection = function () {
       if (!texture)
         return;
 
+      /* Calculates texture data in a scope transission friendly way.
+       * This function is never bound to the Handler object, but a texture object,
+       * thus "this" refers to that object.
+       */
+      var get_texture_data = function (element)
+      {
+        this.img = { flipped : false };
+
+
+        if (element instanceof HTMLImageElement)
+        {
+          var canvas = document.createElement("canvas");
+          canvas.height = element.height;
+          canvas.width = element.width;
+
+          var canvas_ctx = canvas.getContext("2d");
+          canvas_ctx.drawImage(element, 0, 0);
+          this.img.data = canvas.toDataURL("image/png");
+          this.img.source = element.src;
+          this.element_type = "HTMLImageElement";
+          this.width = element.width;
+          this.height = element.height;
+        }
+        else if (element instanceof HTMLCanvasElement)
+        {
+          this.img.data = element.toDataURL("image/png");
+          this.element_type = "HTMLCanvasElement";
+          this.width = element.width;
+          this.height = element.height;
+        }
+        else if (element instanceof HTMLVideoElement)
+        {
+          this.element_type = "HTMLVideoElement";
+          console.log("WebGLDebugger has no support for Video Textures");
+        }
+        else if (element instanceof ImageData)
+        {
+          var canvas = document.createElement("canvas");
+          canvas.height = element.height;
+          canvas.width = element.width;
+
+          var canvas_ctx = canvas.getContext("2d");
+          canvas_ctx.putImageData(element, 0, 0);
+
+          this.img.data = canvas.toDataURL("image/png");
+          this.element_type = "ImageData";
+          this.width = element.width;
+          this.height = element.height;
+        }
+        else if (element instanceof Uint8Array ||
+             element instanceof Uint16Array ||
+             element instanceof Uint32Array)
+        {
+          var canvas = document.createElement("canvas");
+          var canvas_ctx = canvas.getContext("2d");
+
+          var imgData = canvas_ctx.createImageData(this.width, this.height);
+          var size = this.width * this.height;
+          var pix = imgData.data;
+
+          if (this.format === gl.RGB)
+          {
+            for (var i=0; i<size; i += 4)
+            {
+              pix[i] = element[i];
+              pix[i+1] = element[i+1];
+              pix[i+2] = element[i+2];
+              pix[i+4] = 255 // Set alpha channel to opaque
+
+            }
+          }
+          else if (this.format === gl.RGBA)
+          {
+            for (var i=0; i<size; i += 4)
+            {
+              pix[i] = element[i];
+              pix[i+1] = element[i+1];
+              pix[i+2] = element[i+2];
+              pix[i+3] = element[i+3];
+            }
+          }
+          else
+          {
+            console.log("WebGLDebugger: Unknown texture format");
+          }
+
+          canvas_ctx.putImageData(imgData, 0, 0);
+          this.img.data = canvas.toDataURL("image/png");
+          this.img.flipped = true;
+          this.element_type = "ArrayBufferView";
+        }
+        else
+        {
+          // TODO: Draw texture to a new FBO, thes same as Uint8Array
+        }
+
+        return this;
+      };
+
+      // Clone data to new object, which is later released by scope
       var texture_state = {
         call_index : this.call_index,
         index : texture.index,
       };
 
-      // Add texture data getter, and bind it to the object
-      texture_state.get_data = this.handler.get_texture_data.bind(texture_state);
-
       if (texture.object)
       {
-        texture_state.object = texture.object; // Needed for data retrieval
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
@@ -1237,6 +1240,9 @@ cls.WebGL.RPCs.injection = function () {
           texture_state.height = texture.height;
         }
       }
+
+      // Add texture data
+      get_texture_data.call(texture_state, texture.object);
 
       this.textures.push(texture_state);
     };

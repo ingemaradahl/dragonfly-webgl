@@ -15,7 +15,11 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._render = function()
   {
-    this._container.clearAndRender(['div', 'Choose texture to inspect']);
+    if (this._container && this._texture)
+    {
+      var content = window.templates.webgl.texture(this._texture);
+      this._container.clearAndRender(content);
+    }
   };
 
   this.ondestroy = function()
@@ -23,16 +27,24 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._container = null;
   };
 
-  this._on_texture_data = function(msg)
+  var on_show_texture = function (msg)
   {
+    this._texture = msg["texture"];
+    
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
-    var texture = msg["texture"];
-
-    var template = ["div", window.templates.webgl.texture(texture)];
-    this._container.clearAndRender(template);
+    this._render();
   };
 
-  messages.addListener('webgl-new-texture-data', this._on_texture_data.bind(this));
+  var on_texture_data = function(msg)
+  {
+    if (this._container && this._texture === msg["texture"])
+    {
+      this._render();
+    }
+  };
+  
+  messages.addListener('webgl-show-texture', on_show_texture.bind(this));
+  messages.addListener('webgl-new-texture-data', on_texture_data.bind(this));
   this.init(id, name, container_class);
 };
 

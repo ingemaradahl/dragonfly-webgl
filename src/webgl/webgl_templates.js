@@ -192,20 +192,31 @@ window.templates.webgl.texture = function(texture)
 {
   var api = window.webgl.api;
   var image_source = [];
-  if (texture.source)
+  if (texture.img && texture.img.source)
   {
     image_source = [
       "tr",
       ["th", "Image source"],
-      ["td", texture.source]
+      ["td", texture.img.source]
     ];
   }
 
-  var img = ["img", "src", texture.img];
-  if (texture.flipped)
+  var img = [];
+  if (texture.img.data)
   {
-    img.push("class");
-    img.push("flipped");
+    img = ["img", "src", texture.img.data ];
+    if (texture.img.flipped)
+    {
+      img.push("class");
+      img.push("flipped");
+    }
+  }
+  else {
+    img = ["div", 
+      ["img", "src", "./ui-images/loading.png"],
+      "class", "loading-image",
+      "style", "width: " + String(texture.width ? texture.width : 128) + "px; height: " + String(texture.height ? texture.height : 128) + "px;"
+    ];
   }
 
   var info_table = [
@@ -247,7 +258,7 @@ window.templates.webgl.texture = function(texture)
     "class", "table-info"
   ];
 
-  return [
+  return [ "div",
     ["h2", "Texture " + String(texture.index)],
     img,
     info_table

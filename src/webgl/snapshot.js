@@ -74,12 +74,9 @@ cls.WebGLSnapshotArray = function(context_id)
         },
         textures: {
           _array_elements: {
-            get_data: {
+            img: {
               _action: cls.Scoper.ACTIONS.NOTHING
             },
-            object: {
-              _action: cls.Scoper.ACTIONS.NOTHING
-            }
           }
         }
       },
@@ -287,7 +284,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.text = "Texture " + String(this.texture.index);
         this.action = function()
         {
-          window.webgl.texture.get_texture_data(this.texture);
+          window.webgl.texture.show_texture(this.texture);
         };
         this.tab = "webgl_texture";
         break;

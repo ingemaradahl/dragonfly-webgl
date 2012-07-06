@@ -35,17 +35,24 @@ cls.WebGLTexture = function ()
     return null;
   };
 
+  this.show_texture = function (texture)
+  {
+    messages.post('webgl-show-texture', { texture : texture });
+
+    if (!texture.img.data)
+    {
+      this.get_texture_data(texture);
+    }
+  };
 
   // Retrieves the image data of a choosen texture.
   this.get_texture_data = function(texture)
   {
-    var finalize = function (data)
+    var finalize = function (img)
     {
-      texture = data;
+      texture.img = img;
       messages.post('webgl-new-texture-data', { texture : texture });
     };
-
-    // TODO cache image
 
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
@@ -53,6 +60,6 @@ cls.WebGLTexture = function ()
       _depth: 2,
       _reviver: scoper.reviver_basic
     });
-    scoper.execute_remote_function(texture.get_data, false);
+    scoper.examine_object(texture.img)
   };
 };
