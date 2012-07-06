@@ -3,6 +3,14 @@
   width: 40%;
 }
 
+.js-dd-dir-path,
+.webgl_snapshot_menu cst-webgl-title
+{
+  font-style: italic;
+  padding: 2px 8px;
+  color: #8f8f8f;
+  background-color: transparent;
+}
 
 .webgl_view.buffer > div,
 .webgl_view.texture > div
