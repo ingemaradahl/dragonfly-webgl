@@ -198,7 +198,7 @@ cls.Scoper.prototype.examine_object = function(object, release)
   var args = [this.runtime_id, targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
-      [this.runtime_id, [object.object_id]]);
+      [this.runtime_id, [object.object_id], 0, 1]);
 };
 
 /**
@@ -224,7 +224,7 @@ cls.Scoper.prototype.examine_objects = function(runtime_id, object_ids, release)
   var args = [this.runtime_id, targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
-      [this.runtime_id, object_ids]);
+      [this.runtime_id, object_ids, 0, 1]);
 };
 
 /**
@@ -235,7 +235,7 @@ cls.Scoper.prototype._examine_level = function(object_ids, object_targets)
   var args = [this.runtime_id, object_targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
-      [this.runtime_id, object_ids]);
+      [this.runtime_id, object_ids, 0, 1]);
 };
 
 /**
