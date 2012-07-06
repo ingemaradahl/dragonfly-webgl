@@ -3,6 +3,15 @@
   width: 40%;
 }
 
+.js-dd-dir-path,
+.webgl_snapshot_menu cst-webgl-title
+{
+  font-style: italic;
+  padding: 2px 8px;
+  color: #8f8f8f;
+  background-color: transparent;
+}
+
 /* Flipped images */
 
 img.flipped
@@ -11,11 +20,32 @@ img.flipped
 }
 
 
-/* Texture */
-.webgl_view.texture div
+.webgl_view.buffer > div,
+.webgl_view.texture > div,
+.webgl_view.program > div
 {
   text-align: left;
   padding: 10px;
+}
+
+
+.webgl_view .table-info table
+{
+  border-collapse: collapse;
+}
+
+.webgl_view .table-info td,
+.webgl_view .table-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.webgl_view .table-info th
+{
+  text-align: left;
+  padding-right: 30px;
+  width: 140px;
 }
 
 /* Program */
@@ -30,36 +60,8 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border-color: #145e00;
 }
 
-.webgl_view.program > div
-{
-  padding: 10px;
-}
 
 /* Buffer */
-
-.webgl_view.buffer > div
-{
-  padding: 10px;
-}
-
-.buffer-info table
-{
-  border-collapse: collapse;
-}
-
-.buffer-info td,
-.buffer-info th
-{
-  vertical-align: top;
-  word-wrap: break-word;
-}
-
-.buffer-info th
-{
-  text-align: left;
-  padding-right: 30px;
-  width: 140px;
-}
 
 .buffer-data-table
 {

@@ -219,10 +219,10 @@ cls.WebGL.RPCs.injection = function () {
       return redundant;
     };
 
-    innerFuns.createTexture = function(result, args)
+    innerFuns.createTexture = function(texture, args)
     {
       var tex = {};
-      tex.texture = result;
+      tex.texture = texture;
       var i = this.textures.push(tex);
       tex.index = i - 1;
     };
@@ -496,6 +496,8 @@ cls.WebGL.RPCs.injection = function () {
 
     this.new_frame = function()
     {
+      handler.current_frame++;
+
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
@@ -551,6 +553,8 @@ cls.WebGL.RPCs.injection = function () {
   {
     this.gl = gl;
     this.context = context;
+
+    this.current_frame = 0;
 
     this.capture_next_frame = false;
     this.capturing_frame = false;
@@ -1036,6 +1040,8 @@ cls.WebGL.RPCs.injection = function () {
     this.index = _snapshot_index++;
     this.handler = handler;
 
+    this.frame = handler.current_frame;
+
     this.call_index = -1;
     this.calls = [];
     this.call_refs = [];
@@ -1240,6 +1246,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       return {
         index : this.index,
+        frame : this.frame,
         calls : this.calls,
         call_refs : this.call_refs,
         buffers : this.buffers,
@@ -1250,12 +1257,6 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     init();
-  }
-
-  function Trace()
-  {
-    this.calls = [];
-    this.objects = [];
   }
 
   return canvas_map;

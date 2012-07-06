@@ -152,7 +152,18 @@ cls.WebGLTraceView.create_ui_widgets = function()
         title: "Refresh the trace",
         icon: 'reload-webgl-trace'
       }
-    ]
+    ],
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-context',
+        title: 'Select Snapshot',
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['context-select'].getTemplate()
+      }
+    ] 
   );
 };
 
