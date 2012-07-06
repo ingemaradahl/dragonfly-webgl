@@ -180,7 +180,7 @@ window.templates.webgl.texture = function(obj)
             ["tr",
               ["td", ["img", "src", obj.img]]
             ],
-            ["t]",  
+            ["tr",  
               ["td", "Texture id:"],
               ["td", String(obj.index)]
             ],
