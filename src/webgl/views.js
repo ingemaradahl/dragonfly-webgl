@@ -83,7 +83,7 @@ cls.WebGLContextSelect = function(id)
     for(i=0; i<window.webgl.contexts.length; i++)
     {
       ret[entries] = 
-        ["cst-title",
+        ["cst-webgl-title",
          "WebGLContext #" + i,
          "class", "js-dd-dir-path"
         ];
