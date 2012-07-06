@@ -82,6 +82,16 @@ pre.sh_sourceCode .webgl-hilight-uniform
   background: rgba(255,0,0, 0.4);
 }
 
+.trace-table tr.trace-redundant
+{
+  background: rgba(255,255,0, 0.4);
+}
+
+.trace-table tr.trace-drawcall
+{
+  background: rgba(0,255,0, 0.4);
+}
+
 /* Draw Call */
 .webgl_view.draw-call > div
 {

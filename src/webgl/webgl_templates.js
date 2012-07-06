@@ -166,7 +166,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
       ["td", content]
       //["td", call.is_drawcall()]
     ],
-    "class", call.have_error ? "trace-error" : "", // TODO css, add is drawcall
+    "class", call.have_error ? "trace-error" : call.redundant ? "trace-redundant" : call.drawcall ? "trace-drawcall" : "",
     "data-call-number", call_number,
     "handler", "webgl-trace-row"
   ];

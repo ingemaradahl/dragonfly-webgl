@@ -185,6 +185,7 @@ cls.WebGLSnapshotArray = function(context_id)
     // Init draw calls
     var init_drawcall = function(drawcall)
     {
+      this.trace[drawcall.call_index].drawcall = true;
       drawcall.buffer = this.buffers.lookup(drawcall.buffer_index, drawcall.call_index);
       // TODO: Same for programs
 
@@ -220,6 +221,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.error_code = error_code;
     this.have_error = error_code !== 0; // WebGLRenderingContext.NO_ERROR
     this.redundant = redundant;
+    this.drawcall = false;
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
