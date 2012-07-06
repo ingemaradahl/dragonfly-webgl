@@ -385,12 +385,26 @@ cls.WebGL.RPCs.injection = function () {
       for (var i=0; i<num_uniforms; i++)
       {
         var active_uniform = gl.getActiveUniform(program, i);
+        var loc = gl.getUniformLocation(program, active_uniform.name);
+        var uniform_value = gl.getUniform(program, loc);
+        var value;
+        if (typeof(uniform_value) === "object")
+        {
+          value = [];
+          value.length = uniform_value.length;
+        }
+        else
+        {
+          value = uniform_value;
+        }
+
         uniforms.push({
           name : active_uniform.name,
           index : i,
           locations : [],
           type : active_uniform.type,
           size : active_uniform.size,
+          value : value,
           program_index : program_obj.index
         });
       }
@@ -412,6 +426,8 @@ cls.WebGL.RPCs.injection = function () {
       }
       program_obj.attributes = attributes;
     };
+
+    // Uniforms
     innerFuns.getUniformLocation = function(result, args)
     {
       // WebGLUniformLocation objects can not be compared in the way we want to,
@@ -430,6 +446,53 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
     };
+    innerFuns.uniform1i = function(result, args)
+    {
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      var value = args[1];
+      if (uniform.value !== value)
+      {
+        uniform.value = value;
+        return false;
+      }
+      return true;
+    };
+    innerFuns.uniform1f = innerFuns.uniform1i;
+
+    innerFuns.uniform2i = function(result, args)
+    {
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      var values = Array.prototype.slice.call(args, 1);
+      var redundant = true;
+      var length = Math.min(uniform.value.length, values.length);
+      for (var i = 0; i < length; i++)
+      {
+        if (uniform.value[i] !== values[i])
+        {
+          uniform.value[i] = values[i];
+          redundant = false;
+        }
+      }
+      return redundant;
+    };
+    innerFuns.uniform2f = innerFuns.uniform2i;
+    innerFuns.uniform3i = innerFuns.uniform2f;
+    innerFuns.uniform3f = innerFuns.uniform3i;
+    innerFuns.uniform4i = innerFuns.uniform3f;
+    innerFuns.uniform4f = innerFuns.uniform4i;
+
+    innerFuns.uniform2iv = innerFuns.uniform2i;
+    innerFuns.uniform2fv = innerFuns.uniform2iv;
+    innerFuns.uniform3iv = innerFuns.uniform2fv;
+    innerFuns.uniform3fv = innerFuns.uniform3iv;
+    innerFuns.uniform4iv = innerFuns.uniform3fv;
+    innerFuns.uniform4fv = innerFuns.uniform4iv;
 
     // -------------------------------------------------------------------------
 

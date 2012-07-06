@@ -52,7 +52,7 @@
 
 .trace-table > tr.trace-redundant:nth-child(2n)
 {
-  background-color: rgba(209,190,107, 0.4);
+  background-color: rgba(222,202,113, 0.4);
 }
 
 .trace-table > tr.trace-redundant
