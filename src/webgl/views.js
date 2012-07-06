@@ -16,7 +16,7 @@ cls.WebGLContextSelect = function(id)
     {
       return "WebGLSnapshot #" + this._selected_snapshot_index;
     }
-    else 
+    else
     {
       return "No Snapshot available...";
     }
@@ -38,7 +38,7 @@ cls.WebGLContextSelect = function(id)
     {
       if (this._selected_context_id === undefined)
       {
-        this._selected_context_id = window.webgl.contexts[0]; 
+        this._selected_context_id = window.webgl.contexts[0];
       }
       return this._selected_context_id;
     }
@@ -47,19 +47,16 @@ cls.WebGLContextSelect = function(id)
 
   /**
    * Return the snapshot that is currently selected.
-   *  
+   *
    */
   this.get_selected_snapshot = function()
   {
     if (window.webgl.available())
     {
-      var ret = {contex_id: this._selected_context_id, 
-                 snapshot_index: this._selected_snapshot_index}
-      return
-        window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
+      return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
     }
-    return null
- }; 
+    return null;
+ };
 
   this.getTemplate = function()
   {
@@ -74,7 +71,7 @@ cls.WebGLContextSelect = function(id)
   {
     var ret = [];
     var snapshots = select_obj._snapshot_list;
-    var opt = null; 
+    var opt = null;
     var i;
     var j;
     var entries=0;
@@ -82,7 +79,7 @@ cls.WebGLContextSelect = function(id)
     // Iterating the contexts.
     for(i=0; i<window.webgl.contexts.length; i++)
     {
-      ret[entries] = 
+      ret[entries] =
         ["cst-title",
          "WebGLContext #" + i,
          "class", "js-dd-dir-path"
@@ -91,7 +88,7 @@ cls.WebGLContextSelect = function(id)
       // Iterating the snapshots in that context.
       for(j=0; opt = snapshots[window.webgl.contexts[i]][j]; j++)
       {
-        ret[entries] = 
+        ret[entries] =
         [
           "cst-option",
           "Snapshot #" + j,
@@ -109,7 +106,7 @@ cls.WebGLContextSelect = function(id)
         "cst-option",
         "Take snapshot",
         "context-id", window.webgl.contexts[i],
-        "take-snapshot", true 
+        "take-snapshot", true
       ]
       entries++;
     }
@@ -122,9 +119,9 @@ cls.WebGLContextSelect = function(id)
     // TODO The context should also be highlighted on the debuggee
     var context_id = target_ele['context-id'];
     var snapshot_index = target_ele['snapshot-index'];
-    var take_snapshot = target_ele['take-snapshot'];    
+    var take_snapshot = target_ele['take-snapshot'];
     this._selected_contex_id = context_id;
-    
+
     if (take_snapshot !== undefined)
     {
       messages.post('webgl-take-snapshot', context_id);
@@ -145,7 +142,7 @@ cls.WebGLContextSelect = function(id)
     this.disabled = !window.webgl.available();
     this._snapshot_list = window.webgl.snapshots;
   };
-  
+
   this._on_take_snapshot = function(context_id)
   {
     webgl.request_snapshot(context_id);
@@ -173,7 +170,7 @@ cls.WebGLTraceSelect = function(id)
     {
       return "Trace #" + this._selected_option_index;
     }
-    else 
+    else
     {
       return "No trace available...";
     }
@@ -204,15 +201,15 @@ cls.WebGLTraceSelect = function(id)
 
   this.templateOptionList = function(select_obj)
   {
-    var 
+    var
     ret = [],
     opt_list = select_obj._option_list,
-    opt = null, 
+    opt = null,
     i = 0;
 
     for( ; opt = opt_list[i]; i++)
     {
-      ret[i] = 
+      ret[i] =
       [
         "cst-option",
         "Trace #" + i,
@@ -239,7 +236,7 @@ cls.WebGLTraceSelect = function(id)
 
   var on_new_trace = function(trace_idx)
   {
-    this.disabled = false; 
+    this.disabled = false;
     this._option_list = this._option_list.push(trace_idx);
   };
 

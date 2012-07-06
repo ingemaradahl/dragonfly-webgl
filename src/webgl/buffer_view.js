@@ -137,9 +137,10 @@ cls.WebGLBufferSideView = function(id, name, container_class)
 
   this._on_table_click = function(evt, target)
   {
-    var buffer = target.getAttribute("data-object-id");
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
-    //window.views.webgl_buffer.show_buffer(this.buffer);
+    var buffer_index = target.getAttribute("data-object-id");
+    var snapshot = window['cst-selects']['context-select'].get_selected_snapshot();
+    var buffer = snapshot.buffers[buffer_index];
+    window.views.webgl_buffer.show_buffer(buffer);
   };
 
   this.tabledef = {
