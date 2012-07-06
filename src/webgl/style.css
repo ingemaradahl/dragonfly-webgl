@@ -1,4 +1,13 @@
-﻿.webgl_state_view .sortable-table .col_pname
+﻿.js-dd-dir-path,
+.webgl_snapshot_menu cst-webgl-title
+{
+  font-style: italic;
+  padding: 2px 8px;
+  color: #8f8f8f;
+  background-color: transparent;
+}
+
+.webgl_state_view .sortable-table .col_pname
 {
   width: 40%;
 }

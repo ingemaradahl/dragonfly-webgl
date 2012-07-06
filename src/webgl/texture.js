@@ -55,14 +55,6 @@ cls.WebGLTexture = function ()
     };
 
     var scoper = new cls.Scoper(finalize, this);
-    scoper.set_reviver_tree({
-      object: {
-        _action: cls.Scoper.ACTIONS.NOTHING
-      },
-      _action: cls.Scoper.ACTIONS.EXAMINE,
-      _depth: 2,
-      _reviver: scoper.reviver_basic
-    });
     scoper.examine_object(texture.img)
   };
 };
