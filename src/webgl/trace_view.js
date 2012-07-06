@@ -32,10 +32,11 @@ cls.WebGLTraceView = function(id, name, container_class)
   {
     //var ctx_id = window['cst-selects']['context-select'].get_selected_context();
     // TODO: FIXME
-    var ctx_id = window.webgl.contexts[0];
-    var trace;
-    if (ctx_id != null && (trace = window.webgl.snapshots[ctx_id].get_latest_trace()) != null)
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    
+    if (snapshot != null)
     {
+      var trace = snapshot.trace;
       this._current_trace = trace;
       var template = window.templates.webgl.trace_table(trace, this.id);
       this._container.clearAndRender(template);
@@ -62,7 +63,8 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    var ctx = window['cst-selects']['context-select'].get_selected_context();
+    var ctx = window.webgl.contexts[0];
+    //var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
     if (ctx != null)
     {
       window.webgl.request_snapshot(ctx);
@@ -138,6 +140,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   messages.addListener('webgl-new-trace', this._on_new_trace.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
+  messages.addListener('webgl-changed-snapshot', this._render.bind(this));
 
   this.init(id, name, container_class);
 };
@@ -157,11 +160,11 @@ cls.WebGLTraceView.create_ui_widgets = function()
     null,
     [
       {
-        handler: 'select-webgl-context',
+        handler: 'select-webgl-snapshot',
         title: 'Select Snapshot',
         type: 'dropdown',
         class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
+        template: window['cst-selects']['snapshot-select'].getTemplate()
       }
     ] 
   );
