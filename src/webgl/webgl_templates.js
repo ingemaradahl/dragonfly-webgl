@@ -188,47 +188,68 @@ window.templates.webgl.trace_table = function(calls, view_id)
 };
 
 
-window.templates.webgl.texture = function(obj)
+window.templates.webgl.texture = function(texture)
 {
+  var api = window.webgl.api;
   var image_source = [];
-  if (obj.source)
+  if (texture.source)
   {
     image_source = [
       "tr",
       ["th", "Image source"],
-      ["td", obj.source]
+      ["td", texture.source]
     ];
+  }
+
+  var img = ["img", "src", texture.img];
+  if (texture.flipped)
+  {
+    img.push("class");
+    img.push("flipped");
   }
 
   var info_table = [
     "table",
     ["tr",
       ["th", "Source"],
-      ["td", obj.element_type]
+      ["td", texture.element_type]
     ],
     image_source,
     ["tr",
+      ["th", "format"],
+      ["td", api.constant_value_to_string(texture.format) ]
+    ],
+    ["tr",
+      ["th", "internalFormat"],
+      ["td", api.constant_value_to_string(texture.internalFormat) ]
+    ],
+    ["tr",
+      ["th", "type"],
+      ["td", api.constant_value_to_string(texture.type) ]
+    ],
+    texture.border ? ["tr", ["th", "border"], ["td", String(texture.border)]] : [],
+    ["tr",
       ["th", "TEXTURE_WRAP_S"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_s)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_s)]
     ],
     ["tr",
       ["th", "TEXTURE_WRAP_T"] ,
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_wrap_t)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_t)]
     ],
     ["tr",
       ["th", "TEXTURE_MIN_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_min_filter)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_min_filter)]
     ],
     ["tr",
       ["th", "TEXTURE_MAG_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(obj.texture_mag_filter)]
+      ["td", window.webgl.api.constant_value_to_string(texture.texture_mag_filter)]
     ],
     "class", "table-info"
   ];
 
   return [
-    ["h2", "Texture " + String(obj.index)],
-    ["img", "src", obj.img],
+    ["h2", "Texture " + String(texture.index)],
+    img,
     info_table
   ];
 };

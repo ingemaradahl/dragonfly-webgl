@@ -240,32 +240,37 @@ cls.WebGL.RPCs.injection = function () {
 
       var target = args[0];
       var bound_texture = this.texture_binding[target];
+      var internalFormat = args[2];
 
       for (var i=0; i<this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
           var texture = {
-            index : i,
+            index : this.textures[i].index,
             texture : bound_texture,
             object : texture_container_object,
             type : texture_container_object ? texture_container_object.toString() : null,
+            internalFormat : internalFormat,
             texture_wrap_s : gl.getTexParameter(target, gl.TEXTURE_WRAP_S),
             texture_wrap_t : gl.getTexParameter(target, gl.TEXTURE_WRAP_T),
             texture_min_filter : gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER),
             texture_mag_filter : gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER),
           };
 
-          // TODO Translate to ENUMs
-
-          // We need to save some extra information about the call when an
-          // ArrayBufferView is used.
           if (args.length === 9)
           {
             texture.internalFormat = args[2];
             texture.width = args[3];
             texture.height = args[4];
+            texture.border = args[5];
             texture.format = args[6];
+            texture.type = args[7];
+          }
+          else
+          {
+            texture.format = args[3];
+            texture.type = args[4];
           }
 
           this.textures[i] = texture;
@@ -435,9 +440,12 @@ cls.WebGL.RPCs.injection = function () {
 
         var img_data = ctx.createImageData(width, height);
 
-        for (var i=0; i<size; i++)
+        for (var i=0; i<size; i+=4)
         {
           img_data.data[i] = pixels[i];
+          img_data.data[i+1] = pixels[i+1];
+          img_data.data[i+2] = pixels[i+2];
+          img_data.data[i+3] = pixels[i+3];
         }
 
         ctx.putImageData(img_data, 0, 0);
@@ -831,6 +839,7 @@ cls.WebGL.RPCs.injection = function () {
     this.get_texture_data = function ()
     {
       var element = this.object;
+      this.flipped = false;
 
       if (element instanceof HTMLImageElement)
       {
@@ -874,40 +883,28 @@ cls.WebGL.RPCs.injection = function () {
         var canvas_ctx = canvas.getContext("2d");
 
         var imgData = canvas_ctx.createImageData(this.width, this.height);
-        var height = this.height;
-        var width = this.width;
+        var size = this.width * this.height;
         var pix = imgData.data;
-        var format;
-        var alphaOffset=0;
 
-        // Flipping the image on the y-axis because
-        // imgData is drawn from top left to right.
-        // The UintArary is bottom left to right.
         if (this.format === gl.RGB)
         {
-          for (var i=0; i<height; i++)
+          for (var i=0; i<size; i += 4)
           {
-            for (var j=0; j<width*3; j += 3)
-            {
-              pix[j+i*width*3+alphaOffset] = element[j+(height-1-i)*width*3];
-              pix[j+i*width*3+1+alphaOffset] = element[j+(height-1-i)*width*3+1];
-              pix[j+i*width*3+2+alphaOffset] = element[j+(height-1-i)*width*3+2];
-              pix[j+i*width*3+3+alphaOffset] = 255; // Set alpha channel to opaque
-              alphaOffset += 1;
-            }
+            pix[i] = element[i];
+            pix[i+1] = element[i+1];
+            pix[i+2] = element[i+2];
+            pix[i+4] = 255 // Set alpha channel to opaque
+
           }
         }
         else if (this.format === gl.RGBA)
         {
-          for (var i=0; i<height; i++)
+          for (var i=0; i<size; i += 4)
           {
-            for (var j=0; j<width*4; j += 4)
-            {
-              pix[j+i*width*4] = element[j+(height-1-i)*width*4];
-              pix[j+i*width*4+1] = element[j+(height-1-i)*width*4+1];
-              pix[j+i*width*4+2] = element[j+(height-1-i)*width*4+2];
-              pix[j+i*width*4+3] = element[j+(height-1-i)*width*4+3];
-            }
+            pix[i] = element[i];
+            pix[i+1] = element[i+1];
+            pix[i+2] = element[i+2];
+            pix[i+3] = element[i+3];
           }
         }
         else
@@ -917,6 +914,7 @@ cls.WebGL.RPCs.injection = function () {
 
         canvas_ctx.putImageData(imgData, 0, 0);
         this.img = canvas.toDataURL("image/png");
+        this.flipped = true;
         this.element_type = "ArrayBufferView";
       }
       else
@@ -1216,26 +1214,28 @@ cls.WebGL.RPCs.injection = function () {
       var texture_state = {
         call_index : this.call_index,
         index : texture.index,
-        object : texture.object // Needed for data retrieval
       };
 
       // Add texture data getter, and bind it to the object
       texture_state.get_data = this.handler.get_texture_data.bind(texture_state);
 
-      if (texture.internalFormat)
+      if (texture.object)
       {
-        texture_state.internalFormat = texture.internalFormat;
-        texture_state.width = texture.width;
-        texture_state.height = texture.height;
-        texture_state.format = texture.format;
-      }
-      else
-      {
+        texture_state.object = texture.object; // Needed for data retrieval
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_wrap_s = texture.texture_wrap_s;
         texture_state.texture_wrap_t = texture.texture_wrap_s;
+        texture_state.internalFormat = texture.internalFormat;
+        texture_state.format = texture.format;
+        texture_state.type = texture.type;
+
+        if (texture.width)
+        {
+          texture_state.width = texture.width;
+          texture_state.height = texture.height;
+        }
       }
 
       this.textures.push(texture_state);
