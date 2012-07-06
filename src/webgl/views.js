@@ -18,7 +18,7 @@ cls.WebGLContextSelect = function(id)
     }
     else 
     {
-      return "No WebGLContext available...";
+      return "No Snapshot available...";
     }
   };
 

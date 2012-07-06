@@ -219,7 +219,7 @@ cls.WebGL.RPCs.injection = function () {
       return redundant;
     };
 
-    innerFuns.createTexture = function(result, args)
+    innerFuns.createTexture = function(texture, args)
     {
       var tex = {};
       tex.texture = texture;
