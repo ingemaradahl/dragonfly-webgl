@@ -7,14 +7,19 @@ cls.WebGLSnapshotSelect = function(id)
 {
   this._snapshot_list = [{}];
   this.disabled = true;
-  this._selected_snapshot_index = 0;
-  this._selected_context_id;
+  this._selected_snapshot_index = null;
+  this._selected_context_id = null;
 
   this.getSelectedOptionText = function()
   {
-    if (!this.disabled)
+    if (this.disabled)
     {
-      return "WebGLSnapshot #" + this._selected_snapshot_index;
+      return "No WebGL contexts available.";
+    }
+    else if (this._selected_context_id != null && this._selected_snapshot_index != null)
+    {
+      var snapshot = window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
+      return "WebGLSnapshot #" + this._selected_snapshot_index + " (frame: " + snapshot.frame + ")";
     }
     else
     {
@@ -52,7 +57,7 @@ cls.WebGLSnapshotSelect = function(id)
   {
     if (window.webgl.available())
     {
-      if (this._selected_context_id != undefined && this._selected_snapshot_index!= undefined)
+      if (this._selected_context_id != null && this._selected_snapshot_index != null)
       {
         return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
       }
@@ -62,7 +67,7 @@ cls.WebGLSnapshotSelect = function(id)
       }
     }
     return null;
- };
+  };
 
   this.getTemplate = function()
   {
@@ -85,7 +90,7 @@ cls.WebGLSnapshotSelect = function(id)
     // Iterating the contexts.
     for(i=0; i<window.webgl.contexts.length; i++)
     {
-      ret[entries] = 
+      ret[entries] =
         ["cst-webgl-title",
          "WebGLContext #" + i,
          "class", "js-dd-dir-path"
@@ -113,7 +118,7 @@ cls.WebGLSnapshotSelect = function(id)
         "Take snapshot",
         "context-id", window.webgl.contexts[i],
         "take-snapshot", true
-      ]
+      ];
       entries++;
     }
 
@@ -126,14 +131,14 @@ cls.WebGLSnapshotSelect = function(id)
     var context_id = target_ele['context-id'];
     var snapshot_index = target_ele['snapshot-index'];
     var take_snapshot = target_ele['take-snapshot'];
-    this._selected_contex_id = context_id;
+    this._selected_context_id = context_id;
 
     if (take_snapshot !== undefined)
     {
       messages.post('webgl-take-snapshot', context_id);
       return false;
     }
-    else if (this._selected_snapshot_index != snapshot_index)
+    else if (this._selected_snapshot_index !== snapshot_index)
     {
       this._selected_snapshot_index = snapshot_index;
       this._selected_context_id = context_id;
@@ -144,19 +149,35 @@ cls.WebGLSnapshotSelect = function(id)
     return false;
   };
 
-  this._on_new_snapshot = function()
+  this._on_new_context = function()
   {
+    if (!this.disabled) return;
+    this.disabled = false;
+    this.updateElement();
+  };
+
+  this._on_new_snapshot = function(ctx_id)
+  {
+    var snapshots = window.webgl.snapshots;
     this.disabled = !window.webgl.available();
-    this._snapshot_list = window.webgl.snapshots;
+    this._snapshot_list = snapshots;
+
+    this._selected_context_id = ctx_id;
+    this._selected_snapshot_index = snapshots[ctx_id].length - 1;
+
+    var snapshot = snapshots[ctx_id].get_latest_snapshot();
+    messages.post("webgl-changed-snapshot", snapshot);
+    this.updateElement();
   };
 
   this._on_take_snapshot = function(context_id)
   {
-    webgl.request_snapshot(context_id);
+    window.webgl.request_snapshot(context_id);
     console.log("take snapshot");
   };
 
-  messages.addListener('webgl-new-trace', this._on_new_snapshot.bind(this));
+  messages.addListener('webgl-new-context', this._on_new_context.bind(this));
+  messages.addListener('webgl-new-snapshot', this._on_new_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id);

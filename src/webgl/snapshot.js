@@ -21,6 +21,11 @@ cls.WebGLSnapshotArray = function(context_id)
     return this.last ? this.last.trace : null;
   };
 
+  this.get_latest_snapshot = function()
+  {
+    return this.length === 0 ? null : this[this.length - 1];
+  };
+
   var on_snapshot_complete = function(msg)
   {
     var ctx_id = window.webgl.canvas_contexts[msg.object_id];
@@ -36,8 +41,7 @@ cls.WebGLSnapshotArray = function(context_id)
       {
         var snapshot = new Snapshot(snapshots[i], this);
         this.push(snapshot);
-        messages.post("webgl-new-trace");
-        messages.post("webgl-changed-snapshot", snapshot);
+        messages.post("webgl-new-snapshot", ctx_id);
       }
     };
 
