@@ -6,7 +6,8 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTextureView = function(id, name, container_class)
 {
   this._container = null;
-  
+  this._texture = null;
+
   this.createView = function(container)
   {
     this._container = container;
@@ -30,7 +31,7 @@ cls.WebGLTextureView = function(id, name, container_class)
   var on_show_texture = function (msg)
   {
     this._texture = msg["texture"];
-    
+
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
     this._render();
   };
@@ -42,7 +43,7 @@ cls.WebGLTextureView = function(id, name, container_class)
       this._render();
     }
   };
-  
+
   messages.addListener('webgl-show-texture', on_show_texture.bind(this));
   messages.addListener('webgl-new-texture-data', on_texture_data.bind(this));
   this.init(id, name, container_class);
@@ -120,9 +121,6 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     }
   };
 
-
-
-
   var on_snapshot_change = function(snapshot)
   {
     var i = 0;
@@ -132,7 +130,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
         dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
         texture: texture,
         call_index_val : texture.call_index, 
-        call_index : String(texture.call_index === -1 ? " " : texture.call_index),
+        call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
         id : i++
       };
     
@@ -144,7 +142,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   var on_table_click = function(evt, target)
   {
-    var apa = "bepa";
+
   };
 
 
@@ -167,7 +165,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     groups: {
       call: {
         label: "Group by call", // TODO
-        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + String(res.call_index); },
+        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
         sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
       texture: {
@@ -187,7 +185,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   messages.addListener('webgl-changed-snapshot', on_snapshot_change.bind(this));
 
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLTextureSideView.prototype = ViewBase;
 

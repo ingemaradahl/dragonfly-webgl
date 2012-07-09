@@ -236,6 +236,10 @@ window.templates.webgl.texture = function(texture)
     ],
     image_source,
     ["tr",
+      ["th", "Dimensions"],
+      ["td", texture.height + "px * "+ texture.width +"px"]
+    ],
+    ["tr",
       ["th", "format"],
       ["td", api.constant_value_to_string(texture.format) ]
     ],
