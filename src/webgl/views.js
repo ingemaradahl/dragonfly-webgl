@@ -37,16 +37,7 @@ cls.WebGLSnapshotSelect = function(id)
    */
   this.get_selected_context = function()
   {
-    // TODO get correct context
-    if (window.webgl.available())
-    {
-      if (this._selected_context_id === undefined)
-      {
-        this._selected_context_id = window.webgl.contexts[0];
-      }
-      return this._selected_context_id;
-    }
-    return null;
+    return this._selected_context_id;
   };
 
   /**
@@ -141,10 +132,11 @@ cls.WebGLSnapshotSelect = function(id)
     return false;
   };
 
-  this._on_new_context = function()
+  this._on_new_context = function(ctx_id)
   {
     if (!this.disabled) return;
     this.disabled = false;
+    this._selected_context_id = ctx_id;
     this.updateElement();
   };
 

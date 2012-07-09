@@ -30,8 +30,6 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._render = function()
   {
-    //var ctx_id = window['cst-selects']['context-select'].get_selected_context();
-    // TODO: FIXME
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
     if (snapshot != null)
@@ -63,11 +61,10 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
-    var ctx = window.webgl.contexts[0];
-    //var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
-    if (ctx != null)
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
     {
-      window.webgl.request_snapshot(ctx);
+      window.webgl.request_snapshot(ctx_id);
     }
   };
 
