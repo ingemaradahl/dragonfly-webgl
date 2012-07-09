@@ -499,6 +499,28 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.uniform4iv = innerFuns.uniform3fv;
     innerFuns.uniform4fv = innerFuns.uniform4iv;
 
+    innerFuns.uniformMatrix2fv = function(result, args)
+    {
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      var values = args[2];
+      var redundant = true;
+      var length = uniform.value.length;
+      for (var i = 0; i < length; i++)
+      {
+        if (uniform.value[i] !== values[i])
+        {
+          uniform.value[i] = values[i];
+          redundant = false;
+        }
+      }
+      return redundant;
+    };
+    innerFuns.uniformMatrix3fv = innerFuns.uniformMatrix2fv;
+    innerFuns.uniformMatrix4fv = innerFuns.uniformMatrix3fv;
+
     // -------------------------------------------------------------------------
 
     /* Functions called only during a snapshot recording changes to the WebGL
