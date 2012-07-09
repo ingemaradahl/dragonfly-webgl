@@ -55,16 +55,9 @@ cls.WebGLSnapshotSelect = function(id)
    */
   this.get_selected_snapshot = function()
   {
-    if (window.webgl.available())
+    if (this._selected_context_id != null && this._selected_snapshot_index != null)
     {
-      if (this._selected_context_id != null && this._selected_snapshot_index != null)
-      {
-        return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
-      }
-      else
-      {
-        return window.webgl.snapshots[window.webgl.contexts[0]][0];
-      }
+      return window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
     }
     return null;
   };
@@ -82,44 +75,43 @@ cls.WebGLSnapshotSelect = function(id)
   {
     var ret = [];
     var snapshots = select_obj._snapshot_list;
-    var opt = null;
-    var i;
-    var j;
-    var entries=0;
+
+    var contexts = window.webgl.contexts;
 
     // Iterating the contexts.
-    for(i=0; i<window.webgl.contexts.length; i++)
+    for (var i = 0; i < contexts.length; i++)
     {
-      ret[entries] =
-        ["cst-webgl-title",
-         "WebGLContext #" + i,
-         "class", "js-dd-dir-path"
-        ];
-      entries++;
-      // Iterating the snapshots in that context.
-      for(j=0; opt = snapshots[window.webgl.contexts[i]][j]; j++)
+      var context_id = contexts[i];
+      ret.push([
+        "cst-webgl-title",
+        "WebGLContext #" + i,
+        "class", "js-dd-dir-path"
+      ]);
+
+      if (context_id in snapshots)
       {
-        ret[entries] =
-        [
-          "cst-option",
-          "Snapshot #" + j,
-          "snapshot-index", j,
-          "context-index", i,
-          "context-id", window.webgl.contexts[i],
-          "unselectable", "on"
-        ];
-        entries++;
+        // Iterating the snapshots in that context.
+        for (var j = 0; j < snapshots[context_id].length; j++)
+        {
+          ret.push([
+            "cst-option",
+            "Snapshot #" + j,
+            "snapshot-index", j,
+            "context-index", i,
+            "context-id", context_id,
+            "unselectable", "on"
+          ]);
+        }
       }
+
       // TODO add handler
       // Adding a take snapshot entry
-      ret[entries] =
-      [
+      ret.push([
         "cst-option",
         "Take snapshot",
-        "context-id", window.webgl.contexts[i],
+        "context-id", context_id,
         "take-snapshot", true
-      ];
-      entries++;
+      ]);
     }
 
     return ret;
@@ -138,7 +130,7 @@ cls.WebGLSnapshotSelect = function(id)
       messages.post('webgl-take-snapshot', context_id);
       return false;
     }
-    else if (this._selected_snapshot_index !== snapshot_index)
+    else if (snapshot_index != null && this._selected_snapshot_index !== snapshot_index)
     {
       this._selected_snapshot_index = snapshot_index;
       this._selected_context_id = context_id;
@@ -274,5 +266,3 @@ cls.WebGLTraceSelect = function(id)
 };
 
 cls.WebGLTraceSelect.prototype = new CstSelect();
-
-
