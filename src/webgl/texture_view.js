@@ -6,7 +6,8 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTextureView = function(id, name, container_class)
 {
   this._container = null;
-  
+  this._content = null;
+
   this.createView = function(container)
   {
     this._container = container;
@@ -15,7 +16,14 @@ cls.WebGLTextureView = function(id, name, container_class)
 
   this._render = function()
   {
-    this._container.clearAndRender(['div', 'Choose texture to inspect']);
+    if (this._content != null)
+    {
+      this._container.clearAndRender(this._content);
+    }
+    else
+    {
+      this._container.clearAndRender(['div', 'Choose texture to inspect']);
+    }
   };
 
   this.ondestroy = function()
@@ -26,10 +34,11 @@ cls.WebGLTextureView = function(id, name, container_class)
   this._on_texture_data = function(msg)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
-    var texture = msg["texture"];
+    var texture = msg.texture;
 
     var template = ["div", window.templates.webgl.texture(texture)];
-    this._container.clearAndRender(template);
+    this._content = template;
+    this._render();
   };
 
   messages.addListener('webgl-new-texture-data', this._on_texture_data.bind(this));
@@ -45,7 +54,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table || 
+    this._table = this._table ||
                     new SortableTable(this.tabledef, null, null, null, null,
                         false, "texture-table");
 
@@ -58,7 +67,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     // TODO remove listeners
 
@@ -71,11 +80,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       return;
     }
 
-    if(window.webgl.available())
-    {
-
-    }
-    else
+    if(!window.webgl.available())
     {
       this._container.clearAndRender(
         ['div',
@@ -92,13 +97,13 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     var tbl_data = [];
     var ids = window.webgl.data[ctx].texture_container;
     var i = 0;
- 
+
     for (i=0; i < ids.length; i++)
     {
       tbl_data.push({"texture" : "Texture" + ids[i].id, id : ids[i].id});
     }
     this._table.set_data(tbl_data);
-    this._container.clearAndRender(this._table.render()); 
+    this._container.clearAndRender(this._table.render());
   };
 
   this._on_refresh = function()
@@ -126,7 +131,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   };
 
   this.tabledef = {
-  handler: "webgl-texture-table", 
+  handler: "webgl-texture-table",
   column_order: ["texture"],
   idgetter: function(res) { return String(res.id); },
     columns: {
@@ -146,7 +151,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
 
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLTextureSideView.prototype = ViewBase;
 
