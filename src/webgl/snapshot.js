@@ -100,8 +100,8 @@ cls.WebGLSnapshotArray = function(context_id)
     this.drawcalls = [];
     this.trace = [];
 
-    // Finds a buffer denoted by it's index and call_index
-    this.buffers.lookup = function (index, call_index)
+    // Finds a buffer or texture denoted by it's index and call_index
+    var lookup = function (index, call_index)
     {
       var res = null;
       var highest_call = -1;
@@ -114,7 +114,9 @@ cls.WebGLSnapshotArray = function(context_id)
       }
 
       return res;
-    }.bind(this.buffers);
+    };
+    this.buffers.lookup = lookup.bind(this.buffers);
+    this.textures.lookup = lookup.bind(this.textures);
 
 
     var init_trace = function (calls, call_refs)
@@ -147,7 +149,7 @@ cls.WebGLSnapshotArray = function(context_id)
           if (object_index_regexp.test(arg))
           {
             var index = object_index_regexp.exec(arg)[1];
-            args[k] = new LinkedObject(call_refs[index], this);
+            args[k] = new LinkedObject(call_refs[index], j, this);
           }
           else if (!isNaN(arg))
           {
@@ -259,7 +261,7 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Creates a object that can be used to link in the UI to a WebGL object.
    */
-  function LinkedObject(object, snapshot)
+  function LinkedObject(object, call_idx, snapshot)
   {
     for (var key in object)
     {
@@ -279,7 +281,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.buffer.link = this;
         break;
       case "WebGLTexture":
-        this.texture = snapshot.textures[this.texture_index];
+        this.texture = snapshot.textures.lookup(this.texture_index, call_idx);
         this.text = "Texture " + String(this.texture.index);
         this.action = function()
         {

@@ -278,7 +278,7 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var fbo = draw_call.fbo;
-  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.img];
+  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.data];
 
   if (fbo.flipped)
   {

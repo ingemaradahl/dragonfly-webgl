@@ -147,6 +147,15 @@ cls.WebGL.RPCs.injection = function () {
 
 
     var innerFuns = {};
+    innerFuns.bindFramebuffer = function(result, args)
+    {
+      //var target = args[0];
+      var framebuffer = args[1]
+      var redundant = this.framebuffer_binding === framebuffer;
+      this.framebuffer_binding = framebuffer;
+
+      return redundant;
+    };
     innerFuns.createBuffer = function(buffer, args)
     {
       var buf = {};
@@ -555,14 +564,36 @@ cls.WebGL.RPCs.injection = function () {
         var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
         var buffer = this.buffer_binding[target];
 
-        var snapshot = {
-          img : canvas.toDataURL("image/png"),
+        var img = {
+          data : canvas.toDataURL("image/png"),
           width : width,
           height : height,
           flipped : true
         };
 
-        this.snapshot.add_drawcall(snapshot, gl.getParameter(gl.CURRENT_PROGRAM), target, buffer.index);
+        this.snapshot.add_drawcall(img, gl.getParameter(gl.CURRENT_PROGRAM), target, buffer.index);
+
+        // Check whether an color attachment texture have been drawn to
+        if (fbo)
+        {
+          var tex = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+          var texture = this.lookup_texture(tex);
+          if (texture && texture.width === width && texture.height === texture.height)
+          {
+            this.snapshot.add_texture(texture, {data: img.data, flipped : img.flipped});
+          }
+          else if (texture)
+          {
+            //this.add_texture(texture);
+
+            // The only difference between the texture calculated by readpixels 
+            // above and the true texture is scale/aspect ratio. To find out the
+            // _true_ texture, it has to be drawn to a framebuffer, so for now
+            // ignore this..
+            this.snapshot.add_texture(texture, {data: img.data, flipped : img.flipped});
+          }
+        }
+
       };
     };
 
@@ -669,6 +700,8 @@ cls.WebGL.RPCs.injection = function () {
     this.capturing_frame = false;
 
     this.snapshot = null;
+
+    this.framebuffer_binding = null;
 
     this.programs = [];
     this.shaders = [];
@@ -1210,7 +1243,7 @@ cls.WebGL.RPCs.injection = function () {
       this.buffers.push(buffer_state);
     };
 
-    this.add_texture = function (texture)
+    this.add_texture = function (texture, texture_data)
     {
       texture = texture instanceof WebGLTexture ? this.handler.lookup_texture(texture) : texture;
 
@@ -1322,8 +1355,8 @@ cls.WebGL.RPCs.injection = function () {
         index : texture.index,
       };
 
-      if (texture.object)
-      {
+      //if (texture.object)
+      //{
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
@@ -1338,10 +1371,16 @@ cls.WebGL.RPCs.injection = function () {
           texture_state.width = texture.width;
           texture_state.height = texture.height;
         }
-      }
+      //}
 
       // Add texture data
-      get_texture_data.call(texture_state, texture.object);
+      if (texture_data instanceof Object)
+      {
+        texture_state.img = texture_data;
+      }
+      else {
+        get_texture_data.call(texture_state, texture.object);
+      }
 
       this.textures.push(texture_state);
     };
