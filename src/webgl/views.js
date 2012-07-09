@@ -152,6 +152,8 @@ cls.WebGLSnapshotSelect = function(id)
     var snapshot = snapshots[ctx_id].get_latest_snapshot();
     messages.post("webgl-changed-snapshot", snapshot);
     this.updateElement();
+    
+    window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
   };
 
   this._on_take_snapshot = function(context_id)
