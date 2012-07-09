@@ -197,7 +197,6 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-
 window.templates.webgl.texture = function(texture)
 {
   var api = window.webgl.api;

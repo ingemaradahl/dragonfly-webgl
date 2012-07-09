@@ -24,7 +24,6 @@ cls.WebGL.WebGLDebugger = function ()
   this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.test = new cls.WebGLTest();
-  this.texture = new cls.WebGLTexture();
 
   /* Keep an own WebGL instance used when displaying buffer contents and such */
   var canvas = document.createElement("canvas");

@@ -74,6 +74,7 @@ cls.WebGLSnapshotArray = function(context_id)
         },
         textures: {
           _array_elements: {
+            _class: cls.WebGLTexture,
             img: {
               _action: cls.Scoper.ACTIONS.NOTHING
             },
@@ -283,10 +284,8 @@ cls.WebGLSnapshotArray = function(context_id)
       case "WebGLTexture":
         this.texture = snapshot.textures.lookup(this.texture_index, call_idx);
         this.text = "Texture " + String(this.texture.index);
-        this.action = function()
-        {
-          window.webgl.texture.show_texture(this.texture);
-        };
+        this.action = this.texture.show.bind(this.texture);
+        this.texture.link = this;
         this.tab = "webgl_texture";
         break;
       case "WebGLUniformLocation":

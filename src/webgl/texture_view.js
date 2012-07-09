@@ -50,112 +50,117 @@ cls.WebGLTextureView = function(id, name, container_class)
 
 cls.WebGLTextureView.prototype = ViewBase;
 
+
+
+
+
+
+
+
 cls.WebGLTextureSideView = function(id, name, container_class)
 {
   this._container = null;
+  this._content = null;
 
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table || 
-                    new SortableTable(this.tabledef, null, null, null, null,
-                        false, "texture-table");
-
-    if (window.webgl.available())
-    {
-      // TODO: request from correct context
-      window.webgl.request_textures();
-    }
+    this._table = this._table || new SortableTable(this.tabledef, null, null, null, "call", false, "texture-table");
 
     this._render();
   };
 
   this.ondestroy = function() 
   {
-    // TODO remove listeners
-
+    this._container = null;
   };
 
   this._render = function()
   {
     if (!this._container)
-    {
       return;
-    }
 
-    if(window.webgl.available())
+    if (this._content)
     {
-
+      this._table.set_data(this._content)
+      this._container.clearAndRender(this._table.render());
     }
     else
     {
       this._container.clearAndRender(
         ['div',
-         ['p', "No WebGLContext present..."],
+         ['p', "COMMON MAN TAKE A SNAPPY-SHOT!"], // TODO not really no
          'class', 'info-box'
         ]
       );
     }
   };
 
-  this._on_new_texture_list = function()
+
+
+
+  var on_snapshot_change = function(snapshot)
   {
-    var ctx = window['cst-selects']['snapshot-select'].get_selected_context();
-    var tbl_data = [];
-    var ids = window.webgl.data[ctx].texture_container;
     var i = 0;
- 
-    for (i=0; i < ids.length; i++)
-    {
-      tbl_data.push({"texture" : "Texture" + ids[i].id, id : ids[i].id});
-    }
-    this._table.set_data(tbl_data);
-    this._container.clearAndRender(this._table.render()); 
-  };
+    this._content = snapshot.textures.map(function(texture) {
+      return {
+        name: "Texture " + String(texture.index),
+        dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
+        texture: texture,
+        call_index : texture.call_index, 
+        call_index_str : String(texture.call_index === -1 ? " " : texture.call_index),
+        id : i++
+      };
+    
+    });
 
-  this._on_refresh = function()
-  {
-    window.webgl.request_textures(this._context);
     this._render();
   };
 
-  this._on_table_click = function(evt, target)
-  {
-    var tid = Number(target.getAttribute("data-object-id"));
 
-    var ctx = window['cst-selects']['snapshot-select'].get_selected_context();
-    window.webgl.request_texture_data(ctx, tid);
+  var on_table_click = function(evt, target)
+  {
+    var apa = "bepa";
   };
 
-  this._on_context_change = function(ctx)
-  {
-    this._render();
-  };
-
-  this._on_new_texture_data = function(msg)
-  {
-
-  };
 
   this.tabledef = {
-  handler: "webgl-texture-table", 
-  column_order: ["texture"],
-  idgetter: function(res) { return String(res.id); },
+    handler: "webgl-texture-table", 
+    column_order: ["call_index_str", "name", "dimension"],
+    idgetter: function(res) { return String(res.id); },
     columns: {
-      texture: {
-        label: "Texture",
-        sorter: "unsortable",
+      call_index_str : {
+        label: "Call",
       },
+      name: {
+        label: "Texture",
+      },
+      dimension: {
+        label: "Dimension",
+        sorter: "unsortable"
+      }
+    },
+    groups: {
+      call: {
+        label: "Group by call", // TODO
+        grouper : function (res) { return res.call_index === -1 ? "Start of frame" : "Call #" + String(res.call_index); },
+        sorter : function (a, b) { return a.call_index < b.call_index ? -1 : a.call_index > b.call_index ? 1 : 0 }
+      },
+      texture: {
+        label: "Group by texture", // TODO
+        grouper : function (res) { return res.name; }
+      }
     }
+  };
+
+  this.groupby = {
+
   };
 
   var eh = window.eventHandlers;
 
-  eh.click["refresh-webgl-texture"] = this._on_refresh.bind(this);
-  eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
-
-  messages.addListener('webgl-new-texture-list', this._on_new_texture_list.bind(this));
-  messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
+  eh.click["webgl-texture-table"] = on_table_click.bind(this);
+  messages.addListener('webgl-changed-snapshot', on_snapshot_change.bind(this));
 
   this.init(id, name, container_class);
 }
