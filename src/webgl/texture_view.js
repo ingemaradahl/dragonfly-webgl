@@ -65,7 +65,11 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table || new SortableTable(this.tabledef, null, null, null, "call", false, "texture-table");
+    if (!this._table)
+    {
+      this._table = new SortableTable(this.tabledef, null, ["name", "dimension"], null, "call", false, "texture-table");
+      this._table.group = this._make_group(this._table);
+    }
 
     this._render();
   };
@@ -73,6 +77,26 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this.ondestroy = function() 
   {
     this._container = null;
+  };
+
+  this._make_group = function(table)
+  {
+    var orig_group = table.group.bind(table);
+    return function (group) {
+      switch (group)
+      {
+        // TODO: Smarter code that makes sure "name" / "call_index" isn't
+        // present instead of fixed columns
+        case "call":
+          this.columns = ["name", "dimension"];
+          break;
+        case "texture":
+          this.columns = ["call_index", "dimension"];
+          break;
+      }
+
+      orig_group(group);
+    }.bind(table);
   };
 
   this._render = function()
@@ -107,8 +131,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
         name: "Texture " + String(texture.index),
         dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
         texture: texture,
-        call_index : texture.call_index, 
-        call_index_str : String(texture.call_index === -1 ? " " : texture.call_index),
+        call_index_val : texture.call_index, 
+        call_index : String(texture.call_index === -1 ? " " : texture.call_index),
         id : i++
       };
     
@@ -126,10 +150,10 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   this.tabledef = {
     handler: "webgl-texture-table", 
-    column_order: ["call_index_str", "name", "dimension"],
+    column_order: ["call_index", "name", "dimension"],
     idgetter: function(res) { return String(res.id); },
     columns: {
-      call_index_str : {
+      call_index : {
         label: "Call",
       },
       name: {
@@ -143,8 +167,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     groups: {
       call: {
         label: "Group by call", // TODO
-        grouper : function (res) { return res.call_index === -1 ? "Start of frame" : "Call #" + String(res.call_index); },
-        sorter : function (a, b) { return a.call_index < b.call_index ? -1 : a.call_index > b.call_index ? 1 : 0 }
+        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + String(res.call_index); },
+        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
       texture: {
         label: "Group by texture", // TODO
