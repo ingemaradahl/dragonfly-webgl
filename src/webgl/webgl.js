@@ -11,11 +11,11 @@ cls.WebGL.WebGLDebugger = function ()
   /* Context IDs for wrapped contexts. NOT an object id */
   this.contexts = [];
 
-  /* Map from canvas object ids to their respective context id in this.contexts */
-  this.canvas_contexts = {};
-
   /* Interface functions to the context handler */
   this.interfaces = {};
+
+  /* Remote getters to the message queues */
+  this.events = {};
 
   /* Each context have its own snapshot data object, the context id is used as a key. */
   this.snapshots = {};
@@ -115,16 +115,20 @@ cls.WebGL.WebGLDebugger = function ()
 
   this._send_injection = function (rt_id, cont_callback)
   {
-    var finalize = function (canvas_map)
+    var finalize = function (events)
     {
       this.injected = true;
-      this.canvas_map = canvas_map.object_id;
+
+      this.events = events;
 
       cont_callback();
     };
 
     var scoper = new cls.Scoper(finalize, this);
     var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+    scoper.set_reviver_tree({
+      _depth: 1
+    });
     scoper.eval_script(rt_id, script, [], false, true);
   };
 
@@ -133,7 +137,6 @@ cls.WebGL.WebGLDebugger = function ()
     var finalize = function (handler_interface, context_id)
     {
       this.contexts.push(context_id);
-      this.canvas_contexts[message.object_id] = context_id;
       this.interfaces[context_id] = handler_interface;
       this.snapshots[context_id] = new cls.WebGLSnapshotArray(context_id);
 
@@ -157,40 +160,49 @@ cls.WebGL.WebGLDebugger = function ()
         };
     };
 
-    var revive_interface = function (handler_interface, runtime_id)
+    var revive_interfaces = function (list, runtime_id)
     {
-      var context_id = handler_interface.object_id;
-      delete handler_interface.object_id;
-
-      for (var fun_name in handler_interface)
+      for (var i = 0; i < list.length; i++)
       {
-        var fun = handler_interface[fun_name];
-        // # of arguments
-        var argc = fun.length;
-        switch (fun_name)
-        {
-          case "debugger_ready":
-          case "request_snapshot":
-          case "enable_buffers_update":
-          case "disable_buffers_update":
-            handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
-            break;
-          default:
-            handler_interface[fun_name] = { object_id : fun.object_id, runtime_id: runtime_id };
-        }
-      }
+        var handler_interface = list[i];
+        var context_id = handler_interface.object_id;
+        delete handler_interface.object_id;
 
-      finalize(handler_interface, context_id);
+        for (var fun_name in handler_interface)
+        {
+          var fun = handler_interface[fun_name];
+          // # of arguments
+          var argc = fun.length;
+          switch (fun_name)
+          {
+            case "debugger_ready":
+            case "request_snapshot":
+            case "enable_buffers_update":
+            case "disable_buffers_update":
+              handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
+              break;
+            default:
+              handler_interface[fun_name] = { object_id : fun.object_id, runtime_id: runtime_id };
+          }
+        }
+
+        finalize(handler_interface, context_id);
+      }
     };
 
     if (message.runtime_id === this.runtime_id)
     {
-      var canvas_id = message.object_id;
-
-      var scoper = new cls.Scoper(revive_interface, this, [this.runtime_id]);
-      var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.get_handler);
-      scoper.set_reviver_tree({_action: cls.Scoper.ACTIONS.EXAMINE});
-      scoper.eval_script(this.runtime_id, script, [["canvas", canvas_id], ["canvas_map", this.canvas_map]], false);
+      var scoper = new cls.Scoper(revive_interfaces, this, [this.runtime_id]);
+      scoper.set_reviver_tree({
+        _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE,
+        _array_elements: {
+          _action: cls.Scoper.ACTIONS.EXAMINE,
+          context: {
+            _action: cls.Scoper.ACTIONS.NOTHING
+          }
+        }
+      });
+      scoper.execute_remote_function(this.events["new-context"], false);
     }
   };
 
@@ -309,5 +321,31 @@ cls.WebGL.WebGLDebugger = function ()
 
   load_shaders(this.init_gl.bind(this));
 
+  var on_snapshots_complete = function(msg)
+  {
+    var finalize = function(snapshots)
+    {
+      for (var i = 0; i < snapshots.length; i++)
+      {
+        var snapshot = snapshots[i];
+        var context_id = snapshot.context.object_id;
+        this.snapshots[context_id].on_snapshot_complete(snapshot.snapshot);
+      }
+    };
+
+    var scoper = new cls.Scoper(finalize, this);
+    scoper.set_reviver_tree({
+      _depth: 2,
+      _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
+    });
+
+    scoper.execute_remote_function(this.events["snapshot-completed"]);
+  };
+
+  // ---------------------------------------------------------------------------
+
   messages.addListener('runtime-selected', this.clear.bind(this));
+
+  window.host_tabs.activeTab.addEventListener("webgl-snapshot-completed",
+      on_snapshots_complete.bind(this), false, false);
 };

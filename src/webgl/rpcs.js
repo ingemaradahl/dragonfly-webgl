@@ -57,8 +57,8 @@ cls.WebGL.RPCs.call_function = function()
 
 
 cls.WebGL.RPCs.injection = function () {
-  // Used to determine which canvas maps to which handler.
-  var canvas_map = [];
+  // Global events, is populated below the definition of the MessageQueue.
+  var events = {};
 
   // TODO Temporary, see HTMLCanvas.prototype.getContext why
   var contexts = [];
@@ -99,7 +99,6 @@ cls.WebGL.RPCs.injection = function () {
     var gl = {};
 
     var handler = new Handler(this, gl, canvas);
-    canvas_map.push({canvas:canvas, handler:handler});
 
     // Stores the oldest error that have occured since last call to getError
     // When there have been no error it should have the value NO_ERROR
@@ -150,7 +149,7 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.bindFramebuffer = function(result, args)
     {
       //var target = args[0];
-      var framebuffer = args[1]
+      var framebuffer = args[1];
       var redundant = this.framebuffer_binding === framebuffer;
       this.framebuffer_binding = framebuffer;
 
@@ -233,7 +232,8 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.deleteBuffer = function(result, args)
     {
       var buffer = this.lookup_buffer(args[0]);
-      this.buffers[buffer.index] = null;
+      if (buffer == null) return;
+      this.buffers.splice(buffer.index, 1);
 
       for (var target in this.buffer_binding)
       {
@@ -276,7 +276,16 @@ cls.WebGL.RPCs.injection = function () {
 
     innerFuns.deleteTexture = function(result, args)
     {
-      // TODO delete texture from textures[]
+      var texture = this.lookup_texture(args[0]);
+      if (texture == null) return;
+      this.textures.splice(texture.index, 1);
+      for (var target in this.texture_binding)
+      {
+        if (this.texture_binding[target] === texture)
+        {
+          this.texture_binding[target] = null;
+        }
+      }
     };
 
     // TODO All texImage functions must be wrapped and handled
@@ -608,7 +617,7 @@ cls.WebGL.RPCs.injection = function () {
           {
             //this.add_texture(texture);
 
-            // The only difference between the texture calculated by readpixels 
+            // The only difference between the texture calculated by readpixels
             // above and the true texture is scale/aspect ratio. To find out the
             // _true_ texture, it has to be drawn to a framebuffer, so for now
             // ignore this..
@@ -663,7 +672,10 @@ cls.WebGL.RPCs.injection = function () {
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         console.log("Frame have been captured.");
-        handler.events["snapshot-completed"].post(handler.snapshot.end());
+        events["snapshot-completed"].post({
+          context: handler._interface, // Used to connect the snapshot to a context
+          snapshot: handler.snapshot.end()
+        });
         handler.snapshot = null;
       }
 
@@ -684,6 +696,8 @@ cls.WebGL.RPCs.injection = function () {
       oldest_error = gl.NO_ERROR;
       return error;
     };
+
+    return handler;
   }
 
 
@@ -701,9 +715,9 @@ cls.WebGL.RPCs.injection = function () {
     // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
     contexts.push(gl);
 
-    wrap_context.call(gl, this);
+    var handler = wrap_context.call(gl, this);
 
-    this.dispatchEvent(new Event("webgl-debugger-ready"));
+    events["new-context"].post(handler.get_interface());
 
     return gl;
   };
@@ -737,10 +751,6 @@ cls.WebGL.RPCs.injection = function () {
     this.texture_binding = {};
     this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
-    this.events = {
-      "snapshot-completed": new MessageQueue("webgl-snapshot-completed", canvas)
-    };
-
     /* Interface definition between DF and the Context Handler, only the
      * functions included in the interface object will be accessible from DF */
     this._interface = {};
@@ -758,12 +768,6 @@ cls.WebGL.RPCs.injection = function () {
       this.capture_next_frame = true;
     };
     this._interface.request_snapshot = this.request_snapshot.bind(this);
-
-    this.get_snapshot = function()
-    {
-      return this.events["snapshot-completed"].get();
-    };
-    this._interface.get_snapshot = this.get_snapshot.bind(this);
 
     this.get_state = function()
     {
@@ -910,62 +914,36 @@ cls.WebGL.RPCs.injection = function () {
 
     this.debugger_ready = function()
     {
-      for (var key in this.events)
+      for (var key in events) // TODO this only needs to be done once per page
       {
-        if (this.events.hasOwnProperty(key))
+        if (events.hasOwnProperty(key))
         {
-          this.events[key].set_ready();
+          events[key].set_ready();
         }
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
 
-    this.lookup_buffer = function(buffer)
+    var generic_lookup = function(list, subkey)
     {
-      for (var i = 0; i < this.buffers.length; i++) {
-        if (this.buffers[i].buffer === buffer)
-        {
-          return this.buffers[i];
-        }
-      }
-      return null;
-    };
-
-    this.lookup_texture = function(texture)
-    {
-      for (var i = 0; i < this.textures.length; i++) {
-        if (this.textures[i].texture === texture)
-        {
-          return this.textures[i];
-        }
-      }
-      return null;
-    };
-
-    this.lookup_program = function(program)
-    {
-      for (var i=0; i<this.programs.length; i++)
+      return function(value)
       {
-        if (this.programs[i].program === program)
+        for(var key in list)
         {
-          return this.programs[i];
+          if(list[key] != null && list[key][subkey] === value) return list[key];
         }
-      }
-      return null;
+        return null;
+      };
     };
 
-    this.lookup_shader = function(shader)
-    {
-      for (var i=0; i<this.shaders.length; i++)
-      {
-        if (this.shaders[i].shader === shader)
-        {
-          return this.shaders[i];
-        }
-      }
-      return null;
-    };
+    this.lookup_buffer = generic_lookup(this.buffers, "buffer");
+
+    this.lookup_texture = generic_lookup(this.textures, "texture");
+
+    this.lookup_program = generic_lookup(this.programs, "program");
+
+    this.lookup_shader = generic_lookup(this.shaders, "shader");
 
     this.lookup_uniform = function(uniform_location)
     {
@@ -1060,10 +1038,9 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Queues messages for pickup by Dragonfly.
    */
-  function MessageQueue(name, source, ready)
+  function MessageQueue(name, ready)
   {
     this.name = name;
-    this.source = source;
     this.ready = Boolean(ready);
     this.running = false;
     this.messages = [];
@@ -1073,7 +1050,7 @@ cls.WebGL.RPCs.injection = function () {
     this.messages.push(message);
     if (!this.running && this.ready)
     {
-      this.source.dispatchEvent(new Event(this.name));
+      document.dispatchEvent(new Event(this.name));
       this.running = true;
     }
   };
@@ -1088,7 +1065,7 @@ cls.WebGL.RPCs.injection = function () {
   {
     if (!this.ready && this.messages.length > 0)
     {
-      this.source.dispatchEvent(new Event(this.name));
+      document.dispatchEvent(new Event(this.name));
       this.running = true;
     }
     this.ready = true;
@@ -1182,16 +1159,19 @@ cls.WebGL.RPCs.injection = function () {
         else if (obj instanceof WebGLBuffer)
         {
           var buffer = handler.lookup_buffer(obj);
+          if (buffer == null) return arg;
           arg.buffer_index = buffer.index;
         }
         else if (obj instanceof WebGLProgram)
         {
           var program = handler.lookup_program(obj);
+          if (program == null) return arg;
           arg.program_index = program.index;
         }
         else if (obj instanceof WebGLTexture)
         {
           var texture = handler.lookup_texture(obj);
+          if (texture == null) return arg;
           arg.texture_index = texture.index;
         }
         return arg;
@@ -1339,8 +1319,7 @@ cls.WebGL.RPCs.injection = function () {
               pix[i] = element[i];
               pix[i+1] = element[i+1];
               pix[i+2] = element[i+2];
-              pix[i+4] = 255 // Set alpha channel to opaque
-
+              pix[i+4] = 255; // Set alpha channel to opaque
             }
           }
           else if (this.format === gl.RGBA)
@@ -1425,5 +1404,15 @@ cls.WebGL.RPCs.injection = function () {
     init();
   }
 
-  return canvas_map;
+  events["new-context"] = new MessageQueue("webgl-debugger-ready", true);
+  events["snapshot-completed"] = new MessageQueue("webgl-snapshot-completed");
+
+  var event_getters = {};
+  for (var key in events)
+  {
+    if (!events.hasOwnProperty(key)) continue;
+    event_getters[key] = events[key].get.bind(events[key]);
+  }
+
+  return event_getters;
 };

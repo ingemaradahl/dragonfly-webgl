@@ -138,7 +138,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   for (var i = 0; i < argobj.length; i++)
   {
     var arg = argobj[i];
-    var html = ["span", arg.text];
+    var html = ["span", String(arg.text)];
     if (arg.action)
     {
       html.push(
@@ -158,7 +158,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   var row_class = "";
   if (call.have_error)
   {
-    content.push(" » ", ["span", "error: " + String(call.error_code)]);
+    content.push(" >> ", ["span", "error: " + String(call.error_code)]);
     row_class = "trace-error";
   }
   else if (call.redundant)
@@ -221,7 +221,7 @@ window.templates.webgl.texture = function(texture)
     }
   }
   else {
-    img = ["div", 
+    img = ["div",
       ["img", "src", "./ui-images/loading.png"],
       "class", "loading-image",
       "style", "width: " + String(texture.width ? texture.width : 128) + "px; height: " + String(texture.height ? texture.height : 128) + "px;"

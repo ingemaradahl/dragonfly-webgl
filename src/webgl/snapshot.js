@@ -26,71 +26,58 @@ cls.WebGLSnapshotArray = function(context_id)
     return this.length === 0 ? null : this[this.length - 1];
   };
 
-  var on_snapshot_complete = function(msg)
+  this.on_snapshot_complete = function(snapshot_object)
   {
-    var ctx_id = window.webgl.canvas_contexts[msg.object_id];
-
-    if (ctx_id !== this.context_id)
+    var finalize = function (snapshot_data)
     {
-      return;
-    }
-
-    var finalize = function (snapshots)
-    {
-      for (var i = 0; i < snapshots.length; i++)
-      {
-        var snapshot = new Snapshot(snapshots[i], this);
-        this.push(snapshot);
-        messages.post("webgl-new-snapshot", ctx_id);
-      }
+      var snapshot = new Snapshot(snapshot_data, this);
+      this.push(snapshot);
+      messages.post("webgl-new-snapshot", this.context_id);
     };
 
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
-      _array_elements: {
-        buffers: {
-          _array_elements: {
-            _class: cls.WebGLBuffer,
-            data: {
-              _action: cls.Scoper.ACTIONS.NOTHING
-            }
+      buffers: {
+        _array_elements: {
+          _class: cls.WebGLBuffer,
+          data: {
+            _action: cls.Scoper.ACTIONS.NOTHING
           }
-        },
-        drawcalls: {
-          _array_elements: {
-            fbo: {
-              img: {
-                _action: cls.Scoper.ACTIONS.NOTHING
-              }
-            }
-          }
-        },
-        programs: {
-          _array_elements: {
-            uniforms: {
-              _array_elements: {
-                locations: {
-                  _action: cls.Scoper.ACTIONS.RELEASE
-                }
-              }
-            }
-          }
-        },
-        textures: {
-          _array_elements: {
-            _class: cls.WebGLTexture,
+        }
+      },
+      drawcalls: {
+        _array_elements: {
+          fbo: {
             img: {
               _action: cls.Scoper.ACTIONS.NOTHING
-            },
+            }
           }
+        }
+      },
+      programs: {
+        _array_elements: {
+          uniforms: {
+            _array_elements: {
+              locations: {
+                _action: cls.Scoper.ACTIONS.RELEASE
+              }
+            }
+          }
+        }
+      },
+      textures: {
+        _array_elements: {
+          _class: cls.WebGLTexture,
+          img: {
+            _action: cls.Scoper.ACTIONS.NOTHING
+          },
         }
       },
       _depth: 7,
       _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
     });
 
-    var func = window.webgl.interfaces[ctx_id].get_snapshot;
-    scoper.execute_remote_function(func);
+    scoper.examine_object(snapshot_object);
   };
 
   // ---------------------------------------------------------------------------
@@ -249,19 +236,26 @@ cls.WebGLSnapshotArray = function(context_id)
       if (object.hasOwnProperty(key)) this[key] = object[key];
     }
 
+    var matched = false;
     switch (this.type)
     {
       case "WebGLBuffer":
+        if (this.buffer_index == null) return;
         this.buffer = snapshot.buffers[this.buffer_index];
         this.text = String(this.buffer);
         this.action = this.buffer.show.bind(this.buffer);
+        matched = true;
         break;
       case "WebGLTexture":
+        if (this.texture_index == null) return;
         this.texture = snapshot.textures.lookup(this.texture_index, call_idx);
+        if (this.texture == null) return;
         this.text = String(this.texture);
         this.action = this.texture.show.bind(this.texture);
+        matched = true;
         break;
       case "WebGLUniformLocation":
+        if (this.program_index == null) return;
         this.program = snapshot.programs[this.program_index];
         this.uniform = this.program.uniforms[this.uniform_index];
         this.text = this.uniform.name;
@@ -269,25 +263,24 @@ cls.WebGLSnapshotArray = function(context_id)
         {
           window.views.webgl_program.show_uniform(this.program, this.uniform);
         };
+        matched = true;
         break;
-      default:
-        if (this.data && typeof(this.data) !== "function")
-        {
-          this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
-        }
-        else
-        {
-          this.text = this.type;
-        }
+    }
+
+    if (!matched)
+    {
+      if (this.data && typeof(this.data) !== "function")
+      {
+        this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
+      }
+      else
+      {
+        this.text = this.type;
+      }
     }
   }
 
-  // ---------------------------------------------------------------------------
-
-  window.host_tabs.activeTab.addEventListener("webgl-snapshot-completed",
-      on_snapshot_complete.bind(this), false, false);
 };
 
 cls.WebGLSnapshotArray.prototype = new Array();
 cls.WebGLSnapshotArray.prototype.constructor = cls.WebGLSnapshotArray;
-
