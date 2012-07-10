@@ -290,7 +290,7 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   }
 
   var buffer_link = [ "span",
-    draw_call.buffer.link.text,
+    String(draw_call.buffer),
     "handler", "webgl-drawcall-buffer",
     "class", "link",
     "buffer", draw_call.buffer

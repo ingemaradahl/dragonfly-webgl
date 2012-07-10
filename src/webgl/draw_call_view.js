@@ -48,7 +48,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
   var on_buffer_click = function(evt, target)
   {
-    target.buffer.link.action();
+    target.buffer.show();
   };
 
   var eh = window.eventHandlers;
