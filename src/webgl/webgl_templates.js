@@ -324,6 +324,19 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   return html;
 };
 
+window.templates.webgl.shader_source = function(source)
+{
+  var line_count = 1;
+  var lines = [];
+  source.split('\n').forEach(function() { lines.push(line_count++); });
+  return (
+  ['div',
+    ['pre', source, 'class', 'sh_glsl'],
+    ['div', lines.join('\n'), 'class', 'resource-line-numbers', 'unselectable', 'on'],
+    'class', 'resource-detail-container mono line-numbered-resource js-resource-content'
+  ]);
+};
+
 window.templates.webgl.program = function(program)
 {
   var programs = [];
@@ -331,11 +344,6 @@ window.templates.webgl.program = function(program)
   for (var i = 0; i < program.shaders.length; i++)
   {
     var shader = program.shaders[i];
-    var shader_source = [
-        "pre",
-        shader.src,
-        'class', 'sh_glsl'
-    ];
 
     var shader_type = window.webgl.api.constant_value_to_string(shader.type);
     switch (shader_type)
@@ -348,8 +356,8 @@ window.templates.webgl.program = function(program)
         break;
     }
     programs.push([
-      ["h2", shader_type + " shader " + String(shader.index)],
-      shader_source
+      ["h1", shader_type + " shader " + String(shader.index)],
+      window.templates.webgl.shader_source(shader.src)
     ]);
   }
 

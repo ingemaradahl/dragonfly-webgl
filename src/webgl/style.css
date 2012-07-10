@@ -79,6 +79,15 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border-color: #145e00;
 }
 
+.program div.js-resource-content
+{
+  border: 1px solid #ccc; 
+  overflow-y: hidden;
+  overflow-x: auto;
+  margin-top: 0px;
+  margin-bottom: 15px;
+}
+
 
 /* Buffer */
 
