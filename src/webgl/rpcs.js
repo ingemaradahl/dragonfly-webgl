@@ -233,7 +233,8 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.deleteBuffer = function(result, args)
     {
       var buffer = this.lookup_buffer(args[0]);
-      this.buffers[buffer.index] = null;
+      if (buffer == null) return;
+      this.buffers.splice(buffer.index, 1);
 
       for (var target in this.buffer_binding)
       {
@@ -276,7 +277,16 @@ cls.WebGL.RPCs.injection = function () {
 
     innerFuns.deleteTexture = function(result, args)
     {
-      // TODO delete texture from textures[]
+      var texture = this.lookup_texture(args[0]);
+      if (texture == null) return;
+      this.textures.splice(texture.index, 1);
+      for (var target in this.texture_binding)
+      {
+        if (this.texture_binding[target] === texture)
+        {
+          this.texture_binding[target] = null;
+        }
+      }
     };
 
     // TODO All texImage functions must be wrapped and handled
@@ -608,7 +618,7 @@ cls.WebGL.RPCs.injection = function () {
           {
             //this.add_texture(texture);
 
-            // The only difference between the texture calculated by readpixels 
+            // The only difference between the texture calculated by readpixels
             // above and the true texture is scale/aspect ratio. To find out the
             // _true_ texture, it has to be drawn to a framebuffer, so for now
             // ignore this..
@@ -921,51 +931,25 @@ cls.WebGL.RPCs.injection = function () {
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
 
-    this.lookup_buffer = function(buffer)
+    var generic_lookup = function(list, subkey)
     {
-      for (var i = 0; i < this.buffers.length; i++) {
-        if (this.buffers[i].buffer === buffer)
-        {
-          return this.buffers[i];
-        }
-      }
-      return null;
-    };
-
-    this.lookup_texture = function(texture)
-    {
-      for (var i = 0; i < this.textures.length; i++) {
-        if (this.textures[i].texture === texture)
-        {
-          return this.textures[i];
-        }
-      }
-      return null;
-    };
-
-    this.lookup_program = function(program)
-    {
-      for (var i=0; i<this.programs.length; i++)
+      return function(value)
       {
-        if (this.programs[i].program === program)
+        for(var key in list)
         {
-          return this.programs[i];
+          if(list[key] != null && list[key][subkey] === value) return list[key];
         }
-      }
-      return null;
+        return null;
+      };
     };
 
-    this.lookup_shader = function(shader)
-    {
-      for (var i=0; i<this.shaders.length; i++)
-      {
-        if (this.shaders[i].shader === shader)
-        {
-          return this.shaders[i];
-        }
-      }
-      return null;
-    };
+    this.lookup_buffer = generic_lookup(this.buffers, "buffer");
+
+    this.lookup_texture = generic_lookup(this.textures, "texture");
+
+    this.lookup_program = generic_lookup(this.programs, "program");
+
+    this.lookup_shader = generic_lookup(this.shaders, "shader");
 
     this.lookup_uniform = function(uniform_location)
     {
