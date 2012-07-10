@@ -33,21 +33,18 @@ cls.WebGLBufferView = function(id, name, container_class)
   this.show_buffer = function(buffer)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
-    if (!buffer.data_is_loaded())
-    {
-      window.webgl.buffer.get_buffer_data(buffer);
-    }
+
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };
 
-  this._on_buffer_data = function(buffer)
+  var on_buffer_data = function(buffer)
   {
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };
 
-  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
+  messages.addListener('webgl-buffer-data', on_buffer_data.bind(this));
   this.init(id, name, container_class);
 };
 
@@ -140,7 +137,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     var buffer_index = target.getAttribute("data-object-id");
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var buffer = snapshot.buffers[buffer_index];
-    window.views.webgl_buffer.show_buffer(buffer);
+    buffer.show();
   };
 
   this.tabledef = {

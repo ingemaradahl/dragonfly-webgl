@@ -67,28 +67,24 @@ cls.WebGLProgramView = function(id, name, container_class)
     }
   };
 
-  var on_show_program = function(program)
+  this.show_program = function(program)
   {
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_program");
+
     var content = [];
     this._content= window.templates.webgl.program(program);
     this._render();
   }.bind(this);
 
-  var on_show_uniform = function(msg)
+  this.show_uniform = function(program, uniform)
   {
-    var program = msg.program;
-    var uniform = msg.uniform;
-
-    on_show_program(program);
+    this.show_program(program);
     hilight_uniform(uniform);
   };
 
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
-
-  messages.addListener('webgl-show-program', on_show_program.bind(this));
-  messages.addListener('webgl-show-uniform', on_show_uniform.bind(this));
 
   this.init(id, name, container_class);
 };

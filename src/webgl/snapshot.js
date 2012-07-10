@@ -50,7 +50,7 @@ cls.WebGLSnapshotArray = function(context_id)
       _array_elements: {
         buffers: {
           _array_elements: {
-            _class: Buffer,
+            _class: cls.WebGLBuffer,
             data: {
               _action: cls.Scoper.ACTIONS.NOTHING
             }
@@ -243,25 +243,8 @@ cls.WebGLSnapshotArray = function(context_id)
   {
   }
 
-  Buffer.prototype.data_is_loaded = function()
-  {
-    return this.data.object_id === undefined;
-  };
 
-  Buffer.prototype.set_data = function(data)
-  {
-    this.data = data;
-  };
 
-  Buffer.prototype.usage_string = function()
-  {
-    return window.webgl.api.function_argument_to_string("bufferData", "usage", this.usage);
-  };
-
-  Buffer.prototype.target_string = function()
-  {
-    return window.webgl.api.function_argument_to_string("bufferData", "target", this.target);
-  };
 
   /**
    * Creates a object that can be used to link in the UI to a WebGL object.
@@ -277,20 +260,13 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       case "WebGLBuffer":
         this.buffer = snapshot.buffers[this.buffer_index];
-        this.text = "Buffer " + String(this.buffer.index);
-        this.action = function()
-        {
-          window.views.webgl_buffer.show_buffer(this.buffer);
-        };
-        this.tab = "webgl_buffer";
-        this.buffer.link = this;
+        this.text = String(this.buffer);
+        this.action = this.buffer.show.bind(this.buffer);
         break;
       case "WebGLTexture":
         this.texture = snapshot.textures.lookup(this.texture_index, call_idx);
-        this.text = "Texture " + String(this.texture.index);
+        this.text = String(this.texture);
         this.action = this.texture.show.bind(this.texture);
-        this.texture.link = this;
-        this.tab = "webgl_texture";
         break;
       case "WebGLUniformLocation":
         this.program = snapshot.programs[this.program_index];
@@ -298,9 +274,8 @@ cls.WebGLSnapshotArray = function(context_id)
         this.text = this.uniform.name;
         this.action = function()
         {
-          messages.post("webgl-show-uniform", {program: this.program, uniform: this.uniform});
+          window.views.webgl_program.show_uniform(this.program, this.uniform);
         };
-        this.tab = "webgl_program";
         break;
       default:
         if (this.data && typeof(this.data) !== "function")
@@ -313,19 +288,6 @@ cls.WebGLSnapshotArray = function(context_id)
         }
     }
   }
-
-  LinkedObject.prototype.perform = function()
-  {
-    if (this.tab)
-    {
-      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.tab);
-    }
-
-    if (this.action)
-    {
-      this.action();
-    }
-  };
 
   // ---------------------------------------------------------------------------
 

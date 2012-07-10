@@ -21,7 +21,6 @@ cls.WebGL.WebGLDebugger = function ()
   this.snapshots = {};
 
   this.api = new cls.WebGLAPI();
-  this.buffer = new cls.WebGLBuffer();
   this.state = new cls.WebGLState();
   this.test = new cls.WebGLTest();
 

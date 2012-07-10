@@ -13,7 +13,7 @@ cls.WebGLTexture.prototype.get_texture_data = function()
   var finalize = function (img)
   {
     this.img = img;
-    messages.post('webgl-new-texture-data', { texture : this });
+    messages.post('webgl-texture-data', { texture : this });
   };
 
   var scoper = new cls.Scoper(finalize, this);
@@ -22,10 +22,15 @@ cls.WebGLTexture.prototype.get_texture_data = function()
 
 cls.WebGLTexture.prototype.show = function()
 {
-  messages.post('webgl-show-texture', { texture : this });
+  window.views.webgl_texture.show_texture(this);
 
   if (!this.img.data)
   {
     this.get_texture_data();
   }
+};
+
+cls.WebGLTexture.prototype.toString = function()
+{
+  return this.name ? this.name : "Texture " + String(this.index);
 };

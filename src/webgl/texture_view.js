@@ -28,9 +28,9 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._container = null;
   };
 
-  var on_show_texture = function (msg)
+  this.show_texture = function (texture)
   {
-    this._texture = msg["texture"];
+    this._texture = texture;
 
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
     this._render();
@@ -44,8 +44,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
-  messages.addListener('webgl-show-texture', on_show_texture.bind(this));
-  messages.addListener('webgl-new-texture-data', on_texture_data.bind(this));
+  messages.addListener('webgl-texture-data', on_texture_data.bind(this));
   this.init(id, name, container_class);
 };
 
@@ -69,7 +68,10 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     if (!this._table)
     {
       this._table = new SortableTable(this.tabledef, null, ["name", "dimension"], null, "call", false, "texture-table");
-      this._table.group = this._make_group(this._table);
+      this._table.group = this._make_group(this._table,
+        [ {group: "call",    remove: "call_index", add: "name"},
+          {group: "texture", remove: "name",       add: "call_index"} ]
+      );
     }
 
     this._render();
@@ -80,20 +82,21 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._container = null;
   };
 
-  this._make_group = function(table)
+  this._make_group = function(table, group_mutexes)
   {
     var orig_group = table.group.bind(table);
     return function (group) {
-      switch (group)
+      for (var i=0; i<group_mutexes.length; i++)
       {
-        // TODO: Smarter code that makes sure "name" / "call_index" isn't
-        // present instead of fixed columns
-        case "call":
-          this.columns = ["name", "dimension"];
+        var def = group_mutexes[i];
+        if (def.group === group)
+        {
+          this.columns = this.columns.filter(function(columns) { return columns !== def.remove});
+          if (this.columns.indexOf(def.add) === -1)
+            this.columns.unshift(def.add);
+
           break;
-        case "texture":
-          this.columns = ["call_index", "dimension"];
-          break;
+        }
       }
 
       orig_group(group);
@@ -142,7 +145,12 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   var on_table_click = function(evt, target)
   {
+    var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
+    var table_data = this._table.get_data();
+    
+    var texture = table_data[item_id].texture;
 
+    texture.show();
   };
 
 

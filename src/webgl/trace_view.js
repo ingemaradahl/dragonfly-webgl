@@ -94,7 +94,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   {
     var arg = this._current_trace[target["data-call-number"]].args[target["data-argument-number"]];
 
-    arg.perform();
+    arg.action();
   };
 
   this.tabledef = {
