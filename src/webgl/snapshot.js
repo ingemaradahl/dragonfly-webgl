@@ -239,13 +239,6 @@ cls.WebGLSnapshotArray = function(context_id)
     this.have_snapshot = true;
   };
 
-  function Buffer()
-  {
-  }
-
-
-
-
   /**
    * Creates a object that can be used to link in the UI to a WebGL object.
    */

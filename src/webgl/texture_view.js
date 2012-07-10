@@ -68,7 +68,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     if (!this._table)
     {
       this._table = new SortableTable(this.tabledef, null, ["name", "dimension"], null, "call", false, "texture-table");
-      this._table.group = this._make_group(this._table,
+      this._table.group = WebGLUtils.make_group(this._table,
         [ {group: "call",    remove: "call_index", add: "name"},
           {group: "texture", remove: "name",       add: "call_index"} ]
       );
@@ -80,27 +80,6 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this.ondestroy = function() 
   {
     this._container = null;
-  };
-
-  this._make_group = function(table, group_mutexes)
-  {
-    var orig_group = table.group.bind(table);
-    return function (group) {
-      for (var i=0; i<group_mutexes.length; i++)
-      {
-        var def = group_mutexes[i];
-        if (def.group === group)
-        {
-          this.columns = this.columns.filter(function(columns) { return columns !== def.remove});
-          if (this.columns.indexOf(def.add) === -1)
-            this.columns.unshift(def.add);
-
-          break;
-        }
-      }
-
-      orig_group(group);
-    }.bind(table);
   };
 
   this._render = function()
@@ -129,7 +108,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     var i = 0;
     this._content = snapshot.textures.map(function(texture) {
       return {
-        name: "Texture " + String(texture.index),
+        name: String(texture),
         dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
         texture: texture,
         call_index_val : texture.call_index, 
@@ -172,12 +151,12 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     },
     groups: {
       call: {
-        label: "Group by call", // TODO
+        label: "call", // TODO
         grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
         sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
       texture: {
-        label: "Group by texture", // TODO
+        label: "texture", // TODO
         grouper : function (res) { return res.name; }
       }
     }

@@ -50,6 +50,11 @@ cls.WebGLBufferView = function(id, name, container_class)
 
 cls.WebGLBufferView.prototype = ViewBase;
 
+
+
+
+
+
 /**
  * TODO: currently a temporary design of the view which displays data in a non user-friendly way.
  * @constructor
@@ -58,14 +63,20 @@ cls.WebGLBufferView.prototype = ViewBase;
 cls.WebGLBufferSideView = function(id, name, container_class)
 {
   this._container = null;
-  this._table = null;
   this._current_context = null;
   this._table_data = null;
 
   this.createView = function(container)
   {
     this._container = container;
-    this._table = this._table || new SortableTable(this.tabledef, null, null, null, null, false, "buffer-table");
+    if (!this._table)
+    {
+      this._table = new SortableTable(this.tabledef, null, ["name", "usage", "size"], null, "call", false, "buffer-table");
+      this._table.group = WebGLUtils.make_group(this._table,
+        [ {group: "call",    remove: "call_index", add: "name"},
+          {group: "buffer",  remove: "name",       add: "call_index"} ]
+      );
+    }
 
     this._render();
   };
@@ -104,11 +115,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     }
   };
 
-  this._on_refresh = function()
-  {
-  };
-
-  this._on_changed_snapshot = function(snapshot)
+  var on_changed_snapshot = function(snapshot)
   {
     var buffers = snapshot.buffers;
     this._table_data = this._format_buffer_table(buffers);
@@ -119,35 +126,40 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   this._format_buffer_table = function(buffers)
   {
     var tbl_data = [];
-    for (var key in buffers)
-    {
-      if (buffers.hasOwnProperty(key) && !isNaN(key)){
-        var buffer = buffers[key];
-        if (buffer == null) continue;
-
-        // Ugly and temporary.
-        else tbl_data.push({"number" : String(buffer.index), "target" : buffer.target_string(), "usage" : buffer.usage_string(), "size": String(buffer.size)});
-      }
-    }
-    return tbl_data;
+    var i = 0;
+    return buffers.map(function(buffer) {
+      return {
+        buffer : buffer,
+        name: String(buffer),
+        target : buffer.target_string(),
+        usage : buffer.usage_string(),
+        size : String(buffer.size),
+        call_index_val : buffer.call_index,
+        call_index : String(buffer.call_index === -1 ? " " : buffer.call_index+1),
+        id : i++
+      };
+    });
   };
 
-  this._on_table_click = function(evt, target)
+  var on_table_click = function(evt, target)
   {
-    var buffer_index = target.getAttribute("data-object-id");
-    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
-    var buffer = snapshot.buffers[buffer_index];
+    var buffer_index = Number(target.getAttribute("data-object-id"));
+    var table_data = this._table.get_data();
+    var buffer = table_data[buffer_index].buffer;
+
     buffer.show();
   };
 
   this.tabledef = {
     handler: "webgl-buffer-table",
-    idgetter: function(res) { return String(res.number); },
-    column_order: ["number", "target", "usage", "size"],
+    idgetter: function(res) { return String(res.id); },
+    column_order: ["name", "target", "usage", "size"],
     columns: {
-      number: {
-        label: "#",
-        sorter: "unsortable"
+      call_index: {
+        label: "Call"
+      },
+      name: {
+        label: "Buffer",
       },
       target: {
         label: "Target",
@@ -161,14 +173,23 @@ cls.WebGLBufferSideView = function(id, name, container_class)
         label: "Size",
         sorter: "unsortable"
       }
+    },
+    groups: {
+      call: {
+        label: "call", // TODO
+        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
+        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+      },
+      texture: {
+        label: "buffer", // TODO
+        grouper : function (res) { return res.name; }
+      }
     }
   };
 
   var eh = window.eventHandlers;
-  eh.click["refresh-webgl-buffer"] = this._on_refresh.bind(this);
-  eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
-
-  messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
+  eh.click["webgl-buffer-table"] = on_table_click.bind(this);
+  messages.addListener('webgl-changed-snapshot', on_changed_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };
