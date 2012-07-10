@@ -125,8 +125,7 @@ cls.WebGLSnapshotSelect = function(id)
     {
       this._selected_snapshot_index = snapshot_index;
       this._selected_context_id = context_id;
-      messages.post('webgl-changed-snapshot',
-          window.webgl.snapshots[context_id][snapshot_index]);
+      messages.post('webgl-selected-snapshot');
       return true;
     }
     return false;
