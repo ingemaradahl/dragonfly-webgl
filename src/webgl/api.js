@@ -80,6 +80,133 @@ cls.WebGLAPI = function ()
     return param.get_object(value);
   };
 
+
+  // Returns a html link to the specification of webgl a function on the 
+  // khronos site. The seconds argument, link_text, is the clickable text. 
+  // If this argument is empty, function_name will be used.
+  this.function_to_speclink = function(function_name, link_text)
+  {
+    var webgl_functions = {
+      activeTexture: '5.14.3',
+      blendColor: '5.14.3',
+      blendEquation: '5.14.3',
+      blendEquationSeparate: '5.14.3',
+      blendFunc: '5.14.3',
+      blendFuncSeparate: '5.14.3',
+      clearColor: '5.14.3',
+      clearDepth: '5.14.3',
+      clearStencil: '5.14.3',
+      colorMask: '5.14.3',
+      cullFace: '5.14.3',
+      depthFunc: '5.14.3',
+      depthMask: '5.14.3',
+      depthRange: '5.14.3',
+      disable: '5.14.3',
+      enable: '5.14.3',
+      frontFace: '5.14.3',
+      getParameter: '5.14.3',
+      getError: '5.14.3',
+      hint: '5.14.3',
+      isEnabled: '5.14.3',
+      lineWidth: '5.14.3',
+      pixelStorei: '5.14.3',
+      polygonOffset: '5.14.3',
+      sampleCoverage: '5.14.3',
+      stencilFunc: '5.14.3',
+      stencilFuncSeparate: '5.14.3',
+      stencilMask: '5.14.3',
+      stencilMaskSeparate: '5.14.3',
+      stencilOp: '5.14.3',
+      stencilOpSeparate: '5.14.3',
+      viewport: '5.14.4',
+      bufferData: '5.14.5',
+      bufferSubData: '5.14.5',
+      createBuffer: '5.14.5',
+      deleteBuffer: '5.14.5',
+      getBufferParameter: '5.14.5',
+      isBuffer: '5.14.5',
+      checkFramebufferStatus: '5.14.6',
+      createFramebuffer: '5.14.6',
+      deleteFramebuffer: '5.14.6',
+      framebufferRenderbuffer: '5.14.6',
+      framebufferTexture2D: '5.14.6',
+      getFramebufferAttachmentParameter: '5.14.6',
+      isFramebuffer: '5.14.6',
+      createRenderbuffer: '5.14.7',
+      deleteRenderbuffer: '5.14.7',
+      getRenderbufferParameter: '5.14.7',
+      isRenderbuffer: '5.14.7',
+      renderbufferStorage: '5.14.7',
+      compressedTexImage2D: '5.14.8',
+      compressedTexSubImage2D: '5.14.8',
+      copyTexImage2D: '5.14.8',
+      copyTexSubImage2D: '5.14.8',
+      createTexture: '5.14.8',
+      deleteTexture: '5.14.8',
+      generateMipmap: '5.14.8',
+      getTexParameter: '5.14.8',
+      isTexture: '5.14.8',
+      texImage2D: '5.14.8',
+      texParameterf: '5.14.8',
+      texParameteri: '5.14.8',
+      texSubImage2D: '5.14.8',
+      bindAttribLocation: '5.14.9',
+      compileShader: '5.14.9',
+      createProgram: '5.14.9',
+      createShader: '5.14.9',
+      deleteProgram: '5.14.9',
+      deleteShader: '5.14.9',
+      detachShader: '5.14.9',
+      getAttachedShaders: '5.14.9',
+      getProgramParameter: '5.14.9',
+      getProgramInfoLog: '5.14.9',
+      getShaderParameter: '5.14.9',
+      getShaderPrecisionFormat: '5.14.9',
+      getShaderInfoLog: '5.14.9',
+      getShaderSource: '5.14.9',
+      isProgram: '5.14.9',
+      isShader: '5.14.9',
+      linkProgram: '5.14.9',
+      shaderSource: '5.14.9',
+      useProgram: '5.14.9',
+      validateProgram: '5.14.9',
+      enableVertexAttribArray: '5.14.10',
+      getActiveAttrib: '5.14.10',
+      getActiveUniform: '5.14.10',
+      getAttribLocation: '5.14.10',
+      getUniform: '5.14.10',
+      getUniformLocation: '5.14.10',
+      getVertexAttrib: '5.14.10',
+      getVertexAttribOffset: '5.14.10',
+      uniform: '5.14.10',
+      uniformMatrix: '5.14.10',
+      vertexAttrib: '5.14.10',
+      vertexAttribPointer: '5.14.10',
+      getExtension: '5.14.14',
+      drawArrays: '5.14.11',
+      drawElements: '5.14.11',
+      finish: '5.14.11',
+      flush: '5.14.11'
+    }
+
+    var anchor = webgl_functions[function_name];
+    var ret;
+    if (link_text === undefined)
+    {
+      link_text = function_name;
+    }
+    if (anchor != undefined)
+    {
+      ret = "<a href=\"http://www.khronos.org/registry/webgl/specs/latest/#" + anchor + "\"";
+      ret += ">" + link_text + "</a>"; 
+      return ret;
+    }
+    else
+    {
+      return undefined;
+    }
+  }
+
   // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
   var webgl_constants = {
     ACTIVE_ATTRIBUTES: 35721,
