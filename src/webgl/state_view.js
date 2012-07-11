@@ -36,10 +36,7 @@ cls.WebGLStateView = function(id, name, container_class)
 
   this._render = function()
   {
-    if (!this._container)
-    {
-      return;
-    }
+    if (!this._container) return;
 
     if (this._table.get_data())
     {
@@ -147,7 +144,6 @@ cls.WebGLStateView = function(id, name, container_class)
 
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
-  messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
 
   this.init(id, name, container_class);

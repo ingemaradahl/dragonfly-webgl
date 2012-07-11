@@ -25,11 +25,13 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this.ondestroy = function()
   {
-    // TODO remove listeners
+    this._container = null;
   };
 
   this._render = function()
   {
+    if (!this._container) return;
+
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
     if (snapshot != null)
@@ -97,6 +99,12 @@ cls.WebGLTraceView = function(id, name, container_class)
     arg.action();
   };
 
+  this._on_selected_snapshot = function()
+  {
+    this._render();
+  };
+
+
   this.tabledef = {
     column_order: ["number", "call"],
     handler: "webgl-trace-table",
@@ -119,6 +127,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
   messages.addListener('webgl-changed-snapshot', this._render.bind(this));
+  messages.addListener('webgl-selected-snapshot', this._on_selected_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };
