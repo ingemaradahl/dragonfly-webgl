@@ -84,7 +84,7 @@ cls.WebGLAPI = function ()
   // Returns a html link to the specification of webgl a function on the 
   // khronos site. The seconds argument, link_text, is the clickable text. 
   // If this argument is empty, function_name will be used.
-  this.function_to_speclink = function(function_name, link_text)
+  this.function_to_speclink = function(function_name)
   {
     var webgl_functions = {
       activeTexture: '5.14.3',
@@ -190,15 +190,9 @@ cls.WebGLAPI = function ()
     }
 
     var anchor = webgl_functions[function_name];
-    var ret;
-    if (link_text === undefined)
-    {
-      link_text = function_name;
-    }
     if (anchor != undefined)
     {
-      ret = "<a href=\"http://www.khronos.org/registry/webgl/specs/latest/#" + anchor + "\"";
-      ret += ">" + link_text + "</a>"; 
+      var ret = "http://www.khronos.org/registry/webgl/specs/latest/#" + anchor;
       return ret;
     }
     else
