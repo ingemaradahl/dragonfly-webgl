@@ -81,9 +81,8 @@ cls.WebGLAPI = function ()
   };
 
 
-  // Returns a html link to the specification of webgl a function on the 
-  // khronos site. The seconds argument, link_text, is the clickable text. 
-  // If this argument is empty, function_name will be used.
+  // Returns a string with the url to the specification of webgl a function 
+  // on the khronos site. 
   this.function_to_speclink = function(function_name)
   {
     var webgl_functions = {
@@ -211,6 +210,7 @@ cls.WebGLAPI = function ()
       getExtension: '5.14.14',
       drawArrays: '5.14.11',
       drawElements: '5.14.11',
+      readPixels: '5.14.12',
       finish: '5.14.11',
       flush: '5.14.11'
     }
