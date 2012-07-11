@@ -285,8 +285,7 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
 
   if (fbo.flipped)
   {
-    img.push("class");
-    img.push("flipped");
+    img.push("class", "flipped");
   }
 
   var buffer_link = [ "span",
@@ -311,11 +310,32 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
       "class", "draw-call-info"
   ];
 
+  var loc = trace_call.loc;
+  var script_url = loc.short_url || loc.url;
+  var script_ref;
+  if (trace_call.loc.script_id == null)
+  {
+    script_ref = [
+      "span", "Called from " + loc.caller_name + " in " + script_url
+    ];
+  }
+  else
+  {
+    script_ref = [
+      "span", "Goto script",
+      "handler", "webgl-drawcall-goto-script",
+      "data-line", String(loc.line),
+      "data-script-id", String(loc.script_id),
+      "title", "Called from " + loc.caller_name + " in " + script_url
+    ];
+  }
+
   var html =
   [
     "div",
       [ "div",
-        ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)]
+        ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)],
+        script_ref
       ],
       state,
       img

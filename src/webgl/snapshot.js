@@ -41,7 +41,8 @@ cls.WebGLSnapshotArray = function(context_id)
         _array_elements: {
           _class: cls.WebGLBuffer,
           data: {
-            _action: cls.Scoper.ACTIONS.NOTHING
+            _action: cls.Scoper.ACTIONS.NOTHING,
+            _reviver: scoper.reviver_typed
           }
         }
       },
@@ -51,6 +52,13 @@ cls.WebGLSnapshotArray = function(context_id)
             img: {
               _action: cls.Scoper.ACTIONS.NOTHING
             }
+          }
+        }
+      },
+      call_locs: {
+        _array_elements: {
+          caller_function: {
+            _action: cls.Scoper.ACTIONS.NOTHING
           }
         }
       },
@@ -110,15 +118,42 @@ cls.WebGLSnapshotArray = function(context_id)
     this.buffers.lookup = lookup.bind(this.buffers);
     this.textures.lookup = lookup.bind(this.textures);
 
+    /**
+     * Tries to find a matching script id to the provided url.
+     * Can currently don't match inline scripts.
+     *
+     * TODO change implementation to make use of the Scope command GetFunctionPositions.
+     * The loc object in the trace call already contains the object id to the caller function.
+     */
+    var lookup_script_id = function(url)
+    {
+      var scripts = window.runtimes.getScripts(window.webgl.runtime_id);
 
-    var init_trace = function (calls, call_refs)
+      for (var key in scripts)
+      {
+        var script = scripts[key];
+        if (script.uri == null) continue;
+        if (script.uri === url)
+        {
+          return script.script_id;
+        }
+      }
+      return null;
+    };
+
+    var init_trace = function (calls, call_locs, call_refs)
     {
       var trace_list = [];
       var object_index_regexp = /^@([0-9]+)$/;
 
+      var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
+      var base_url = new RegExp("^(.*)/[^/]*$").exec(runtime.uri)[1] + "/";
+      var short_url_regexp = new RegExp("^" + base_url + "(.*)$");
+
       for (var j = 0; j < calls.length; j++)
       {
         var call = calls[j];
+        var loc = call_locs[j];
 
         // WebGL Function call
         var parts = call.split("|");
@@ -156,22 +191,26 @@ cls.WebGLSnapshotArray = function(context_id)
         }
         else if (object_index_regexp.test(result))
         {
-            var res_index = object_index_regexp.exec(result)[1];
-            result = new LinkedObject(call_refs[res_index], this);
+          var res_index = object_index_regexp.exec(result)[1];
+          result = new LinkedObject(call_refs[res_index], this);
         }
         else if (!isNaN(result))
         {
           result = Number(result);
         }
 
-        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args));
+        var script_id = lookup_script_id(loc.url);
+        loc.script_id = script_id;
+        loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
+
+        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args, loc));
       }
 
       this.trace = trace_list;
 
     }.bind(this);
 
-    init_trace(snapshot.calls, snapshot.call_refs);
+    init_trace(snapshot.calls, snapshot.call_locs, snapshot.call_refs);
 
     // Init draw calls
     var init_drawcall = function(drawcall)
@@ -205,7 +244,7 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Used to store a single function call in a frame trace.
    */
-  function TraceEntry(function_name, error_code, redundant, result, args)
+  function TraceEntry(function_name, error_code, redundant, result, args, loc)
   {
     this.function_name = function_name;
     this.error_code = error_code;
@@ -215,6 +254,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.result = result;
     this.have_result = result !== "";
     this.args = args;
+    this.loc = loc;
 
     this.snapshot = null;
     this.have_snapshot = false;

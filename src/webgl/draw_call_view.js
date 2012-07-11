@@ -43,7 +43,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var template = window.templates.webgl.drawcall(draw_call, trace_call);
     this._container.clearAndRender(template);
 
-    return; 
+    return;
   };
 
   var on_buffer_click = function(evt, target)
@@ -51,8 +51,23 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     target.buffer.show();
   };
 
+  var on_goto_script_click = function(evt, target)
+  {
+    var line = parseInt(target.getAttribute("data-line"));
+    var script_id = parseInt(target.getAttribute("data-script-id"));
+
+    var sourceview = window.views.js_source;
+    window.runtimes.setSelectedScript(script_id);
+    UI.get_instance().show_view("js_mode");
+    if (sourceview)
+    {
+      sourceview.show_and_flash_line(script_id, line);
+    }
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-drawcall-buffer"] = on_buffer_click.bind(this);
+  eh.click["webgl-drawcall-goto-script"] = on_goto_script_click.bind(this);
 
   this.init(id, name, container_class);
 };

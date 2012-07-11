@@ -131,19 +131,44 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame)
         {
-          handler.snapshot.add_call(function_name, error, arguments, result, redundant);
+          var loc;
+          try
+          {
+            cause_error += 1;
+          }
+          catch (e)
+          {
+            var caller = arguments.callee.caller;
+            loc = analyse_stacktrace(e.stacktrace, caller);
+          }
+
+          handler.snapshot.add_call(function_name, error, arguments, result, redundant, loc);
 
           var snapshot_function = snapshot_functions[function_name];
           if (snapshot_function)
           {
             snapshot_function.call(handler, result, arguments);
           }
-
         }
         return result;
       };
     }
 
+    var stacktrace_regexp = new RegExp("^called from line (\\d+), column (\\d+) in ([^(]+)\\([^)]*\\) in (.+):$");
+    function analyse_stacktrace(stacktrace, caller)
+    {
+      var lines = stacktrace.split("\n");
+      if (lines.length < 3) return null;
+      var matches = stacktrace_regexp.exec(lines[2]);
+      if (matches.length < 5) return null;
+      return {
+        line: Number(matches[1]),
+        column: Number(matches[2]),
+        caller_name: matches[3],
+        url: matches[4],
+        caller_function: caller
+      };
+    }
 
     var innerFuns = {};
     innerFuns.bindFramebuffer = function(result, args)
@@ -1082,6 +1107,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.call_index = -1;
     this.calls = [];
+    this.call_locs = [];
     this.call_refs = [];
 
     this.drawcalls = [];
@@ -1125,7 +1151,7 @@ cls.WebGL.RPCs.injection = function () {
     }.bind(this);
 
     /* Adds a WebGL function call to the snapshot */
-    this.add_call = function (function_name, error, args, result, redundant)
+    this.add_call = function (function_name, error, args, result, redundant, loc)
     {
       /**
        * Pairs a trace argument with a WebGL object.
@@ -1206,6 +1232,8 @@ cls.WebGL.RPCs.injection = function () {
           call_args = call_args.slice(0, 6);
         }
       }
+
+      this.call_locs.push(loc);
 
       var res = result === undefined ? "" : result;
 
@@ -1393,6 +1421,7 @@ cls.WebGL.RPCs.injection = function () {
         index : this.index,
         frame : this.frame,
         calls : this.calls,
+        call_locs : this.call_locs,
         call_refs : this.call_refs,
         buffers : this.buffers,
         programs : this.programs,
