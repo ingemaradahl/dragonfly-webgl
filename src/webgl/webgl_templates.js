@@ -313,7 +313,11 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   var loc = trace_call.loc;
   var script_url = loc.short_url || loc.url;
   var script_ref;
-  if (trace_call.loc.script_id == null)
+  if (trace_call.loc == null)
+  {
+    script_ref = [];
+  }
+  else if (trace_call.loc.script_id == null)
   {
     script_ref = [
       "span", "Called from " + loc.caller_name + " in " + script_url
