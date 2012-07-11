@@ -85,7 +85,7 @@ cls.WebGLSnapshotArray = function(context_id)
           }
         }
       },
-      _depth: 7,
+      _depth: 9,
       _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
     });
 
@@ -189,9 +189,26 @@ cls.WebGLSnapshotArray = function(context_id)
     // Init draw calls
     var init_drawcall = function(drawcall)
     {
-      this.trace[drawcall.call_index].drawcall = true;
-      drawcall.buffer = this.buffers.lookup(drawcall.buffer_index, drawcall.call_index);
-      // TODO: Same for programs
+      var call_index = drawcall.call_index;
+      this.trace[call_index].drawcall = true;
+
+      // Connect buffers to vetrex attribute bindings
+      for (var i=0; i<drawcall.program.attributes.length; i++)
+      {
+        var attribute = drawcall.program.attributes[i];
+        var buffer = this.buffers.lookup(attribute.pointer.buffer_index, call_index);
+        attribute.buffer = buffer;
+        delete attribute.buffer_index;
+
+        if (buffer.vertex_attribs[call_index])
+        {
+          buffer.vertex_attribs[call_index].push(attribute);
+        }
+        else
+        {
+          buffer.vertex_attribs[call_index] = [attribute];
+        }
+      }
 
       this.drawcalls.push(drawcall);
     };

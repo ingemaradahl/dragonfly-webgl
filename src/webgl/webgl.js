@@ -56,46 +56,6 @@ cls.WebGL.WebGLDebugger = function ()
     messages.post('webgl-clear');
   };
 
-  this.request_test = function (ctx)
-  {
-    if (this.available())
-    {
-      window.webgl._start_time = (new Date()).getTime();
-      // TODO choosen context
-      ctx = (ctx || this.contexts[0]);
-      this.test._send_test_query(ctx);
-    }
-  };
-
-  // Request for texture names.
-  this.request_textures = function(ctx)
-  {
-    if (this.available())
-    {
-      ctx = (ctx || this.contexts[0]);
-      this.texture._send_texture_query(ctx);
-    }
-  };
-
-  // Request for one texture image data string.
-  this.request_texture_data = function(ctx, texture_id)
-  {
-    if (this.available())
-    {
-      ctx = (ctx || this.contexts[0]);
-      this.texture._get_texture_data(ctx, texture_id);
-    }
-  };
-
-  this.request_state = function (ctx)
-  {
-    if (this.available())
-    {
-      ctx = (ctx || this.contexts[0]);
-      this.state.send_state_query(ctx);
-    }
-  };
-
   /**
    * Gets a snapshot of WebGL state for the next frame.
    * @param context_id Id of the context which should be traced.
@@ -104,12 +64,6 @@ cls.WebGL.WebGLDebugger = function ()
   {
     context_id = context_id || this.contexts[0];
     this.snapshots[context_id].send_snapshot_request();
-  };
-
-  this.request_buffer_data = function(context_object_id, buffer_index)
-  {
-    var buffer = this.data[context_object_id].buffers[buffer_index];
-    this.buffer.get_buffer_data(buffer_index, buffer);
   };
 
   this._send_injection = function (rt_id, cont_callback)
@@ -170,8 +124,6 @@ cls.WebGL.WebGLDebugger = function ()
         {
           case "debugger_ready":
           case "request_snapshot":
-          case "enable_buffers_update":
-          case "disable_buffers_update":
             handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
             break;
           default:
@@ -226,29 +178,26 @@ cls.WebGL.WebGLDebugger = function ()
     gl.programs = {};
     var shaders = this.shaders;
 
-    var compile_texture_program = function ()
+    var compile_buffer_program = function ()
     {
       var program = WebGLUtils.compile_program(
-        shaders["texture-vs"],
-        shaders["texture-fs"]
+        shaders["buffer-vs"],
+        shaders["buffer-fs"]
       );
 
       gl.useProgram(program);
 
       program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
       gl.enableVertexAttribArray(program.positionAttrib);
-
-      program.uvAttrib = gl.getAttribLocation(program, "aTexturePosition");
-      gl.enableVertexAttribArray(program.uvAttrib);
-
-      program.samplerUniform = gl.getUniformLocation(program, "uTexture");
+      program.pMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
+      program.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
 
       gl.useProgram(null);
 
       return program;
     };
 
-    gl.programs.texture = compile_texture_program();
+    gl.programs.buffer = compile_buffer_program();
   };
 
   var load_shaders = function(callback)

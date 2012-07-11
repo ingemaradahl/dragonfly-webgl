@@ -163,6 +163,7 @@ cls.WebGL.RPCs.injection = function () {
       var i = this.buffers.push(buf);
       buf.index = i - 1;
       buf.data = [];
+      buf.layouts = [];
     };
     innerFuns.bindBuffer = function(result, args)
     {
@@ -207,6 +208,7 @@ cls.WebGL.RPCs.injection = function () {
         buffer.data = clone_array(new_data);
         // TODO: Make data cloning a selectable option?
       }
+      buffer.target = target;
       buffer.usage = args[2];
       return redundant;
     };
@@ -435,10 +437,64 @@ cls.WebGL.RPCs.injection = function () {
           name : active_attribute.name,
           loc  : loc,
           type : active_attribute.type,
-          size : active_attribute.size
+          size : active_attribute.size,
+          pointer : {layout : null, buffer_index:null}
         });
       }
       program_obj.attributes = attributes;
+    };
+
+    innerFuns.vertexAttribPointer = function(result, args)
+    {
+      var buffer = this.buffer_binding[this.gl.ARRAY_BUFFER];
+      var program = this.lookup_program(this.bound_program);
+
+      var index = args[0];
+      var size = args[1];
+      var type = args[2];
+      var normalized = args[3];
+      var stride = args[4];
+      var offset = args[5];
+
+      var redundant = false;
+
+      var layout = { 
+        index : index,
+        size : size,
+        type : type,
+        normalized : normalized,
+        stride : stride,
+        offset : offset
+      };
+
+      // A bit ugly, but optimized for speed not beauty
+      for (var i=0; i<program.attributes.length; i++)
+      {
+        var attrib = program.attributes[i];
+        if (attrib.loc !== index) continue;
+
+        var l = attrib.pointer.layout;
+        if (attrib.pointer.buffer_index === buffer.index &&
+            l.size === layout.size && 
+            l.type === layout.type && 
+            l.normalized === layout.normalized && 
+            l.stride === layout.stride && 
+            l.offset === layout.offset)
+        {
+          redundant = true;
+          break;
+        }
+        else
+        {
+          attrib.pointer = { 
+            buffer_index : buffer.index,
+            layout : layout
+          };
+          break;
+        }
+      }
+
+      return redundant;
     };
 
     // Uniforms
@@ -593,7 +649,9 @@ cls.WebGL.RPCs.injection = function () {
           flipped : true
         };
 
-        this.snapshot.add_drawcall(img, gl.getParameter(gl.CURRENT_PROGRAM), target, buffer.index);
+        var program_state = this.get_program_state();
+        
+        this.snapshot.add_drawcall(img, target, buffer.index, program_state);
 
         // Check whether an color attachment texture have been drawn to
         if (fbo)
@@ -675,6 +733,8 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
+    //canvas.onframeend = this.new_frame.bind(this);
+
     var orig_getError = this.getError;
     this.getError = function()
     {
@@ -713,6 +773,8 @@ cls.WebGL.RPCs.injection = function () {
    */
   function Handler(context, gl, canvas)
   {
+
+
     this.gl = gl;
     this.context = context;
 
@@ -749,8 +811,6 @@ cls.WebGL.RPCs.injection = function () {
     {
       return this._interface;
     };
-
-
 
     /* Requests a snapshot of all WebGL data for the next frame */
     this.request_snapshot = function()
@@ -1004,21 +1064,17 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_program_state = function(program)
     {
-      var gl = this.gl;
-
-      program = program || gl.getParameter(gl.CURRENT_PROGRAM);
+      program = program || this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
 
       if (!program)
-      {
         return null;
-      }
 
+      var gl = this.gl;
       var program_obj = this.lookup_program(program);
 
       var state =
       {
         index : program_obj.index,
-        shaders : program_obj.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
         attributes : [],
         uniforms : []
       };
@@ -1033,10 +1089,9 @@ cls.WebGL.RPCs.injection = function () {
           loc  : attribute.loc,
           type : attribute.type,
           size : attribute.size,
-          binding : buffer_binding ? buffer_binding.index : null
+          pointer : attribute.pointer
         });
       }
-
 
       for (var index=0; index<program_obj.uniforms.length; index++)
       {
@@ -1130,10 +1185,9 @@ cls.WebGL.RPCs.injection = function () {
         for (var i=0; i<h.programs.length; i++)
         {
           var prg = h.programs[i];
-          var state = this.handler.get_program_state(prg.program);
-          state.call_index = this.call_index;
+          var info = this.handler.get_program_info(prg.program);
 
-          this.programs.push(state);
+          this.programs.push(info);
         }
       }.bind(this);
 
@@ -1233,16 +1287,14 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index = this.calls.push([function_name, error, res, redundant ? true : false].concat(call_args).join("|")) - 1;
     };
 
-    this.add_drawcall = function (fbo, program, buffer_target, buffer_index)
+    this.add_drawcall = function (fbo, buffer_target, buffer_index, program_state)
     {
-      var program_obj = this.handler.lookup_program(program);
 
       this.drawcalls.push({
         call_index : this.call_index,
         fbo : fbo,
-        buffer_target : buffer_target,
-        buffer_index : buffer_index,
-        program_index : program_obj.index
+        program : program_state,
+        element_buffer : buffer_target === gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });
     };
 
@@ -1252,7 +1304,6 @@ cls.WebGL.RPCs.injection = function () {
       var buffer_state = {
         call_index : this.call_index,
         index : buffer.index,
-        //buffer : buffer.buffer
       };
 
       if (buffer.data)
@@ -1260,6 +1311,7 @@ cls.WebGL.RPCs.injection = function () {
         buffer_state.data = buffer.data;
         buffer_state.size = buffer.size;
         buffer_state.usage = buffer.usage;
+        buffer_state.target = buffer.target;
       }
 
       this.buffers.push(buffer_state);

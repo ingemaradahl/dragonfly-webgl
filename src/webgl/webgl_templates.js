@@ -16,6 +16,12 @@ window.templates.webgl.buffer_base = function(buffer)
     data_table = ["div", "Loading buffer data."];
   }
 
+  var buffer_display = [];
+  if (window.webgl.gl)
+  {
+    buffer_display = [ "div", "", "id", "webgl-canvas-holder", "class", "webgl-holder"];
+  }
+
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
@@ -56,6 +62,7 @@ window.templates.webgl.buffer_base = function(buffer)
           ]
         ]
       ],
+      buffer_display,
       data_table
     ]
   ];

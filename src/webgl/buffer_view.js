@@ -19,10 +19,67 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._render();
   };
 
+  var add_canvas = function()
+  {
+    var canvas_holder = document.getElementById("webgl-canvas-holder");
+    canvas_holder.appendChild(window.webgl.gl.canvas);
+
+    // TODO temporary
+    window.webgl.gl.canvas.width = 250;
+    window.webgl.gl.canvas.height = 250;
+  };
+
+  var draw_mesh = function(gl)
+  {
+    var buffer = this._buffer;
+    if (!buffer.data_is_loaded() || buffer.target === gl.ELEMENT_ARRAY_BUFFER)
+      return;
+
+    if (!buffer.gl_buffer)
+    {
+      buffer.gl_buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer); // TODO: actual target
+      gl.bufferData(gl.ARRAY_BUFFER, buffer.data, gl.STATIC_DRAW);
+    }
+    
+    var width = gl.canvas.width;
+    var height = gl.canvas.height;
+
+    var program = gl.programs.buffer;
+
+    gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
+    gl.viewport(0, 0, width, height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.useProgram(program);
+
+    var pMatrix = mat4.create();
+    mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
+
+    var mvMatrix = mat4.create();
+    mat4.identity(mvMatrix);
+    mat4.translate(mvMatrix, [0.0, 0.0, 2.0]);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer);
+    gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, 0, 0);
+
+    gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
+    gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
+
+    gl.drawArrays(gl.TRIANGLES, 0, Math.floor(buffer.data.length/3));
+  }.bind(this);
+
   this._render = function()
   {
     if (this._content == null) return;
     this._container.clearAndRender(this._content);
+
+    var gl = window.webgl.gl;
+    if (gl)
+    {
+      add_canvas();
+      draw_mesh(gl);
+    }
   };
 
   this.ondestroy = function()
@@ -34,6 +91,7 @@ cls.WebGLBufferView = function(id, name, container_class)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
 
+    this._buffer = buffer;
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };
