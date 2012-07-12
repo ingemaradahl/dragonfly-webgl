@@ -328,10 +328,10 @@ window.templates.webgl.generic_call = function(trace_call, call)
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-  var function_call = 
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
-  var callnr = parseInt(call) + 1; // Start call count on 1. 
-  
+  var function_call =
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
+  var callnr = parseInt(call) + 1; // Start call count on 1.
+
   var func_text = ["span", function_name];
   var content = [func_text];
   content.push("(");
@@ -349,16 +349,16 @@ window.templates.webgl.generic_call = function(trace_call, call)
           "arg", arg);
     }
     if (i>0) content.push(", ");
-    content.push(html); 
+    content.push(html);
   }
   content.push(")");
 
 
-  var ret = ["div", ["h2", "Call: " + callnr], 
+  var ret = ["div", ["h2", "Call: " + callnr],
                      content,
                      ["p", spec_link],
                      "class", "draw-call-info"
-             ];  
+             ];
   return ret;
 };
 
@@ -459,7 +459,11 @@ window.templates.webgl.uniform_table = function(call_index, program)
       ],
       [
         "td",
-        "value"
+        "Type"
+      ],
+      [
+        "td",
+        "Value"
       ]
     ],
     "class", "header"
@@ -493,8 +497,12 @@ window.templates.webgl.uniform_table = function(call_index, program)
       "tr",
       [
         [
-          "th",
+          "td",
           uniform.name
+        ],
+        [
+          "td",
+          window.webgl.api.constant_value_to_string(uniform.type)
         ],
         [
           "td",
