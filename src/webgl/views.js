@@ -136,7 +136,7 @@ cls.WebGLSnapshotSelect = function(id)
     if (!this.disabled) return;
     this.disabled = false;
     this._selected_context_id = ctx_id;
-    this.updateElement();
+    window.topCell.tab.setActiveTab("webgl_mode", true);
   };
 
   this._on_new_snapshot = function(ctx_id)
@@ -151,7 +151,7 @@ cls.WebGLSnapshotSelect = function(id)
     var snapshot = snapshots[ctx_id].get_latest_snapshot();
     messages.post("webgl-changed-snapshot", snapshot);
     this.updateElement();
-    
+
     window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
   };
 
@@ -161,9 +161,17 @@ cls.WebGLSnapshotSelect = function(id)
     console.log("take snapshot");
   };
 
+  var clear = function()
+  {
+    this.disabled = true;
+    this._selected_snapshot_index = null;
+    this._selected_context_id = null;
+  };
+
   messages.addListener('webgl-new-context', this._on_new_context.bind(this));
   messages.addListener('webgl-new-snapshot', this._on_new_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
+  messages.addListener('webgl-clear', clear.bind(this));
 
   this.init(id);
 };

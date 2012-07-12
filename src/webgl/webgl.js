@@ -41,6 +41,10 @@ cls.WebGL.WebGLDebugger = function ()
           this._on_new_context.bind(this), false, false);
       this._send_injection(rt_id, cont_callback);
     }
+    else
+    {
+      cont_callback();
+    }
   };
 
   this.available = function ()
@@ -53,6 +57,7 @@ cls.WebGL.WebGLDebugger = function ()
     this.injected = false;
     this.runtime_id = -1;
     this.contexts = [];
+    this.snapshots = [];
 
     messages.post('webgl-clear');
   };

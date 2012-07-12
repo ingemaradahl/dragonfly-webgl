@@ -15,13 +15,13 @@ cls.WebGLTestView = function(id, name, container_class)
 
     if (window.webgl.available())
     {
-      window.webgl.request_test();
+      //window.webgl.request_test();
 		}
 
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     this._container = null;
     // TODO remove listeners
@@ -44,6 +44,9 @@ cls.WebGLTestView = function(id, name, container_class)
     {
       return;
     }
+
+    this._container.clearAndRender("Disabled.");
+    return;
 
     if (window.webgl.available() && this._test_done )
  		{
@@ -77,14 +80,14 @@ cls.WebGLTestView = function(id, name, container_class)
 			['div',
 				['p', "Test done"],
 				['p', "Execution time: " + (this._test_time/1000)
-					+ " seconds."			
+					+ " seconds."
 				],
 				['p', "Size of payload: " + this._data_length ],
-				// Assuming a string, every character 16bit long. 
+				// Assuming a string, every character 16bit long.
 				// Last division by 1000000 for Mbit/s
-				['p', "Estimated speed: " + 
-					Math.round((16*this._data_length) / (this._test_time/1000) / 1000000) 
-					+ " Mbit/s"],	
+				['p', "Estimated speed: " +
+					Math.round((16*this._data_length) / (this._test_time/1000) / 1000000)
+					+ " Mbit/s"],
 			'class', 'info-box'
 			]
 		);

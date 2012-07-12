@@ -3,6 +3,21 @@
 window.templates = window.templates || {};
 window.templates.webgl = window.templates.webgl || {};
 
+
+window.templates.webgl.reload_info = function(buffer)
+{
+  return [
+    "div",
+    [
+      "span", "",
+      "class", "ui-button reload-window",
+      "handler", "reload-window",
+      "tabindex", "1"
+    ],
+    "class", "info-box"
+  ];
+};
+
 window.templates.webgl.buffer_base = function(buffer)
 {
   var MAX_NUM_ELEMENTS = 1000;

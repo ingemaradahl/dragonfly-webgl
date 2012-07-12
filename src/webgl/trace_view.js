@@ -34,7 +34,11 @@ cls.WebGLTraceView = function(id, name, container_class)
 
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    if (snapshot != null)
+    if (window.webgl.runtime_id === -1)
+    {
+      this._container.clearAndRender(window.templates.webgl.reload_info());
+    }
+    else if (snapshot != null)
     {
       var trace = snapshot.trace;
       this._current_trace = trace;
