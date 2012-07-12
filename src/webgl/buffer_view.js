@@ -32,41 +32,65 @@ cls.WebGLBufferView = function(id, name, container_class)
   var draw_mesh = function(gl)
   {
     var buffer = this._buffer;
-    if (!buffer.data_is_loaded() || buffer.target === gl.ELEMENT_ARRAY_BUFFER)
+
+    if (buffer.target === gl.ELEMENT_ARRAY_BUFFER)
       return;
 
-    if (!buffer.gl_buffer)
+    var layouts = buffer.vertex_attribs;
+    var layout = null;
+    var element_buffer = undefined;
+    for (var key in layouts)
     {
-      buffer.gl_buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer); // TODO: actual target
-      gl.bufferData(gl.ARRAY_BUFFER, buffer.data, gl.STATIC_DRAW);
+      if (!layouts.hasOwnProperty(key)) continue;
+      layout = layouts[key].last.pointer.layout;
+      element_buffer = layouts[key].element_buffer;
+      break;
     }
+
+    if (!buffer.data_is_loaded() || !(element_buffer && element_buffer.data_is_loaded()))
+      return;
     
-    var width = gl.canvas.width;
-    var height = gl.canvas.height;
+    var drawer = new cls.WebGLMeshDrawer(gl, gl.programs.buffer, this._buffer, element_buffer);
+    drawer.draw_buffer_layout(this._buffer, layout, element_buffer);
+    drawer.render();
 
-    var program = gl.programs.buffer;
+    //var buffer = this._buffer;
+    //if (!buffer.data_is_loaded() || buffer.target === gl.ELEMENT_ARRAY_BUFFER)
+    //  return;
 
-    gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
-    gl.viewport(0, 0, width, height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    //if (!buffer.gl_buffer)
+    //{
+    //  buffer.gl_buffer = gl.createBuffer();
+    //  gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer); // TODO: actual target
+    //  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer.data), gl.STATIC_DRAW);
+    //}
+    //
+    //var width = gl.canvas.width;
+    //var height = gl.canvas.height;
 
-    gl.useProgram(program);
+    //var program = gl.programs.buffer;
 
-    var pMatrix = mat4.create();
-    mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
+    //gl.clearColor(Math.random(), Math.random(), Math.random(), 0.0);
+    //gl.viewport(0, 0, width, height);
+    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    var mvMatrix = mat4.create();
-    mat4.identity(mvMatrix);
-    mat4.translate(mvMatrix, [0.0, 0.0, 2.0]);
+    //gl.useProgram(program);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer);
-    gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, 0, 0);
+    //var pMatrix = mat4.create();
+    //mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
 
-    gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
-    gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
+    //var mvMatrix = mat4.create();
+    //mat4.identity(mvMatrix);
+    //mat4.translate(mvMatrix, [0.0, 0.0, -2.0]);
 
-    gl.drawArrays(gl.TRIANGLES, 0, Math.floor(buffer.data.length/3));
+    //gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer);
+
+    //gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, 0, 0);
+
+    //gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
+    //gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
+
+    //gl.drawArrays(gl.TRIANGLES, 0, Math.floor(buffer.data.length/3));
   }.bind(this);
 
   this._render = function()

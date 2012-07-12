@@ -69,7 +69,7 @@ cls.WebGL.RPCs.injection = function () {
     window.setTimeout(fun, 1000 / 60);
     for (var c = 0; c < contexts.length; c++)
     {
-      if (contexts[c].new_frame) contexts[c].new_frame();
+      if (contexts[c].new_frame) null; //contexts[c].new_frame();
     }
   };
 
@@ -733,7 +733,7 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
-    //canvas.onframeend = this.new_frame.bind(this);
+    canvas.onframeend = this.new_frame.bind(this);
 
     var orig_getError = this.getError;
     this.getError = function()

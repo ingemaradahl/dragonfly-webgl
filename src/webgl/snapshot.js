@@ -192,6 +192,12 @@ cls.WebGLSnapshotArray = function(context_id)
       var call_index = drawcall.call_index;
       this.trace[call_index].drawcall = true;
 
+      // Link up eventual element array buffer if it was used
+      if (drawcall.element_buffer)
+      {
+        drawcall.element_buffer = this.buffers.lookup(drawcall.element_buffer, call_index);
+      }
+
       // Connect buffers to vetrex attribute bindings
       for (var i=0; i<drawcall.program.attributes.length; i++)
       {
@@ -207,6 +213,11 @@ cls.WebGLSnapshotArray = function(context_id)
         else
         {
           buffer.vertex_attribs[call_index] = [attribute];
+        }
+
+        if (drawcall.element_buffer)
+        {
+          buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
         }
       }
 

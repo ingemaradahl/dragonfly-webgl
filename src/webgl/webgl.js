@@ -175,6 +175,8 @@ cls.WebGL.WebGLDebugger = function ()
       return;
     }
 
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+
     gl.programs = {};
     var shaders = this.shaders;
 

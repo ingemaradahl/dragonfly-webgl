@@ -423,6 +423,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/webgl.js"/>
 <script src="./webgl/scoper.js"/>
 <script src="./webgl/utils.js"/>
+<script src="./webgl/mesh_drawer.js"/>
 <script src="./webgl/api.js"/>
 <script src="./webgl/snapshot.js"/>
 <script src="./webgl/program.js"/>
