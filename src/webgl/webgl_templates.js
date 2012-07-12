@@ -278,6 +278,20 @@ window.templates.webgl.texture = function(texture)
   ];
 };
 
+window.templates.webgl.generic_call = function(trace_call, call)
+{
+  var function_name = trace_call.function_name;
+  var spec_link = ["span", "Specification", 
+                   "handler", "webgl-speclink-click",
+                   "class", "link",
+                   "function_name",
+                    window.webgl.api.function_to_speclink(function_name)
+                  ];
+  var html =
+    ["div", ["h2", "Call: " + call], ["p", function_name] , spec_link];  
+  return html;
+};
+
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var fbo = draw_call.fbo;

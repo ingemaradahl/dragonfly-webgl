@@ -36,7 +36,9 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
     if (!draw_call)
     {
-      this._container.innerHTML = "No framebuffer snapshot for call " + call;
+      var template = window.templates.webgl.generic_call(trace_call, call);
+      this._container.clearAndRender(template);
+      //this._container.innerHTML = "No framebuffer snapshot for call " + call;
       return;
     }
 
@@ -51,8 +53,14 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     target.buffer.show();
   };
 
+  var on_speclink_click = function(evt, target)
+  {
+      window.open(target.getAttribute("function_name"));
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-drawcall-buffer"] = on_buffer_click.bind(this);
+  eh.click["webgl-speclink-click"] = on_speclink_click.bind(this);
 
   this.init(id, name, container_class);
 };
