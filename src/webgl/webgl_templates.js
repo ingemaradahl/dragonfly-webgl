@@ -328,8 +328,14 @@ window.templates.webgl.generic_call = function(trace_call, call)
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-  var html =
-    ["div", ["h2", "Call: " + call], ["p", function_name] , spec_link];
+  var function_call = 
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args) 
+ 
+  var callnr = parseInt(call) + 1; 
+  var html = ["div", ["h2", "Call: " + callnr], 
+                     ["p", function_call],
+                     ["p", spec_link]
+             ];  
   return html;
 };
 
