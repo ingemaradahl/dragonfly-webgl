@@ -322,19 +322,23 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.generic_call = function(trace_call, call)
 {
   var function_name = trace_call.function_name;
+  var function_call = 
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
+  var callnr = parseInt(call) + 1; // Start call count on 1. 
+
+  // Makes a link to the webgl specification of the actual function. 
   var spec_link = ["span", "Goto Specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-  var function_call = 
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
-  var callnr = parseInt(call) + 1; // Start call count on 1. 
-  
+
+  // The following code is to build a function call string. It checks for 
+  // arguments that are clickable and make a link.
   var func_text = ["span", function_name];
-  var content = [func_text];
-  content.push("(");
+  var function_string = [func_text];
+  function_string.push("(");
   var argobj =
       window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
   for (var i=0; i<argobj.length; i++)
@@ -348,14 +352,14 @@ window.templates.webgl.generic_call = function(trace_call, call)
           "class", "link",
           "arg", arg);
     }
-    if (i>0) content.push(", ");
-    content.push(html); 
+    if (i>0) function_string.push(", ");
+    function_string.push(html); 
   }
-  content.push(")");
-
+  function_string.push(")");
+  // End
 
   var ret = ["div", ["h2", "Call: " + callnr], 
-                     content,
+                     function_string,
                      ["p", spec_link],
                      "class", "draw-call-info"
              ];  
