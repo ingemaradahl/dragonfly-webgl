@@ -214,15 +214,13 @@ window.templates.webgl.trace_table = function(calls, view_id)
 
 window.templates.webgl.texture = function(texture)
 {
-  var api = window.webgl.api;
-  var image_source = [];
+  var image_source = null;
   if (texture.img && texture.img.source)
   {
-    image_source = [
-      "tr",
-      ["th", "Image source"],
-      ["td", texture.img.source]
-    ];
+    image_source = {
+      name: "Image source",
+      value: texture.img.source
+    };
   }
 
   var img = [];
@@ -235,7 +233,8 @@ window.templates.webgl.texture = function(texture)
       img.push("flipped");
     }
   }
-  else {
+  else
+  {
     img = ["div",
       ["img", "src", "./ui-images/loading.png"],
       "class", "loading-image",
@@ -243,46 +242,73 @@ window.templates.webgl.texture = function(texture)
     ];
   }
 
+  var const_to_string = window.webgl.api.constant_value_to_string;
+
+  var border_info = !texture.border ? null : {
+    name: "Border",
+    value: String(texture.border)
+  };
+
+  var texture_info = [
+    {
+      name: "Source",
+      value: texture.element_type
+    },
+    image_source,
+    {
+      name: "Dimensions",
+      value: texture.height + "x" + texture.width + " px"
+    },
+    {
+      name: "Format",
+      value: const_to_string(texture.format)
+    },
+    {
+      name: "Internal format",
+      value: const_to_string(texture.internalFormat)
+    },
+    {
+      name: "Type",
+      value: const_to_string(texture.type)
+    },
+    border_info,
+    {
+      name: "TEXTURE_WRAP_S",
+      value: const_to_string(texture.texture_wrap_s)
+    },
+    {
+      name: "TEXTURE_WRAP_T",
+      value: const_to_string(texture.texture_wrap_t)
+    },
+    {
+      name: "TEXTURE_MIN_FILTER",
+      value: const_to_string(texture.texture_min_filter)
+    },
+    {
+      name: "TEXTURE_MAG_FILTER",
+      value: const_to_string(texture.texture_mag_filter)
+    }
+  ];
+
+  var info_table_rows = texture_info.map(function(info){
+    return info == null ? [] : [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  });
+
   var info_table = [
     "table",
-    ["tr",
-      ["th", "Source"],
-      ["td", texture.element_type]
-    ],
-    image_source,
-    ["tr",
-      ["th", "Dimensions"],
-      ["td", texture.height + "px * "+ texture.width +"px"]
-    ],
-    ["tr",
-      ["th", "format"],
-      ["td", api.constant_value_to_string(texture.format) ]
-    ],
-    ["tr",
-      ["th", "internalFormat"],
-      ["td", api.constant_value_to_string(texture.internalFormat) ]
-    ],
-    ["tr",
-      ["th", "type"],
-      ["td", api.constant_value_to_string(texture.type) ]
-    ],
-    texture.border ? ["tr", ["th", "border"], ["td", String(texture.border)]] : [],
-    ["tr",
-      ["th", "TEXTURE_WRAP_S"],
-      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_s)]
-    ],
-    ["tr",
-      ["th", "TEXTURE_WRAP_T"] ,
-      ["td", window.webgl.api.constant_value_to_string(texture.texture_wrap_t)]
-    ],
-    ["tr",
-      ["th", "TEXTURE_MIN_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(texture.texture_min_filter)]
-    ],
-    ["tr",
-      ["th", "TEXTURE_MAG_FILTER"],
-      ["td", window.webgl.api.constant_value_to_string(texture.texture_mag_filter)]
-    ],
+    info_table_rows,
     "class", "table-info"
   ];
 
@@ -296,14 +322,14 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.generic_call = function(trace_call, call)
 {
   var function_name = trace_call.function_name;
-  var spec_link = ["span", "Specification", 
+  var spec_link = ["span", "Specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
   var html =
-    ["div", ["h2", "Call: " + call], ["p", function_name] , spec_link];  
+    ["div", ["h2", "Call: " + call], ["p", function_name] , spec_link];
   return html;
 };
 

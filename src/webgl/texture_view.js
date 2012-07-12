@@ -50,12 +50,7 @@ cls.WebGLTextureView = function(id, name, container_class)
 
 cls.WebGLTextureView.prototype = ViewBase;
 
-
-
-
-
-
-
+// ----------------------------------------------------------------------------
 
 cls.WebGLTextureSideView = function(id, name, container_class)
 {
@@ -77,7 +72,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._render();
   };
 
-  this.ondestroy = function() 
+  this.ondestroy = function()
   {
     this._container = null;
   };
@@ -111,11 +106,11 @@ cls.WebGLTextureSideView = function(id, name, container_class)
         name: String(texture),
         dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
         texture: texture,
-        call_index_val : texture.call_index, 
+        call_index_val : texture.call_index,
         call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
         id : i++
       };
-    
+
     });
 
     this._render();
@@ -126,7 +121,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
-    
+
     var texture = table_data[item_id].texture;
 
     texture.show();
@@ -134,7 +129,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
 
   this.tabledef = {
-    handler: "webgl-texture-table", 
+    handler: "webgl-texture-table",
     column_order: ["call_index", "name", "dimension"],
     idgetter: function(res) { return String(res.id); },
     columns: {
@@ -201,4 +196,3 @@ cls.WebGLTextureSideView.create_ui_widgets = function()
     ]
   );
 };
-
