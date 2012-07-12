@@ -81,8 +81,8 @@ cls.WebGLAPI = function ()
   };
 
 
-  // Returns a string with the url to the specification of webgl a function 
-  // on the khronos site. 
+  // Returns a string with the url to the specification of webgl a function
+  // on the khronos site.
   this.function_to_speclink = function(function_name)
   {
     var webgl_functions = {
@@ -213,19 +213,15 @@ cls.WebGLAPI = function ()
       readPixels: '5.14.12',
       finish: '5.14.11',
       flush: '5.14.11'
-    }
+    };
 
     var anchor = webgl_functions[function_name];
-    if (anchor != undefined)
+    if (anchor != null)
     {
-      var ret = "http://www.khronos.org/registry/webgl/specs/latest/#" + anchor;
-      return ret;
+      return "http://www.khronos.org/registry/webgl/specs/latest/#" + anchor;
     }
-    else
-    {
-      return undefined;
-    }
-  }
+    return null;
+  };
 
   // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
   var webgl_constants = {
@@ -666,7 +662,7 @@ cls.WebGLAPI = function ()
 
   GLParam.prototype.generate_string = function(value)
   {
-    if (typeof(value) === "object" && value.generate_string !== undefined) return value.generate_string();
+    if (typeof(value) === "object" && value.text != null) return value.text;
     return String(value);
   };
 
