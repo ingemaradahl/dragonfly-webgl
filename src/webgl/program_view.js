@@ -67,18 +67,18 @@ cls.WebGLProgramView = function(id, name, container_class)
     }
   };
 
-  this.show_program = function(program)
+  this.show_program = function(call_index, program)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_program");
 
     var content = [];
-    this._content= window.templates.webgl.program(program);
+    this._content= window.templates.webgl.program(call_index, program);
     this._render();
   }.bind(this);
 
-  this.show_uniform = function(program, uniform)
+  this.show_uniform = function(call_index, program, uniform)
   {
-    this.show_program(program);
+    this.show_program(call_index, program);
     hilight_uniform(uniform);
   };
 

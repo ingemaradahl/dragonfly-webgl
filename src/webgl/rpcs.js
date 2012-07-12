@@ -147,7 +147,7 @@ cls.WebGL.RPCs.injection = function () {
           var snapshot_function = snapshot_functions[function_name];
           if (snapshot_function)
           {
-            snapshot_function.call(handler, result, arguments);
+            snapshot_function.call(handler, result, arguments, redundant);
           }
         }
         return result;
@@ -674,6 +674,41 @@ cls.WebGL.RPCs.injection = function () {
       this.snapshot.add_texture(texture);
     };
 
+    var snapshot_function_uniform = function(result, args, redundant)
+    {
+      if (redundant) return;
+      var uniform_info = this.lookup_uniform(args[0]);
+      if (uniform_info == null) return;
+
+      var uniform = this.programs[uniform_info.program_index].uniforms[uniform_info.uniform_index];
+      this.snapshot.add_uniform(uniform);
+    };
+
+    var uniform_functions = [
+      "uniform1i",
+      "uniform1f",
+      "uniform2i",
+      "uniform2f",
+      "uniform3i",
+      "uniform3f",
+      "uniform4i",
+      "uniform4f",
+      "uniform2iv",
+      "uniform2fv",
+      "uniform3iv",
+      "uniform3fv",
+      "uniform4iv",
+      "uniform4fv",
+      "uniformMatrix2fv",
+      "uniformMatrix3fv",
+      "uniformMatrix4fv"
+    ];
+    uniform_functions.forEach(function(name)
+      {
+        snapshot_functions[name] = snapshot_function_uniform;
+      }
+    );
+
     // -------------------------------------------------------------------------
 
     // Copy enumerators and wrap functions
@@ -1044,16 +1079,16 @@ cls.WebGL.RPCs.injection = function () {
       for (var index=0; index<program_obj.uniforms.length; index++)
       {
         var uniform = program_obj.uniforms[index];
-        var value = gl.getUniform(program, uniform.loc);
         state.uniforms.push({
           name : uniform.name,
           index  : index,
-          //loc  : uniform.loc,
           type : uniform.type,
           size : uniform.size,
-          value : value
+          values : [{
+            call_index: -1,
+            value: uniform.value
+          }]
         });
-
       }
 
       return state;
@@ -1412,6 +1447,17 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       this.textures.push(texture_state);
+    };
+
+    this.add_uniform = function (uniform)
+    {
+      var value = uniform.value;
+      if (typeof(value) === "object") value = clone_array(value);
+      var values = this.programs[uniform.program_index].uniforms[uniform.index].values;
+      values.push({
+        call_index: this.call_index,
+        value: value
+      });
     };
 
     /* Wraps up the frame in a complete package for transmission to DF */
