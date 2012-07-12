@@ -327,7 +327,7 @@ window.templates.webgl.generic_call = function(trace_call, call)
   var callnr = parseInt(call) + 1; // Start call count on 1. 
 
   // Makes a link to the webgl specification of the actual function. 
-  var spec_link = ["span", "Goto Specification",
+  var spec_link = ["span", "Goto specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
                    "function_name",
@@ -335,9 +335,9 @@ window.templates.webgl.generic_call = function(trace_call, call)
                   ];
   
   // The following code is to build a function call string. It checks for 
-  // arguments that are clickable and make a link.
+  // arguments that are clickable and makes it into a link.
   var func_text = ["span", function_name];
-  var function_string = [func_text];
+  var function_string = [["h2", func_text]];
   function_string.push("(");
   var argobj =
       window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
@@ -358,10 +358,36 @@ window.templates.webgl.generic_call = function(trace_call, call)
   function_string.push(")");
   // End
 
+  var loc = trace_call.loc;
+  var script_url = loc.short_url || loc.url;
+  var script_ref;
+  if (trace_call.loc == null)
+  {
+    script_ref = [];
+  }
+  else if (trace_call.loc.script_id == null)
+  {
+    script_ref = [
+      "span", "Called from " + loc.caller_name + " in " + script_url
+    ];
+  }
+  else
+  {
+    script_ref = [
+      "span", "Goto script",
+      "handler", "webgl-drawcall-goto-script",
+      "class", "link",
+      "data-line", String(loc.line),
+      "data-script-id", String(loc.script_id),
+      "title", "Called from " + loc.caller_name + " in " + script_url
+    ];
+  }
+
   var ret = ["div", ["h2", "Call: " + callnr], 
-                     function_string,
-                     ["p", spec_link],
-                     "class", "draw-call-info"
+                    ["p", function_string],
+                    ["p", spec_link],
+                    ["p", script_ref],
+                    "class", "draw-call-info"
              ];
   return ret;
 };
@@ -398,40 +424,14 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
       "class", "draw-call-info"
   ];
 
-  var loc = trace_call.loc;
-  var script_url = loc.short_url || loc.url;
-  var script_ref;
-  if (trace_call.loc == null)
-  {
-    script_ref = [];
-  }
-  else if (trace_call.loc.script_id == null)
-  {
-    script_ref = [
-      "span", "Called from " + loc.caller_name + " in " + script_url
-    ];
-  }
-  else
-  {
-    script_ref = [
-      "span", "Goto script",
-      "handler", "webgl-drawcall-goto-script",
-      "data-line", String(loc.line),
-      "data-script-id", String(loc.script_id),
-      "title", "Called from " + loc.caller_name + " in " + script_url
-    ];
-  }
 
-  var html =
-  [
-    "div",
-      [ "div",
-        ["h2", window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args)],
-        script_ref
-      ],
-      state,
-      img
-  ];
+  var html = [];
+  html.push(window.templates.webgl.generic_call(trace_call, draw_call.call_index));
+  html.push(["div",
+              state,
+              img
+            ]);
+
 
   return html;
 };

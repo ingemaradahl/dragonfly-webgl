@@ -38,7 +38,6 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     {
       var template = window.templates.webgl.generic_call(trace_call, call);
       this._container.clearAndRender(template);
-      //this._container.innerHTML = "No framebuffer snapshot for call " + call;
       return;
     }
 
