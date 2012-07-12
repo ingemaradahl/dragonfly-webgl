@@ -14,7 +14,7 @@
 
 /* Flipped images */
 img.flipped
-{ 
+{
   -o-transform: scaleY(-1);
 }
 
@@ -81,13 +81,23 @@ pre.sh_sourceCode .webgl-hilight-uniform
 
 .program div.js-resource-content
 {
-  border: 1px solid #ccc; 
+  border: 1px solid #ccc;
   overflow-y: hidden;
   overflow-x: auto;
   margin-top: 0px;
   margin-bottom: 15px;
 }
 
+.webgl_view .uniform-table .changed
+{
+  color: red;
+}
+
+.webgl_view .uniforms
+{
+  margin-bottom: 10px;
+  border: 1px solid #999999;
+}
 
 /* Buffer */
 

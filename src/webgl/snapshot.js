@@ -81,7 +81,7 @@ cls.WebGLSnapshotArray = function(context_id)
           },
         }
       },
-      _depth: 7,
+      _depth: 8,
       _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
     });
 
@@ -269,7 +269,7 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Creates a object that can be used to link in the UI to a WebGL object.
    */
-  function LinkedObject(object, call_idx, snapshot)
+  function LinkedObject(object, call_index, snapshot)
   {
     for (var key in object)
     {
@@ -288,7 +288,7 @@ cls.WebGLSnapshotArray = function(context_id)
         break;
       case "WebGLTexture":
         if (this.texture_index == null) return;
-        this.texture = snapshot.textures.lookup(this.texture_index, call_idx);
+        this.texture = snapshot.textures.lookup(this.texture_index, call_index);
         if (this.texture == null) return;
         this.text = String(this.texture);
         this.action = this.texture.show.bind(this.texture);
@@ -301,7 +301,7 @@ cls.WebGLSnapshotArray = function(context_id)
         this.text = this.uniform.name;
         this.action = function()
         {
-          window.views.webgl_program.show_uniform(this.program, this.uniform);
+          window.views.webgl_program.show_uniform(call_index, this.program, this.uniform);
         };
         matched = true;
         break;

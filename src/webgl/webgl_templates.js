@@ -333,7 +333,7 @@ window.templates.webgl.generic_call = function(trace_call, call)
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-
+  
   // The following code is to build a function call string. It checks for 
   // arguments that are clickable and make a link.
   var func_text = ["span", function_name];
@@ -362,7 +362,7 @@ window.templates.webgl.generic_call = function(trace_call, call)
                      function_string,
                      ["p", spec_link],
                      "class", "draw-call-info"
-             ];  
+             ];
   return ret;
 };
 
@@ -449,7 +449,88 @@ window.templates.webgl.shader_source = function(source)
   ]);
 };
 
-window.templates.webgl.program = function(program)
+window.templates.webgl.uniform_table = function(call_index, program)
+{
+  var uniforms = program.uniforms;
+  var rows = [];
+
+  rows.push([
+    "tr",
+    [
+      [
+        "td",
+        "Uniform name"
+      ],
+      [
+        "td",
+        "Type"
+      ],
+      [
+        "td",
+        "Value"
+      ]
+    ],
+    "class", "header"
+  ]);
+
+  for (var i = 0; i < uniforms.length; i++)
+  {
+    var uniform = uniforms[i];
+
+    var value = uniform.values[0].value;
+
+    var last_index = 0;
+    var values = uniform.values;
+    for (var j = 1; j < values.length && values[j].call_index <= call_index; j++)
+    {
+      last_index = j;
+      value = values[j].value;
+    }
+
+    var changed_this_call = false;
+    if (last_index !== 0)
+    {
+      if (values[last_index].call_index === call_index)
+      {
+        changed_this_call = true;
+      }
+      value = values[last_index].value;
+    }
+
+    rows.push([
+      "tr",
+      [
+        [
+          "td",
+          uniform.name
+        ],
+        [
+          "td",
+          window.webgl.api.constant_value_to_string(uniform.type)
+        ],
+        [
+          "td",
+          String(value),
+          "class", changed_this_call ? "changed" : ""
+        ]
+      ]
+    ]);
+  }
+
+  var table = [
+    "div",
+    [
+      "table",
+      rows,
+      "class", "sortable-table uniform-table"
+    ],
+    "class", "uniforms"
+  ];
+
+  return table;
+};
+
+window.templates.webgl.program = function(call_index, program)
 {
   var programs = [];
 
@@ -473,9 +554,12 @@ window.templates.webgl.program = function(program)
     ]);
   }
 
+  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
+
   var html =
   [
     "div",
+     uniform_table,
      programs
   ];
 
