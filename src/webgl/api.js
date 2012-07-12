@@ -118,6 +118,7 @@ cls.WebGLAPI = function ()
       stencilOp: '5.14.3',
       stencilOpSeparate: '5.14.3',
       viewport: '5.14.4',
+      bindBuffer: '5.14.5',
       bufferData: '5.14.5',
       bufferSubData: '5.14.5',
       createBuffer: '5.14.5',

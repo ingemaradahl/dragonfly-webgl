@@ -322,21 +322,44 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.generic_call = function(trace_call, call)
 {
   var function_name = trace_call.function_name;
-  var spec_link = ["span", "Specification",
+  var spec_link = ["span", "Goto Specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
   var function_call = 
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args) 
- 
-  var callnr = parseInt(call) + 1; 
-  var html = ["div", ["h2", "Call: " + callnr], 
-                     ["p", function_call],
-                     ["p", spec_link]
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
+  var callnr = parseInt(call) + 1; // Start call count on 1. 
+  
+  var func_text = ["span", function_name];
+  var content = [func_text];
+  content.push("(");
+  var argobj =
+      window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
+  for (var i=0; i<argobj.length; i++)
+  {
+    var arg = argobj[i];
+    var html = ["span", String(arg.text)];
+    if (arg.action)
+    {
+      html.push(
+          "handler", "webgl-draw-argument",
+          "class", "link",
+          "arg", arg);
+    }
+    if (i>0) content.push(", ");
+    content.push(html); 
+  }
+  content.push(")");
+
+
+  var ret = ["div", ["h2", "Call: " + callnr], 
+                     content,
+                     ["p", spec_link],
+                     "class", "draw-call-info"
              ];  
-  return html;
+  return ret;
 };
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)

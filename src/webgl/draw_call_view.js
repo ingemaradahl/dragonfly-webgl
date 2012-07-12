@@ -57,6 +57,11 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   {
       window.open(target.getAttribute("function_name"));
   };
+  
+  var on_argument_click = function(evt, target)
+  {
+    target.arg.action();
+  };
 
   var on_goto_script_click = function(evt, target)
   {
@@ -76,6 +81,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   eh.click["webgl-drawcall-buffer"] = on_buffer_click.bind(this);
   eh.click["webgl-speclink-click"] = on_speclink_click.bind(this);
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click.bind(this);
+  eh.click["webgl-draw-argument"] = on_argument_click.bind(this);
 
   this.init(id, name, container_class);
 };
