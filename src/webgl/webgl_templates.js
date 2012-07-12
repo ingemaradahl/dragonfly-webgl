@@ -147,7 +147,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
 
   var content = [func_text];
 
-  content.push("(");
+  content.push(["span", "("]);
 
   var argobj = window.webgl.api.function_arguments_to_objects(call.function_name, call.args);
   for (var i = 0; i < argobj.length; i++)
@@ -168,7 +168,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
     content.push(html);
   }
 
-  content.push(")");
+  content.push(["span", ")"]);
 
   var row_class = "";
   if (call.have_error)
