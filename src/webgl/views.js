@@ -131,15 +131,27 @@ cls.WebGLSnapshotSelect = function(id)
     return false;
   };
 
-  this._on_new_context = function(ctx_id)
+  /**
+   * Reloads the tab if it is currently shown.
+   */
+  var refresh_tab = function()
+  {
+    var tab = "webgl_mode";
+    if (window.topCell.tab.activeTab === tab)
+    {
+      window.topCell.tab.setActiveTab(tab, true);
+    }
+  };
+
+  var on_new_context = function(ctx_id)
   {
     if (!this.disabled) return;
     this.disabled = false;
     this._selected_context_id = ctx_id;
-    window.topCell.tab.setActiveTab("webgl_mode", true);
+    refresh_tab();
   };
 
-  this._on_new_snapshot = function(ctx_id)
+  var on_new_snapshot = function(ctx_id)
   {
     var snapshots = window.webgl.snapshots;
     this.disabled = !window.webgl.available();
@@ -155,7 +167,7 @@ cls.WebGLSnapshotSelect = function(id)
     window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
   };
 
-  this._on_take_snapshot = function(context_id)
+  var on_take_snapshot = function(context_id)
   {
     window.webgl.request_snapshot(context_id);
     console.log("take snapshot");
@@ -163,107 +175,22 @@ cls.WebGLSnapshotSelect = function(id)
 
   var clear = function()
   {
-    this.disabled = true;
     this._selected_snapshot_index = null;
     this._selected_context_id = null;
+
+    if (!this.disabled)
+    {
+      this.disabled = true;
+      refresh_tab();
+    }
   };
 
-  messages.addListener('webgl-new-context', this._on_new_context.bind(this));
-  messages.addListener('webgl-new-snapshot', this._on_new_snapshot.bind(this));
-  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
+  messages.addListener('webgl-new-context', on_new_context.bind(this));
+  messages.addListener('webgl-new-snapshot', on_new_snapshot.bind(this));
+  messages.addListener('webgl-take-snapshot', on_take_snapshot.bind(this));
   messages.addListener('webgl-clear', clear.bind(this));
 
   this.init(id);
 };
 
 cls.WebGLSnapshotSelect.prototype = new CstSelect();
-
-
-cls.WebGLTraceSelect = function(id)
-{
-  this._option_list = [{}];
-  this.disabled = true;
-  this._selected_option_index = 0;
-
-  this.getSelectedOptionText = function()
-  {
-    if (!this.disabled && this._option_list.length > 0)
-    {
-      return "Trace #" + this._selected_option_index;
-    }
-    else
-    {
-      return "No trace available...";
-    }
-  };
-
-  this.getSelectedOptionValue = function()
-  {
-
-  };
-
-  /**
-   * Returns the id of the trace that is currently selected.
-   * Returns null if there is no trace selected.
-   */
-  this.get_selected_trace_idx = function()
-  {
-
-  };
-
-  this.getTemplate = function()
-  {
-    var select = this;
-    return function(view)
-    {
-      return window.templates['cst-select'](select, select.disabled);
-    };
-  };
-
-  this.templateOptionList = function(select_obj)
-  {
-    var
-    ret = [],
-    opt_list = select_obj._option_list,
-    opt = null,
-    i = 0;
-
-    for( ; opt = opt_list[i]; i++)
-    {
-      ret[i] =
-      [
-        "cst-option",
-        "Trace #" + i,
-        "opt-index", i,
-        "unselectable", "on"
-      ];
-    }
-    return ret;
-  };
-
-  this.checkChange = function(target_ele)
-  {
-    var index = target_ele['opt-index'];
-    if (index == undefined) return false;
-
-    if (this._selected_option_index != index)
-    {
-      this._selected_option_index = index;
-      messages.post('webgl-trace-selected', index);
-      return true;
-    }
-    return false;
-  }
-
-  var on_new_trace = function(trace_idx)
-  {
-    this.disabled = false;
-    this._option_list = this._option_list.push(trace_idx);
-  };
-
-  messages.addListener('webgl-new-trace', on_new_trace.bind(this));
-
-  this.init(id);
-};
-
-cls.WebGLTraceSelect.prototype = new CstSelect();
