@@ -319,8 +319,10 @@ window.templates.webgl.texture = function(texture)
   ];
 };
 
-window.templates.webgl.generic_call = function(trace_call, call)
+// Argument draw_call may be undefined.
+window.templates.webgl.generic_call = function(trace_call, draw_call)
 {
+  var call = trace_call.call;
   var function_name = trace_call.function_name;
   var function_call = 
       window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
@@ -358,6 +360,7 @@ window.templates.webgl.generic_call = function(trace_call, call)
   function_string.push(")");
   // End
 
+  // Makes a link to the script tag to show where the call was made. 
   var loc = trace_call.loc;
   var script_url = loc.short_url || loc.url;
   var script_ref;
@@ -382,13 +385,21 @@ window.templates.webgl.generic_call = function(trace_call, call)
       "title", "Called from " + loc.caller_name + " in " + script_url
     ];
   }
+  // End
 
-  var ret = ["div", ["h2", "Call: " + callnr], 
+  var ret = [["div", ["h2", "Call: " + callnr], 
                     ["p", function_string],
                     ["p", spec_link],
                     ["p", script_ref],
                     "class", "draw-call-info"
-             ];
+             ]];
+ 
+  // Add a draw call view if the call was a draw call. 
+  if (draw_call)
+  {
+    ret.push(window.templates.webgl.drawcall(draw_call, trace_call));
+  }
+
   return ret;
 };
 
@@ -426,7 +437,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
 
 
   var html = [];
-  html.push(window.templates.webgl.generic_call(trace_call, draw_call.call_index));
   html.push(["div",
               state,
               img
