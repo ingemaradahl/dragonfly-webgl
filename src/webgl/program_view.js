@@ -55,6 +55,7 @@ cls.WebGLProgramView = function(id, name, container_class)
         var child_node = program.childNodes[j];
         if (regex.test(child_node.data))
         {
+          // TODO: Only wrap non-white space characters
           var new_span = document.createElement("span");
           new_span.className = "webgl-hilight-uniform";
           new_span.appendChild(document.createTextNode(child_node.data));

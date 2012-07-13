@@ -21,7 +21,7 @@ cls.WebGLBufferView = function(id, name, container_class)
 
   this._render = function()
   {
-    if (this._content == null) return;
+    if (this._content == null || !this._container) return;
     this._container.clearAndRender(this._content);
   };
 
@@ -34,6 +34,7 @@ cls.WebGLBufferView = function(id, name, container_class)
   {
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
 
+    this._buffer = buffer;
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };

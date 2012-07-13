@@ -334,7 +334,7 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-  
+
   // The following code is to build a function call string. It checks for 
   // arguments that are clickable and makes it into a link.
   var func_text = ["span", function_name];
@@ -402,6 +402,36 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
   return ret;
 };
 
+
+window.templates.webgl.drawcall_buffer = function (attributes)
+{
+  return ["div",
+    [
+      "select",
+      [
+        attributes.map(function(attribute) {
+          return [ "option",
+            attribute.name + " (" + attribute.buffer + ")",
+            "value", attribute,
+            "attribute", attribute
+          ];
+        })
+      ],
+      "handler", "webgl-select-attribute",
+      "id", "webgl-attribute-selector"
+    ],
+    [
+      "div", 
+      "", 
+      "handler", "webgl-canvas",
+      "id", "webgl-canvas-holder", 
+      "class", "webgl-holder"
+    ]
+  ];
+};
+
+
+
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var fbo = draw_call.fbo;
@@ -412,35 +442,42 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
     img.push("class", "flipped");
   }
 
-  var buffer_link = [ "span",
-    String(draw_call.buffer),
-    "handler", "webgl-drawcall-buffer",
-    "class", "link",
-    "buffer", draw_call.buffer
-  ];
+  var buffer_link_row = [];
+  if (draw_call.element_buffer)
+  {
+    var buffer_link = [ "span",
+      String(draw_call.element_buffer),
+      "handler", "webgl-drawcall-buffer",
+      "class", "link",
+      "buffer", draw_call.element_buffer
+    ];
+
+    buffer_link_row = ["tr", ["th", "Element buffer"], ["td", buffer_link]];
+  }
 
   var state = [
     "table",
       [
-        [ "tr",
-          ["th", window.webgl.api.constant_value_to_string(draw_call.buffer_target)],
-          ["td", buffer_link ]
-        ],
+        buffer_link_row,
         [ "tr",
           [ "th", "Program" ],
-          [ "td", String(draw_call.program_index)]
+          [ "td", String(draw_call.program.index)]
         ],
       ],
       "class", "draw-call-info"
   ];
 
+  var buffer_display = [];
+  if (window.webgl.gl)
+  {
+    buffer_display = window.templates.webgl.drawcall_buffer(draw_call.program.attributes);
+  }
 
-  var html = [];
-  html.push(["div",
-              state,
-              img
-            ]);
-
+  var html = [ "div",
+    state,
+    buffer_display,
+    img
+  ];
 
   return html;
 };
@@ -456,6 +493,42 @@ window.templates.webgl.shader_source = function(source)
     ['div', lines.join('\n'), 'class', 'resource-line-numbers', 'unselectable', 'on'],
     'class', 'resource-detail-container mono line-numbered-resource js-resource-content'
   ]);
+};
+
+window.templates.webgl.program = function(call_index, program)
+{
+  var programs = [];
+
+  for (var i = 0; i < program.shaders.length; i++)
+  {
+    var shader = program.shaders[i];
+
+    var shader_type = window.webgl.api.constant_value_to_string(shader.type);
+    switch (shader_type)
+    {
+      case "VERTEX_SHADER":
+        shader_type = "Vertex";
+        break;
+      case "FRAGMENT_SHADER":
+        shader_type = "Fragment";
+        break;
+    }
+    programs.push([
+      ["h1", shader_type + " shader " + String(shader.index)],
+      window.templates.webgl.shader_source(shader.src)
+    ]);
+  }
+
+  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
+
+  var html =
+  [
+    "div",
+     uniform_table,
+     programs
+  ];
+
+  return html;
 };
 
 window.templates.webgl.uniform_table = function(call_index, program)
@@ -539,39 +612,3 @@ window.templates.webgl.uniform_table = function(call_index, program)
   return table;
 };
 
-window.templates.webgl.program = function(call_index, program)
-{
-  var programs = [];
-
-  for (var i = 0; i < program.shaders.length; i++)
-  {
-    var shader = program.shaders[i];
-
-    var shader_type = window.webgl.api.constant_value_to_string(shader.type);
-    switch (shader_type)
-    {
-      case "VERTEX_SHADER":
-        shader_type = "Vertex";
-        break;
-      case "FRAGMENT_SHADER":
-        shader_type = "Fragment";
-        break;
-    }
-    programs.push([
-      ["h1", shader_type + " shader " + String(shader.index)],
-      window.templates.webgl.shader_source(shader.src)
-    ]);
-  }
-
-  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
-
-  var html =
-  [
-    "div",
-     uniform_table,
-     programs
-  ];
-
-
-  return html;
-};

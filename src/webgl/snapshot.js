@@ -81,7 +81,7 @@ cls.WebGLSnapshotArray = function(context_id)
           },
         }
       },
-      _depth: 8,
+      _depth: 9,
       _action: cls.Scoper.ACTIONS.EXAMINE_RELEASE
     });
 
@@ -215,9 +215,37 @@ cls.WebGLSnapshotArray = function(context_id)
     // Init draw calls
     var init_drawcall = function(drawcall)
     {
-      this.trace[drawcall.call_index].drawcall = true;
-      drawcall.buffer = this.buffers.lookup(drawcall.buffer_index, drawcall.call_index);
-      // TODO: Same for programs
+      var call_index = drawcall.call_index;
+      this.trace[call_index].drawcall = true;
+
+      // Link up eventual element array buffer if it was used
+      if (drawcall.element_buffer)
+      {
+        drawcall.element_buffer = this.buffers.lookup(drawcall.element_buffer, call_index);
+      }
+
+      // Connect buffers to vetrex attribute bindings
+      for (var i=0; i<drawcall.program.attributes.length; i++)
+      {
+        var attribute = drawcall.program.attributes[i];
+        var buffer = this.buffers.lookup(attribute.pointer.buffer_index, call_index);
+        attribute.buffer = buffer;
+        delete attribute.buffer_index;
+
+        if (buffer.vertex_attribs[call_index])
+        {
+          buffer.vertex_attribs[call_index].push(attribute);
+        }
+        else
+        {
+          buffer.vertex_attribs[call_index] = [attribute];
+        }
+
+        if (drawcall.element_buffer)
+        {
+          buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
+        }
+      }
 
       this.drawcalls.push(drawcall);
     };
