@@ -223,19 +223,30 @@ window.templates.webgl.texture = function(texture)
     };
   }
 
-  var img = [];
+  var image = [];
   if (texture.img.data)
   {
-    img = ["img", "src", texture.img.data ];
+    var img = [
+      "img",
+      "src", texture.img.data,
+      "handler", "webgl-texture-image"
+    ];
+    var classes = ["checkerboard"];
     if (texture.img.flipped)
     {
-      img.push("class");
-      img.push("flipped");
+      classes.push("flipped");
     }
+
+    img.push("class", classes.join(" "));
+    image = [
+      "div",
+      img,
+      "class", "texture-container"
+    ];
   }
   else
   {
-    img = ["div",
+    image = ["div",
       ["img", "src", "./ui-images/loading.png"],
       "class", "loading-image",
       "style", "width: " + String(texture.width ? texture.width : 128) + "px; height: " + String(texture.height ? texture.height : 128) + "px;"
@@ -314,7 +325,7 @@ window.templates.webgl.texture = function(texture)
 
   return [ "div",
     ["h2", "Texture " + String(texture.index)],
-    img,
+    image,
     info_table
   ];
 };
@@ -323,11 +334,11 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.generic_call = function(trace_call, draw_call, call)
 {
   var function_name = trace_call.function_name;
-  var function_call = 
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
-  var callnr = parseInt(call) + 1; // Start call count on 1. 
+  var function_call =
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
+  var callnr = parseInt(call) + 1; // Start call count on 1.
 
-  // Makes a link to the webgl specification of the actual function. 
+  // Makes a link to the webgl specification of the actual function.
   var spec_link = ["span", "Goto specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
@@ -335,7 +346,7 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
                     window.webgl.api.function_to_speclink(function_name)
                   ];
 
-  // The following code is to build a function call string. It checks for 
+  // The following code is to build a function call string. It checks for
   // arguments that are clickable and makes it into a link.
   var func_text = ["span", function_name];
   var function_string = [["h2", func_text]];
@@ -354,12 +365,12 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
           "arg", arg);
     }
     if (i>0) function_string.push(", ");
-    function_string.push(html); 
+    function_string.push(html);
   }
   function_string.push(")");
   // End
 
-  // Makes a link to the script tag to show where the call was made. 
+  // Makes a link to the script tag to show where the call was made.
   var loc = trace_call.loc;
   var script_url = loc.short_url || loc.url;
   var script_ref;
@@ -386,14 +397,14 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
   }
   // End
 
-  var ret = [["div", ["h2", "Call: " + callnr], 
+  var ret = [["div", ["h2", "Call: " + callnr],
                     ["p", function_string],
                     ["p", spec_link],
                     ["p", script_ref],
                     "class", "draw-call-info"
              ]];
- 
-  // Add a draw call view if the call was a draw call. 
+
+  // Add a draw call view if the call was a draw call.
   if (draw_call)
   {
     ret.push(window.templates.webgl.drawcall(draw_call, trace_call));
@@ -401,36 +412,6 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
 
   return ret;
 };
-
-
-window.templates.webgl.drawcall_buffer = function (attributes)
-{
-  return ["div",
-    [
-      "select",
-      [
-        attributes.map(function(attribute) {
-          return [ "option",
-            attribute.name + " (" + attribute.buffer + ")",
-            "value", attribute,
-            "attribute", attribute
-          ];
-        })
-      ],
-      "handler", "webgl-select-attribute",
-      "id", "webgl-attribute-selector"
-    ],
-    [
-      "div", 
-      "", 
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder", 
-      "class", "webgl-holder"
-    ]
-  ];
-};
-
-
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
@@ -482,6 +463,33 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   return html;
 };
 
+window.templates.webgl.drawcall_buffer = function (attributes)
+{
+  return ["div",
+    [
+      "select",
+      [
+        attributes.map(function(attribute) {
+          return [ "option",
+            attribute.name + " (" + attribute.buffer + ")",
+            "value", attribute,
+            "attribute", attribute
+          ];
+        })
+      ],
+      "handler", "webgl-select-attribute",
+      "id", "webgl-attribute-selector"
+    ],
+    [
+      "div",
+      "",
+      "handler", "webgl-canvas",
+      "id", "webgl-canvas-holder",
+      "class", "webgl-holder"
+    ]
+  ];
+};
+
 window.templates.webgl.shader_source = function(source)
 {
   var line_count = 1;
@@ -493,42 +501,6 @@ window.templates.webgl.shader_source = function(source)
     ['div', lines.join('\n'), 'class', 'resource-line-numbers', 'unselectable', 'on'],
     'class', 'resource-detail-container mono line-numbered-resource js-resource-content'
   ]);
-};
-
-window.templates.webgl.program = function(call_index, program)
-{
-  var programs = [];
-
-  for (var i = 0; i < program.shaders.length; i++)
-  {
-    var shader = program.shaders[i];
-
-    var shader_type = window.webgl.api.constant_value_to_string(shader.type);
-    switch (shader_type)
-    {
-      case "VERTEX_SHADER":
-        shader_type = "Vertex";
-        break;
-      case "FRAGMENT_SHADER":
-        shader_type = "Fragment";
-        break;
-    }
-    programs.push([
-      ["h1", shader_type + " shader " + String(shader.index)],
-      window.templates.webgl.shader_source(shader.src)
-    ]);
-  }
-
-  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
-
-  var html =
-  [
-    "div",
-     uniform_table,
-     programs
-  ];
-
-  return html;
 };
 
 window.templates.webgl.uniform_table = function(call_index, program)
@@ -620,7 +592,7 @@ window.templates.webgl.taking_snapshot = function()
                   "class", "info-box"
                 ];
     return html;
-}
+};
 
 window.templates.webgl.program = function(call_index, program)
 {

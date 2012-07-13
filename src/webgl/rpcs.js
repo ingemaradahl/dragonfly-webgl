@@ -493,7 +493,7 @@ cls.WebGL.RPCs.injection = function () {
 
       var redundant = false;
 
-      var layout = { 
+      var layout = {
         index : index,
         size : size,
         type : type,
@@ -510,10 +510,10 @@ cls.WebGL.RPCs.injection = function () {
 
         var l = attrib.pointer.layout;
         if (attrib.pointer.buffer_index === buffer.index &&
-            l.size === layout.size && 
-            l.type === layout.type && 
-            l.normalized === layout.normalized && 
-            l.stride === layout.stride && 
+            l.size === layout.size &&
+            l.type === layout.type &&
+            l.normalized === layout.normalized &&
+            l.stride === layout.stride &&
             l.offset === layout.offset)
         {
           redundant = true;
@@ -521,7 +521,7 @@ cls.WebGL.RPCs.injection = function () {
         }
         else
         {
-          attrib.pointer = { 
+          attrib.pointer = {
             buffer_index : buffer.index,
             layout : layout
           };
@@ -685,7 +685,7 @@ cls.WebGL.RPCs.injection = function () {
         };
 
         var program_state = this.get_program_state();
-        
+
         this.snapshot.add_drawcall(img, target, buffer.index, program_state);
 
         // Check whether an color attachment texture have been drawn to
@@ -1336,7 +1336,7 @@ cls.WebGL.RPCs.injection = function () {
         call_index : this.call_index,
         fbo : fbo,
         program : program_state,
-        element_buffer : buffer_target === gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
+        element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });
     };
 

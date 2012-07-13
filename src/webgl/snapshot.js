@@ -230,6 +230,7 @@ cls.WebGLSnapshotArray = function(context_id)
       {
         var attribute = drawcall.program.attributes[i];
         var buffer = this.buffers.lookup(attribute.pointer.buffer_index, call_index);
+        if (buffer == null) continue;
         attribute.buffer = buffer;
         delete attribute.buffer_index;
 
