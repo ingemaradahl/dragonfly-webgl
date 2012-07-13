@@ -163,4 +163,28 @@ pre.sh_sourceCode .webgl-hilight-uniform
 .draw-call-info span.link
 {
   color: blue;
-};
+}
+
+/* Texture */
+
+.checkerboard
+{
+  background-color: #fefefe;
+  background-image: -o-linear-gradient(45deg, #cbcbcb 26%, transparent 25%, transparent 75%, #cbcbcb 75%, #cbcbcb), -o-linear-gradient(45deg, #cbcbcb 25%, transparent 26%, transparent 75%, #cbcbcb 75%, #cbcbcb);
+  background-size: 4px 4px;
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+.texture-container
+{
+  border: 1px solid #888888;
+  overflow: auto;
+  font-size: 0px;
+}
+
+.texture-container.fit img
+{
+  max-height: 100%;
+  max-width: 100%;
+}

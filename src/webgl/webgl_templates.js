@@ -223,19 +223,30 @@ window.templates.webgl.texture = function(texture)
     };
   }
 
-  var img = [];
+  var image = [];
   if (texture.img.data)
   {
-    img = ["img", "src", texture.img.data ];
+    var img = [
+      "img",
+      "src", texture.img.data,
+      "handler", "webgl-texture-image"
+    ];
+    var classes = ["checkerboard"];
     if (texture.img.flipped)
     {
-      img.push("class");
-      img.push("flipped");
+      classes.push("flipped");
     }
+
+    img.push("class", classes.join(" "));
+    image = [
+      "div",
+      img,
+      "class", "texture-container"
+    ];
   }
   else
   {
-    img = ["div",
+    image = ["div",
       ["img", "src", "./ui-images/loading.png"],
       "class", "loading-image",
       "style", "width: " + String(texture.width ? texture.width : 128) + "px; height: " + String(texture.height ? texture.height : 128) + "px;"
@@ -314,7 +325,7 @@ window.templates.webgl.texture = function(texture)
 
   return [ "div",
     ["h2", "Texture " + String(texture.index)],
-    img,
+    image,
     info_table
   ];
 };
@@ -322,19 +333,19 @@ window.templates.webgl.texture = function(texture)
 window.templates.webgl.generic_call = function(trace_call, call)
 {
   var function_name = trace_call.function_name;
-  var function_call = 
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  
-  var callnr = parseInt(call) + 1; // Start call count on 1. 
+  var function_call =
+      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
+  var callnr = parseInt(call) + 1; // Start call count on 1.
 
-  // Makes a link to the webgl specification of the actual function. 
+  // Makes a link to the webgl specification of the actual function.
   var spec_link = ["span", "Goto Specification",
                    "handler", "webgl-speclink-click",
                    "class", "link",
                    "function_name",
                     window.webgl.api.function_to_speclink(function_name)
                   ];
-  
-  // The following code is to build a function call string. It checks for 
+
+  // The following code is to build a function call string. It checks for
   // arguments that are clickable and make a link.
   var func_text = ["span", function_name];
   var function_string = [func_text];
@@ -353,12 +364,12 @@ window.templates.webgl.generic_call = function(trace_call, call)
           "arg", arg);
     }
     if (i>0) function_string.push(", ");
-    function_string.push(html); 
+    function_string.push(html);
   }
   function_string.push(")");
   // End
 
-  var ret = ["div", ["h2", "Call: " + callnr], 
+  var ret = ["div", ["h2", "Call: " + callnr],
                      function_string,
                      ["p", spec_link],
                      "class", "draw-call-info"

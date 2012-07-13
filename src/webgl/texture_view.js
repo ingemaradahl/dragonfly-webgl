@@ -44,6 +44,39 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
+  var on_texture_down = function(evt, target)
+  {
+    evt.stopPropagation();
+    evt.preventDefault();
+    var parent = target.parentElement;
+    var x_start = evt.clientX + parent.scrollLeft;
+    var y_start = evt.clientY + parent.scrollTop;
+
+    var max_top = Math.max(0, evt.target.offsetHeight - parent.clientHeight);
+    var max_left = Math.max(0, evt.target.offsetWidth - parent.clientWidth);
+    target.onmousemove = function(e)
+    {
+      e.stopPropagation();
+      e.preventDefault();
+      var top = Math.min(max_top, Math.max(0, y_start - e.clientY));
+      var left = Math.min(max_left, Math.max(0, x_start - e.clientX));
+
+      parent.scrollTop = top;
+      parent.scrollLeft = left;
+    };
+  };
+
+  var on_texture_up = function(evt, target)
+  {
+    evt.stopPropagation();
+    evt.preventDefault();
+    target.onmousemove = null;
+  };
+
+  var eh = window.eventHandlers;
+  eh.mousedown["webgl-texture-image"] = on_texture_down.bind(this);
+  eh.mouseup["webgl-texture-image"] = on_texture_up.bind(this);
+
   messages.addListener('webgl-texture-data', on_texture_data.bind(this));
   this.init(id, name, container_class);
 };
