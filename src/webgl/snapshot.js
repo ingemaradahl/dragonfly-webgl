@@ -13,6 +13,7 @@ cls.WebGLSnapshotArray = function(context_id)
   /* Retrieves the frame trace for the last rendered frame of the WebGL context */
   this.send_snapshot_request = function()
   {
+    messages.post('webgl-take-snapshot');
     window.webgl.interfaces[this.context_id].request_snapshot();
   };
 

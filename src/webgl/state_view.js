@@ -81,11 +81,12 @@ cls.WebGLStateView = function(id, name, container_class)
   };
 
   this._on_refresh = function()
-  {
-    delete this._state[this._context];
-    this._table.set_data(null);
-    window.webgl.request_state(this._context);
-    this._render();
+  {   
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
   };
 
   this._on_context_change = function(ctx)
@@ -101,6 +102,14 @@ cls.WebGLStateView = function(id, name, container_class)
     }
 
     this._render();
+  };
+
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
   };
 
   this._on_error = function(error)
@@ -145,6 +154,7 @@ cls.WebGLStateView = function(id, name, container_class)
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 }

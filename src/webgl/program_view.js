@@ -21,7 +21,7 @@ cls.WebGLProgramView = function(id, name, container_class)
     this._container = null;
   };
 
-  this.clear = function ()
+  this._clear = function ()
   {
     this._context = null;
   };
@@ -83,7 +83,7 @@ cls.WebGLProgramView = function(id, name, container_class)
     hilight_uniform(uniform);
   };
 
-  messages.addListener('webgl-clear', this.clear.bind(this));
+  messages.addListener('webgl-clear', this._clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
 

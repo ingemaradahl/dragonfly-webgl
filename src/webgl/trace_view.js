@@ -108,6 +108,14 @@ cls.WebGLTraceView = function(id, name, container_class)
     this._render();
   };
 
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
+
 
   this.tabledef = {
     column_order: ["number", "call"],
@@ -132,6 +140,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   messages.addListener('webgl-changed-snapshot', this._render.bind(this));
   messages.addListener('webgl-selected-snapshot', this._on_selected_snapshot.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };

@@ -665,7 +665,7 @@ ui_framework.layouts.webgl_rough_layout =
         {
           tabs: function(services)
           {
-            return ['trace-side-panel', 'state-side-panel', 
+            return ['trace-side-panel', 'state-side-panel',
               'buffer-side-panel', 'texture-side-panel' /* TODO: , 'program-side-panel' */];
           }
         }

@@ -36,7 +36,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._render();
   };
 
-  var on_texture_data = function(msg)
+  this._on_texture_data = function(msg)
   {
     if (this._container && this._texture === msg["texture"])
     {
@@ -44,7 +44,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
-  messages.addListener('webgl-texture-data', on_texture_data.bind(this));
+  messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
   this.init(id, name, container_class);
 };
 
@@ -98,7 +98,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     }
   };
 
-  var on_snapshot_change = function(snapshot)
+  this._on_snapshot_change = function(snapshot)
   {
     var i = 0;
     this._content = snapshot.textures.map(function(texture) {
@@ -116,8 +116,16 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._render();
   };
 
+  this._on_refresh = function()
+  {   
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
+  };
 
-  var on_table_click = function(evt, target)
+  this._on_table_click = function(evt, target)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
@@ -127,6 +135,15 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     texture.show();
   };
 
+
+
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
 
   this.tabledef = {
     handler: "webgl-texture-table",
@@ -163,8 +180,11 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
 
-  eh.click["webgl-texture-table"] = on_table_click.bind(this);
-  messages.addListener('webgl-changed-snapshot', on_snapshot_change.bind(this));
+  eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
+  eh.click["refresh-webgl-texture"] = this._on_refresh.bind(this);
+
+  messages.addListener('webgl-changed-snapshot', this._on_snapshot_change.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };

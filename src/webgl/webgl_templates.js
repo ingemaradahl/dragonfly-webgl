@@ -612,3 +612,49 @@ window.templates.webgl.uniform_table = function(call_index, program)
   return table;
 };
 
+window.templates.webgl.taking_snapshot = function()
+{
+    var html = ["div",
+                  ["p", ["img", "src", "./ui-images/loading.png"]],
+                  ["p", "Taking snapshot..."],
+                  "class", "info-box"
+                ];
+    return html;
+}
+
+window.templates.webgl.program = function(call_index, program)
+{
+  var programs = [];
+
+  for (var i = 0; i < program.shaders.length; i++)
+  {
+    var shader = program.shaders[i];
+
+    var shader_type = window.webgl.api.constant_value_to_string(shader.type);
+    switch (shader_type)
+    {
+      case "VERTEX_SHADER":
+        shader_type = "Vertex";
+        break;
+      case "FRAGMENT_SHADER":
+        shader_type = "Fragment";
+        break;
+    }
+    programs.push([
+      ["h1", shader_type + " shader " + String(shader.index)],
+      window.templates.webgl.shader_source(shader.src)
+    ]);
+  }
+
+  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
+
+  var html =
+  [
+    "div",
+     uniform_table,
+     programs
+  ];
+
+
+  return html;
+};

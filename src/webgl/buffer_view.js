@@ -39,21 +39,17 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._render();
   };
 
-  var on_buffer_data = function(buffer)
+  this._on_buffer_data = function(buffer)
   {
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };
 
-  messages.addListener('webgl-buffer-data', on_buffer_data.bind(this));
+  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   this.init(id, name, container_class);
 };
 
 cls.WebGLBufferView.prototype = ViewBase;
-
-
-
-
 
 
 /**
@@ -116,7 +112,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     }
   };
 
-  var on_changed_snapshot = function(snapshot)
+  this._on_changed_snapshot = function(snapshot)
   {
     var buffers = snapshot.buffers;
     this._table_data = this._format_buffer_table(buffers);
@@ -142,13 +138,30 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     });
   };
 
-  var on_table_click = function(evt, target)
+  this._on_table_click = function(evt, target)
   {
     var buffer_index = Number(target.getAttribute("data-object-id"));
     var table_data = this._table.get_data();
     var buffer = table_data[buffer_index].buffer;
 
     buffer.show();
+  };
+
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
+
+  this._on_refresh = function()
+  {
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
   };
 
   this.tabledef = {
@@ -189,8 +202,11 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.click["webgl-buffer-table"] = on_table_click.bind(this);
-  messages.addListener('webgl-changed-snapshot', on_changed_snapshot.bind(this));
+  eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
+  eh.click["webgl-buffer-refresh"] = this._on_refresh.bind(this);
+
+  messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };
@@ -203,7 +219,7 @@ cls.WebGLBufferSideView.create_ui_widgets = function()
     'buffer-side-panel',
     [
       {
-        handler: 'refresh-webgl-buffer',
+        handler: 'webgl-buffer-refresh',
         title: "Refresh buffers",
         icon: 'reload-webgl-buffer'
       }
