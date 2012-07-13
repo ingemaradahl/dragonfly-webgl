@@ -320,9 +320,8 @@ window.templates.webgl.texture = function(texture)
 };
 
 // Argument draw_call may be undefined.
-window.templates.webgl.generic_call = function(trace_call, draw_call)
+window.templates.webgl.generic_call = function(trace_call, draw_call, call)
 {
-  var call = trace_call.call;
   var function_name = trace_call.function_name;
   var function_call = 
       window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);  

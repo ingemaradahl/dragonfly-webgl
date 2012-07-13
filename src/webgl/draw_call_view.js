@@ -34,7 +34,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var draw_call = snapshot.drawcalls.get_by_call(call);
     var trace_call = snapshot.trace[call];
 
-    var template = window.templates.webgl.generic_call(trace_call, draw_call);
+    var template = window.templates.webgl.generic_call(trace_call, draw_call, call);
     this._container.clearAndRender(template);
 
     return;
