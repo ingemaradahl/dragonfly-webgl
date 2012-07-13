@@ -116,6 +116,14 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._render();
   };
 
+  this._on_refresh = function()
+  {   
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
+  };
 
   this._on_table_click = function(evt, target)
   {
@@ -126,6 +134,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
     texture.show();
   };
+
+
 
   this._on_take_snapshot = function()
   {
@@ -171,6 +181,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   var eh = window.eventHandlers;
 
   eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
+  eh.click["refresh-webgl-texture"] = this._on_refresh.bind(this);
+
   messages.addListener('webgl-changed-snapshot', this._on_snapshot_change.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 

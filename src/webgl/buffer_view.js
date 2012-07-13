@@ -154,6 +154,15 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     }
   };
 
+  this._on_refresh = function()
+  {
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
+  };
+
   this.tabledef = {
     handler: "webgl-buffer-table",
     idgetter: function(res) { return String(res.id); },
@@ -193,6 +202,8 @@ cls.WebGLBufferSideView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
   eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
+  eh.click["webgl-buffer-refresh"] = this._on_refresh.bind(this);
+
   messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
@@ -207,7 +218,7 @@ cls.WebGLBufferSideView.create_ui_widgets = function()
     'buffer-side-panel',
     [
       {
-        handler: 'refresh-webgl-buffer',
+        handler: 'webgl-buffer-refresh',
         title: "Refresh buffers",
         icon: 'reload-webgl-buffer'
       }

@@ -268,10 +268,10 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                              "scroll webgl_view program");
     cls.WebGLProgramView.create_ui_widgets();
 
-    new cls.WebGLTestView("webgl_test",
-                           "Payload Test",
-                           "scroll webgl_view test");
-    cls.WebGLTestView.create_ui_widgets();
+    //new cls.WebGLTestView("webgl_test",
+    //                       "Payload Test",
+    //                       "scroll webgl_view test");
+    //cls.WebGLTestView.create_ui_widgets();
 
     new cls.WebGLTextureView("webgl_texture",
                              "Texture",

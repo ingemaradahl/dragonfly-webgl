@@ -22,7 +22,7 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.api = new cls.WebGLAPI();
   this.state = new cls.WebGLState();
-  this.test = new cls.WebGLTest();
+  //this.test = new cls.WebGLTest();
 
   /* Keep an own WebGL instance used when displaying buffer contents and such */
   var canvas = document.createElement("canvas");

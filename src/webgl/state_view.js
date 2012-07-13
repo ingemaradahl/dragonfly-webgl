@@ -81,11 +81,12 @@ cls.WebGLStateView = function(id, name, container_class)
   };
 
   this._on_refresh = function()
-  {
-    delete this._state[this._context];
-    this._table.set_data(null);
-    window.webgl.request_state(this._context);
-    this._render();
+  {   
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
   };
 
   this._on_context_change = function(ctx)
