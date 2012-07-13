@@ -28,6 +28,9 @@ cls.WebGL.WebGLDebugger = function ()
   this.gl = canvas.getContext("experimental-webgl");
   this.gl ? this.gl.canvas = canvas : null;
 
+  /* Instantiate buffer preview renderer */
+  this.preview = this.gl ? new cls.WebGLMeshDrawer(this.gl) : null;
+
   /* Contains shader used when displaying textures and buffers in the debugger */
   this.shaders = {};
 
@@ -192,6 +195,7 @@ cls.WebGL.WebGLDebugger = function ()
     }
 
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.enable(gl.DEPTH_TEST);
 
     gl.programs = {};
     var shaders = this.shaders;

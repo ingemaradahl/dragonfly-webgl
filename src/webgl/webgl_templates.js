@@ -31,12 +31,6 @@ window.templates.webgl.buffer_base = function(buffer)
     data_table = ["div", "Loading buffer data."];
   }
 
-  var buffer_display = [];
-  if (window.webgl.gl)
-  {
-    buffer_display = [ "div", "", "id", "webgl-canvas-holder", "class", "webgl-holder"];
-  }
-
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
@@ -77,7 +71,6 @@ window.templates.webgl.buffer_base = function(buffer)
           ]
         ]
       ],
-      buffer_display,
       data_table
     ]
   ];
@@ -340,6 +333,37 @@ window.templates.webgl.generic_call = function(trace_call, call)
   return html;
 };
 
+
+
+window.templates.webgl.drawcall_buffer = function (attributes)
+{
+  return ["div",
+    [
+      "select",
+      [
+        attributes.map(function(attribute) {
+          return [ "option",
+            attribute.name + " (" + attribute.buffer + ")",
+            "value", attribute,
+            "attribute", attribute
+          ];
+        })
+      ],
+      "handler", "webgl-select-attribute",
+      "id", "webgl-attribute-selector"
+    ],
+    [
+      "div", 
+      "", 
+      "handler", "webgl-canvas",
+      "id", "webgl-canvas-holder", 
+      "class", "webgl-holder"
+    ]
+  ];
+};
+
+
+
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var fbo = draw_call.fbo;
@@ -350,23 +374,26 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
     img.push("class", "flipped");
   }
 
-  var buffer_link = [ "span",
-    String(draw_call.buffer),
-    "handler", "webgl-drawcall-buffer",
-    "class", "link",
-    "buffer", draw_call.buffer
-  ];
+  var buffer_link_row = [];
+  if (draw_call.element_buffer)
+  {
+    var buffer_link = [ "span",
+      String(draw_call.element_buffer),
+      "handler", "webgl-drawcall-buffer",
+      "class", "link",
+      "buffer", draw_call.element_buffer
+    ];
+
+    buffer_link_row = ["tr", ["th", "Element buffer"], ["td", buffer_link]];
+  }
 
   var state = [
     "table",
       [
-        [ "tr",
-          ["th", window.webgl.api.constant_value_to_string(draw_call.buffer_target)],
-          ["td", buffer_link ]
-        ],
+        buffer_link_row,
         [ "tr",
           [ "th", "Program" ],
-          [ "td", String(draw_call.program_index)]
+          [ "td", String(draw_call.program.index)]
         ],
       ],
       "class", "draw-call-info"
@@ -396,6 +423,12 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
     ];
   }
 
+  var buffer_display = [];
+  if (window.webgl.gl)
+  {
+    buffer_display = window.templates.webgl.drawcall_buffer(draw_call.program.attributes);
+  }
+
   var html =
   [
     "div",
@@ -404,6 +437,7 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
         script_ref
       ],
       state,
+      buffer_display,
       img
   ];
 

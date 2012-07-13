@@ -16,6 +16,9 @@ cls.WebGLBuffer = function()
  */
 cls.WebGLBuffer.prototype.get_buffer_data = function()
 {
+  if (this.data_is_loaded() || this.data.downloading)
+    return;
+
   var finalize = function (data)
   {
     this.data = data;
@@ -24,6 +27,7 @@ cls.WebGLBuffer.prototype.get_buffer_data = function()
 
   var scoper = new cls.Scoper(finalize, this);
   scoper.examine_object(this.data, true);
+  this.data.downloading = true;
 };
 
 cls.WebGLBuffer.prototype.show = function()

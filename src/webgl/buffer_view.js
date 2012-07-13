@@ -19,91 +19,10 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._render();
   };
 
-  var add_canvas = function()
-  {
-    var canvas_holder = document.getElementById("webgl-canvas-holder");
-    canvas_holder.appendChild(window.webgl.gl.canvas);
-
-    // TODO temporary
-    window.webgl.gl.canvas.width = 250;
-    window.webgl.gl.canvas.height = 250;
-  };
-
-  var draw_mesh = function(gl)
-  {
-    var buffer = this._buffer;
-
-    if (buffer.target === gl.ELEMENT_ARRAY_BUFFER)
-      return;
-
-    var layouts = buffer.vertex_attribs;
-    var layout = null;
-    var element_buffer = undefined;
-    for (var key in layouts)
-    {
-      if (!layouts.hasOwnProperty(key)) continue;
-      layout = layouts[key].last.pointer.layout;
-      element_buffer = layouts[key].element_buffer;
-      break;
-    }
-
-    if (!buffer.data_is_loaded() || !(element_buffer && element_buffer.data_is_loaded()))
-      return;
-    
-    var drawer = new cls.WebGLMeshDrawer(gl, gl.programs.buffer, this._buffer, element_buffer);
-    drawer.draw_buffer_layout(this._buffer, layout, element_buffer);
-    drawer.render();
-
-    //var buffer = this._buffer;
-    //if (!buffer.data_is_loaded() || buffer.target === gl.ELEMENT_ARRAY_BUFFER)
-    //  return;
-
-    //if (!buffer.gl_buffer)
-    //{
-    //  buffer.gl_buffer = gl.createBuffer();
-    //  gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer); // TODO: actual target
-    //  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer.data), gl.STATIC_DRAW);
-    //}
-    //
-    //var width = gl.canvas.width;
-    //var height = gl.canvas.height;
-
-    //var program = gl.programs.buffer;
-
-    //gl.clearColor(Math.random(), Math.random(), Math.random(), 0.0);
-    //gl.viewport(0, 0, width, height);
-    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    //gl.useProgram(program);
-
-    //var pMatrix = mat4.create();
-    //mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
-
-    //var mvMatrix = mat4.create();
-    //mat4.identity(mvMatrix);
-    //mat4.translate(mvMatrix, [0.0, 0.0, -2.0]);
-
-    //gl.bindBuffer(gl.ARRAY_BUFFER, buffer.gl_buffer);
-
-    //gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, 0, 0);
-
-    //gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
-    //gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
-
-    //gl.drawArrays(gl.TRIANGLES, 0, Math.floor(buffer.data.length/3));
-  }.bind(this);
-
   this._render = function()
   {
-    if (this._content == null) return;
+    if (this._content == null || !this._container) return;
     this._container.clearAndRender(this._content);
-
-    var gl = window.webgl.gl;
-    if (gl)
-    {
-      add_canvas();
-      draw_mesh(gl);
-    }
   };
 
   this.ondestroy = function()
