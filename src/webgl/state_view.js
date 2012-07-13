@@ -103,6 +103,14 @@ cls.WebGLStateView = function(id, name, container_class)
     this._render();
   };
 
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
+
   this._on_error = function(error)
   {
     if (error.origin !== "state")
@@ -145,6 +153,7 @@ cls.WebGLStateView = function(id, name, container_class)
   messages.addListener('webgl-new-state', this._on_new_state.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-error', this._on_error.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 }

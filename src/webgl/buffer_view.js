@@ -51,10 +51,6 @@ cls.WebGLBufferView = function(id, name, container_class)
 cls.WebGLBufferView.prototype = ViewBase;
 
 
-
-
-
-
 /**
  * TODO: currently a temporary design of the view which displays data in a non user-friendly way.
  * @constructor
@@ -115,7 +111,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     }
   };
 
-  var on_changed_snapshot = function(snapshot)
+  this._on_changed_snapshot = function(snapshot)
   {
     var buffers = snapshot.buffers;
     this._table_data = this._format_buffer_table(buffers);
@@ -141,13 +137,21 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     });
   };
 
-  var on_table_click = function(evt, target)
+  this._on_table_click = function(evt, target)
   {
     var buffer_index = Number(target.getAttribute("data-object-id"));
     var table_data = this._table.get_data();
     var buffer = table_data[buffer_index].buffer;
 
     buffer.show();
+  };
+
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
   };
 
   this.tabledef = {
@@ -188,8 +192,9 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.click["webgl-buffer-table"] = on_table_click.bind(this);
-  messages.addListener('webgl-changed-snapshot', on_changed_snapshot.bind(this));
+  eh.click["webgl-buffer-table"] = this._on_table_click.bind(this);
+  messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };

@@ -108,6 +108,14 @@ cls.WebGLTestView = function(id, name, container_class)
     this._render();
   };
 
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
+
 
   var eh = window.eventHandlers;
 
@@ -116,6 +124,7 @@ cls.WebGLTestView = function(id, name, container_class)
   messages.addListener('webgl-new-test', this._on_new_test.bind(this));
   messages.addListener('webgl-clear', this.clear.bind(this));
   messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 }

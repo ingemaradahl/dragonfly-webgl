@@ -98,7 +98,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     }
   };
 
-  var on_snapshot_change = function(snapshot)
+  this._on_snapshot_change = function(snapshot)
   {
     var i = 0;
     this._content = snapshot.textures.map(function(texture) {
@@ -117,7 +117,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   };
 
 
-  var on_table_click = function(evt, target)
+  this._on_table_click = function(evt, target)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
@@ -127,6 +127,13 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     texture.show();
   };
 
+  this._on_take_snapshot = function()
+  {
+    if (this._container)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    }
+  };
 
   this.tabledef = {
     handler: "webgl-texture-table",
@@ -163,8 +170,9 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
 
-  eh.click["webgl-texture-table"] = on_table_click.bind(this);
-  messages.addListener('webgl-changed-snapshot', on_snapshot_change.bind(this));
+  eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
+  messages.addListener('webgl-changed-snapshot', this._on_snapshot_change.bind(this));
+  messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
 };

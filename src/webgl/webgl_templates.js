@@ -539,6 +539,16 @@ window.templates.webgl.uniform_table = function(call_index, program)
   return table;
 };
 
+window.templates.webgl.taking_snapshot = function()
+{
+    var html = ["div",
+                  ["p", ["img", "src", "./ui-images/loading.png"]],
+                  ["p", "Taking snapshot..."],
+                  "class", "info-box"
+                ];
+    return html;
+}
+
 window.templates.webgl.program = function(call_index, program)
 {
   var programs = [];
