@@ -38,13 +38,13 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._render();
   };
 
-  var on_buffer_data = function(buffer)
+  this._on_buffer_data = function(buffer)
   {
     this._content = window.templates.webgl.buffer_base(buffer);
     this._render();
   };
 
-  messages.addListener('webgl-buffer-data', on_buffer_data.bind(this));
+  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   this.init(id, name, container_class);
 };
 

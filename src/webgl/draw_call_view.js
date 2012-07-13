@@ -40,22 +40,22 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     return;
   };
 
-  var on_buffer_click = function(evt, target)
+  this._on_buffer_click = function(evt, target)
   {
     target.buffer.show();
   };
 
-  var on_speclink_click = function(evt, target) 
+  this._on_speclink_click = function(evt, target) 
   {
       window.open(target.getAttribute("function_name"));
   };
   
-  var on_argument_click = function(evt, target)
+  this._on_argument_click = function(evt, target)
   {
     target.arg.action();
   };
 
-  var on_goto_script_click = function(evt, target)
+  this._on_goto_script_click = function(evt, target)
   {
     var line = parseInt(target.getAttribute("data-line"));
     var script_id = parseInt(target.getAttribute("data-script-id"));
@@ -70,10 +70,10 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.click["webgl-drawcall-buffer"] = on_buffer_click.bind(this);
-  eh.click["webgl-speclink-click"] = on_speclink_click.bind(this);
-  eh.click["webgl-drawcall-goto-script"] = on_goto_script_click.bind(this);
-  eh.click["webgl-draw-argument"] = on_argument_click.bind(this);
+  eh.click["webgl-drawcall-buffer"] = this._on_buffer_click.bind(this);
+  eh.click["webgl-speclink-click"] = this._on_speclink_click.bind(this);
+  eh.click["webgl-drawcall-goto-script"] = this._on_goto_script_click.bind(this);
+  eh.click["webgl-draw-argument"] = this._on_argument_click.bind(this);
 
   this.init(id, name, container_class);
 };

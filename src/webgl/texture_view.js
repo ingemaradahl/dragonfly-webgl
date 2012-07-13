@@ -36,7 +36,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._render();
   };
 
-  var on_texture_data = function(msg)
+  this._on_texture_data = function(msg)
   {
     if (this._container && this._texture === msg["texture"])
     {
@@ -44,7 +44,7 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
-  messages.addListener('webgl-texture-data', on_texture_data.bind(this));
+  messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
   this.init(id, name, container_class);
 };
 
