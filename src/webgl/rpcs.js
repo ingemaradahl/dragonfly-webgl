@@ -19,17 +19,6 @@ cls.WebGL.RPCs.prepare = function(fun)
 /* The following functions will never be called by the dragonfly instance */
 
 
-cls.WebGL.RPCs.query_test = function()
-{
-	var data_length = 1000000;
-	var return_value = 'a';
-	for (var i=0; i<data_length-1; i++)
-	{
-		return_value += 'a';
-	}
-	return return_value;
-};
-
 /**
  * Retrieves the handler interface from a canvas after a WebGL context have been
  * created. canvas and canvas_map should be defined by Dragonfly.
@@ -663,6 +652,7 @@ cls.WebGL.RPCs.injection = function () {
 
         var img_data = ctx.createImageData(width, height);
 
+        // TODO this is so slooooow.
         for (var i=0; i<size; i+=4)
         {
           img_data.data[i] = pixels[i];
@@ -784,13 +774,15 @@ cls.WebGL.RPCs.injection = function () {
       }
     }
 
+    var trace_start_time = null;
     this.new_frame = function()
     {
       handler.current_frame++;
 
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
-        console.log("Frame have been captured.");
+        var time = new Date() - trace_start_time;
+        console.log("Frame have been captured in " + time + " ms.");
         events["snapshot-completed"].post({
           context: handler._interface, // Used to connect the snapshot to a context
           snapshot: handler.snapshot.end()
@@ -800,6 +792,7 @@ cls.WebGL.RPCs.injection = function () {
 
       if (handler.capture_next_frame)
       {
+        trace_start_time = new Date();
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
         handler.snapshot = new Snapshot(handler);
