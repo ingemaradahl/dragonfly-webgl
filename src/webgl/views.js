@@ -16,7 +16,7 @@ cls.WebGLHeaderViewBase = Object.create(ViewBase,
     });
 
 
-// This adds a listener for 
+// Add listeners and methods for call view events. 
 cls.WebGLHeaderViewBase.initialize = function()
 { 
   var on_goto_script_click = function(evt, target)

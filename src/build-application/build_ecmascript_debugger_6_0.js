@@ -235,6 +235,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* WebGL inspection */
     window.webgl = new cls.WebGL.WebGLDebugger();
 
+    // Add some listeners and corresponding methods for call views.
     cls.WebGLHeaderViewBase.initialize();
 
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
