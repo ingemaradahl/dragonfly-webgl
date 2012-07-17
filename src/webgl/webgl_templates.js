@@ -160,6 +160,9 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
           "handler", "webgl-trace-argument",
           "class", "link");
     }
+
+    if (arg.tooltip) html.push("title", arg.tooltip);
+
     html.push(
         "data-call-number", call_number,
         "data-argument-number", i);

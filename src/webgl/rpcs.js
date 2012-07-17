@@ -637,6 +637,10 @@ cls.WebGL.RPCs.injection = function () {
           height = viewport[3];
         }
 
+        // TODO temporary until improved dimension finding is in place.
+        // http://glge.org/demos/cardemo/
+        if (!width || !height) return;
+
         // Image data will be stored as RGBA - 4 bytes per pixel
         var size = width * height * 4;
         var arr = new ArrayBuffer(size);
@@ -1305,14 +1309,6 @@ cls.WebGL.RPCs.injection = function () {
       // http://www.glge.org/demos/canvasdemo/ (and possibly all GLGE
       // applications?) adds an extra parameter to texImage2D, rendering the
       // arguments "decoding" heuristic in DF invalid
-      if (function_name === "texImage2D")
-      {
-        call_args = call_args.slice(0, 9);
-        if (call_args.length > 6 && call_args.length < 9)
-        {
-          call_args = call_args.slice(0, 6);
-        }
-      }
 
       this.call_locs.push(loc);
 
@@ -1357,8 +1353,9 @@ cls.WebGL.RPCs.injection = function () {
     {
       texture = texture instanceof WebGLTexture ? this.handler.lookup_texture(texture) : texture;
 
-      if (!texture)
-        return;
+      if (!texture) return;
+
+      var gl = this.handler.gl;
 
       /* Calculates texture data in a scope transission friendly way.
        * This function is never bound to the Handler object, but a texture object,
@@ -1461,7 +1458,7 @@ cls.WebGL.RPCs.injection = function () {
       // Clone data to new object, which is later released by scope
       var texture_state = {
         call_index : this.call_index,
-        index : texture.index,
+        index : texture.index
       };
 
       //if (texture.object)
