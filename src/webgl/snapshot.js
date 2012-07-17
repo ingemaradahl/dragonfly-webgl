@@ -193,7 +193,7 @@ cls.WebGLSnapshotArray = function(context_id)
         else if (object_index_regexp.test(result))
         {
           var res_index = object_index_regexp.exec(result)[1];
-          result = new LinkedObject(call_refs[res_index], this);
+          result = new LinkedObject(call_refs[res_index], j, this);
         }
         else if (!isNaN(result))
         {
@@ -349,7 +349,6 @@ cls.WebGLSnapshotArray = function(context_id)
       }
     }
   }
-
 };
 
 cls.WebGLSnapshotArray.prototype = new Array();

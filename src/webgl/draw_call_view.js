@@ -54,9 +54,9 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this.display_by_call = function(trace_call, call, draw_call)
   {
     var draw_template = window.templates.webgl.drawcall(draw_call, trace_call);
-    
+
     this.render_with_header(trace_call, call, draw_template);
-    
+
     if (draw_call && window.webgl.gl)
     {
       this._element_buffer = draw_call.element_buffer;
@@ -68,7 +68,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
   var on_attribute_select = function(evt, target)
   {
-    render_preview()
+    render_preview();
   };
 
   var on_buffer_click = function(evt, target)
@@ -76,10 +76,10 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     target.buffer.show();
   };
 
-  
+
   this._on_argument_click = function(evt, target)
   {
-    target.arg.action();
+    target.argument.action();
   };
 
 

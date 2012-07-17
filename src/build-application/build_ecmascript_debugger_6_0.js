@@ -241,11 +241,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
 
-    new cls.WebGLView('webgl_panel',
-                      'WebGL',// TODO: ui_strings.M_VIEW_LABEL_WEBGL,
-                      'scroll webgl_panel mono');
-    cls.WebGLView.create_ui_widgets();
-
     new cls.WebGLBufferSideView("buffer-side-panel",
                                 "Buffers", // TODO
                                 "scroll side-panel buffer");

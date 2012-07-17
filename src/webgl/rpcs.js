@@ -1243,7 +1243,7 @@ cls.WebGL.RPCs.injection = function () {
        * Creates a object for easy pairing on the Dragonfly side.
        */
       var object_type_regexp = /^\[object (.*?)\]$/;
-      var make_trace_argument_object = function (obj, args)
+      var make_trace_linked_object = function (obj, args)
       {
         var type = obj.constructor.name;
         if (type === "Function.prototype")
@@ -1295,7 +1295,7 @@ cls.WebGL.RPCs.injection = function () {
         if (typeof(args[i]) === "object" && args[i] !== null)
         {
           var obj = args[i];
-          var trace_ref = make_trace_argument_object(obj);
+          var trace_ref = make_trace_linked_object(obj);
           var trace_ref_index = this.call_refs.push(trace_ref) - 1;
           call_args.push("@" + String(trace_ref_index));
         }
@@ -1305,10 +1305,12 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
 
-      // TODO: better fix
-      // http://www.glge.org/demos/canvasdemo/ (and possibly all GLGE
-      // applications?) adds an extra parameter to texImage2D, rendering the
-      // arguments "decoding" heuristic in DF invalid
+      if (typeof(result) === "object" && result !== null)
+      {
+        var result_ref = make_trace_linked_object(result);
+        var result_ref_index = this.call_refs.push(result_ref) - 1;
+        result = "@" + String(result_ref_index);
+      }
 
       this.call_locs.push(loc);
 
