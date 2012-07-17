@@ -211,6 +211,13 @@ cls.WebGL.WebGLDebugger = function ()
 
       program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
       gl.enableVertexAttribArray(program.positionAttrib);
+      program.vertex2Attrib = gl.getAttribLocation(program, "aVertex2Position");
+      gl.enableVertexAttribArray(program.vertex2Attrib);
+      program.vertex3Attrib = gl.getAttribLocation(program, "aVertex3Position");
+      gl.enableVertexAttribArray(program.vertex3Attrib);
+      program.normalAttrib = gl.getAttribLocation(program, "aVertexNormal");
+      gl.enableVertexAttribArray(program.normalAttrib);
+
       program.pMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
       program.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
 
