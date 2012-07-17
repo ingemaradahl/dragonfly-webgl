@@ -211,7 +211,7 @@ cls.WebGLAPI = function ()
       shaderSource: '5.14.9',
       useProgram: '5.14.9',
       validateProgram: '5.14.9',
-      disableVertexAttribArray: '5.14.14',
+      disableVertexAttribArray: '5.14.10',
       enableVertexAttribArray: '5.14.10',
       getActiveAttrib: '5.14.10',
       getActiveUniform: '5.14.10',
