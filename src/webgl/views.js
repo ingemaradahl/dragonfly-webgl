@@ -3,6 +3,46 @@
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
+// Makes it possible to render a view with an attached header.
+cls.WebGLHeaderViewBase = Object.create(ViewBase, 
+    {render_with_header:
+      {value:
+        function(trace_call, call, template)
+        {
+          this._container.clearAndRender(
+          window.templates.webgl.generic_call(trace_call, call, template));
+        }
+      }
+    });
+
+
+// Add listeners and methods for call view events. 
+cls.WebGLHeaderViewBase.initialize = function()
+{ 
+  var on_goto_script_click = function(evt, target)
+  {
+    var line = parseInt(target.getAttribute("data-line"));
+    var script_id = parseInt(target.getAttribute("data-script-id"));
+
+    var sourceview = window.views.js_source;
+    window.runtimes.setSelectedScript(script_id);
+    UI.get_instance().show_view("js_mode");
+    if (sourceview)
+    {
+      sourceview.show_and_flash_line(script_id, line);
+    }
+  };
+  
+  var on_speclink_click = function(evt, target) 
+  {
+      window.open(target.getAttribute("function_name"));
+  };
+
+  var eh = window.eventHandlers;
+  eh.click["webgl-speclink-click"] = on_speclink_click;
+  eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
+};
+
 cls.WebGLSnapshotSelect = function(id)
 {
   this._snapshot_list = [{}];

@@ -3,6 +3,7 @@
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
+
 cls.WebGL.WebGLDebugger = function ()
 {
   this.injected = false;

@@ -333,8 +333,8 @@ window.templates.webgl.texture = function(texture)
   ];
 };
 
-// Argument draw_call may be undefined.
-window.templates.webgl.generic_call = function(trace_call, draw_call, call)
+// Argument template may be undefined.
+window.templates.webgl.generic_call = function(trace_call, call, template)
 {
   var function_name = trace_call.function_name;
   var function_call =
@@ -351,9 +351,8 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
 
   // The following code is to build a function call string. It checks for
   // arguments that are clickable and makes it into a link.
-  var func_text = ["span", function_name];
-  var function_string = [["h2", func_text]];
-  function_string.push("(");
+  var function_string = [];
+  function_string.push(["span", "("]);
   var argobj =
       window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
   for (var i=0; i<argobj.length; i++)
@@ -367,10 +366,10 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
           "class", "link",
           "arg", arg);
     }
-    if (i>0) function_string.push(", ");
+    if (i>0) function_string.push(["span", ", "]);
     function_string.push(html);
   }
-  function_string.push(")");
+  function_string.push(["span", ")"]);
   // End
 
   // Makes a link to the script tag to show where the call was made.
@@ -400,17 +399,17 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
   }
   // End
 
-  var ret = [["div", ["h2", "Call: " + callnr],
-                    ["p", function_string],
-                    ["p", spec_link],
-                    ["p", script_ref],
-                    "class", "draw-call-info"
+  var ret = [["div", ["h2", [["span", "Call " + callnr + ": "], ["span", function_name]]],
+                     function_string,
+                     ["p", spec_link],
+                     ["p", script_ref],
+                     "class", "draw-call-info"
              ]];
 
   // Add a draw call view if the call was a draw call.
-  if (draw_call)
+  if (template)
   {
-    ret.push(window.templates.webgl.drawcall(draw_call, trace_call));
+    ret.push(template);
   }
 
   return ret;

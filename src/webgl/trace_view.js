@@ -90,10 +90,22 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_row_click = function(evt, target)
   {
-    var call_number = target["data-call-number"];
+    
+    var call = target["data-call-number"];
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var draw_call = snapshot.drawcalls.get_by_call(call);
+    var trace_call = snapshot.trace[call];
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_draw_call");
-    window.views.webgl_draw_call.display_by_call(call_number);
+    if (trace_call.drawcall)
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_draw_call");
+      window.views.webgl_draw_call.display_by_call(trace_call, call, draw_call);
+    }
+    else
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_call");
+      window.views.webgl_call.display_by_call(trace_call, call); 
+    }
   };
 
   this._on_argument_click = function(evt, target)
