@@ -39,6 +39,14 @@ cls.WebGLAPI = function ()
       ULONG: 13,
       WH: 14        // width x height (array with 2 values)
   };
+  var TYPES = this.TYPES;
+
+  var TYPES_BACK = [];
+  for (var key in TYPES)
+  {
+    if (!TYPES.hasOwnProperty(key)) continue;
+    TYPES_BACK[TYPES[key]] = key;
+  }
 
   this.function_call_to_string = function(function_name, args)
   {
@@ -203,7 +211,7 @@ cls.WebGLAPI = function ()
       shaderSource: '5.14.9',
       useProgram: '5.14.9',
       validateProgram: '5.14.9',
-      disableVertexAttribArray: '5.14.14',
+      disableVertexAttribArray: '5.14.10',
       enableVertexAttribArray: '5.14.10',
       getActiveAttrib: '5.14.10',
       getActiveUniform: '5.14.10',
@@ -583,12 +591,25 @@ cls.WebGLAPI = function ()
   GLFunction.prototype.get_argument_objects = function(args)
   {
     var arrs = [];
-    for (var i = 0; i < args.length; i++)
+    for (var i = 0; i < this.args.length; i++)
     {
       var arr = this.args[i];
       var value = args[i];
 
       arrs.push(arr.get_object(value));
+    }
+
+    // If there are more arguments than expected, handle them as possible constants or objects
+    if (this.args.length < args.length)
+    {
+      for (var h = this.args.length; h < args.length; h++)
+      {
+        var val = args[h];
+        var arg;
+        if (typeof(val) === "object") arg = val;
+        else arg = {text: window.webgl.api.constant_value_to_string(val)};
+        arrs.push(arg);
+      }
     }
 
     return arrs;
@@ -608,6 +629,8 @@ cls.WebGLAPI = function ()
    */
   function GLFunctionMulti(){
     GLFunction.apply(this, arguments);
+    // Sort the different parameter lists based on their length, in decending order.
+    this.args.sort(function(a, b){return b.length - a.length;});
   }
 
   GLFunctionMulti.prototype = new GLFunction();
@@ -645,18 +668,33 @@ cls.WebGLAPI = function ()
     var arrs = [];
     for (var i = 0; i < this.args.length; i++)
     {
-      if (this.args[i].length === args.length)
+      var arg_list = this.args[i];
+      if (arg_list.length <= args.length)
       {
-        for (var j = 0; j < args.length; j++)
+        for (var j = 0; j < arg_list.length; j++)
         {
-          var arr = this.args[i][j];
+          var arr = arg_list[j];
           var value = args[j];
 
           arrs.push(arr.get_object(value));
         }
+
+        // If there are more arguments than expected, handle them as possible constants or objects
+        if (arg_list.length < args.length)
+        {
+          for (var h = arg_list.length; h < args.length; h++)
+          {
+            var val = args[h];
+            var arg;
+            if (typeof(val) === "object") arg = val;
+            else arg = {text: window.webgl.api.constant_value_to_string(val)};
+            arrs.push(arg);
+          }
+        }
         break;
       }
     }
+
 
     return arrs;
   };
@@ -675,14 +713,23 @@ cls.WebGLAPI = function ()
     return String(value);
   };
 
+  GLParam.prototype.get_tooltip = function()
+  {
+    return TYPES_BACK[this.type] + " " + this.name;
+  };
+
   GLParam.prototype.get_object = function(value)
   {
     if (typeof(value) === "object")
     {
+      if (!value.tooltip) value.tooltip = this.get_tooltip();
       return value;
     }
 
-    return {text: this.generate_string(value)};
+    return {
+      text: this.generate_string(value),
+      tooltip: this.get_tooltip()
+    };
   };
 
   // --------------------------

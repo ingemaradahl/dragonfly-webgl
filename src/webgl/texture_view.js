@@ -44,7 +44,15 @@ cls.WebGLTextureView = function(id, name, container_class)
     }
   };
 
-  var on_texture_down = function(evt, target)
+  var on_texture_end_drag = function(evt)
+  {
+    evt.stopPropagation();
+    evt.preventDefault();
+    window.onmousemove = null;
+    window.onmouseup = null;
+  };
+
+  var on_texture_start_drag = function(evt, target)
   {
     evt.stopPropagation();
     evt.preventDefault();
@@ -54,7 +62,9 @@ cls.WebGLTextureView = function(id, name, container_class)
 
     var max_top = Math.max(0, evt.target.offsetHeight - parent.clientHeight);
     var max_left = Math.max(0, evt.target.offsetWidth - parent.clientWidth);
-    target.onmousemove = function(e)
+    this._target = target;
+
+    window.onmousemove = function(e)
     {
       e.stopPropagation();
       e.preventDefault();
@@ -64,18 +74,13 @@ cls.WebGLTextureView = function(id, name, container_class)
       parent.scrollTop = top;
       parent.scrollLeft = left;
     };
-  };
 
-  var on_texture_up = function(evt, target)
-  {
-    evt.stopPropagation();
-    evt.preventDefault();
-    target.onmousemove = null;
+    window.onmouseup = on_texture_end_drag;
   };
 
   var eh = window.eventHandlers;
-  eh.mousedown["webgl-texture-image"] = on_texture_down.bind(this);
-  eh.mouseup["webgl-texture-image"] = on_texture_up.bind(this);
+  eh.mousedown["webgl-texture-image"] = on_texture_start_drag.bind(this);
+  eh.mouseup["webgl-texture-image"] = on_texture_end_drag.bind(this);
 
   messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
   this.init(id, name, container_class);

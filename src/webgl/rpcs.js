@@ -19,17 +19,6 @@ cls.WebGL.RPCs.prepare = function(fun)
 /* The following functions will never be called by the dragonfly instance */
 
 
-cls.WebGL.RPCs.query_test = function()
-{
-	var data_length = 1000000;
-	var return_value = 'a';
-	for (var i=0; i<data_length-1; i++)
-	{
-		return_value += 'a';
-	}
-	return return_value;
-};
-
 /**
  * Retrieves the handler interface from a canvas after a WebGL context have been
  * created. canvas and canvas_map should be defined by Dragonfly.
@@ -648,6 +637,10 @@ cls.WebGL.RPCs.injection = function () {
           height = viewport[3];
         }
 
+        // TODO temporary until improved dimension finding is in place.
+        // http://glge.org/demos/cardemo/
+        if (!width || !height) return;
+
         // Image data will be stored as RGBA - 4 bytes per pixel
         var size = width * height * 4;
         var arr = new ArrayBuffer(size);
@@ -663,6 +656,7 @@ cls.WebGL.RPCs.injection = function () {
 
         var img_data = ctx.createImageData(width, height);
 
+        // TODO this is so slooooow.
         for (var i=0; i<size; i+=4)
         {
           img_data.data[i] = pixels[i];
@@ -784,13 +778,15 @@ cls.WebGL.RPCs.injection = function () {
       }
     }
 
+    var trace_start_time = null;
     this.new_frame = function()
     {
       handler.current_frame++;
 
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
-        console.log("Frame have been captured.");
+        var time = new Date() - trace_start_time;
+        console.log("Frame have been captured in " + time + " ms.");
         events["snapshot-completed"].post({
           context: handler._interface, // Used to connect the snapshot to a context
           snapshot: handler.snapshot.end()
@@ -800,6 +796,7 @@ cls.WebGL.RPCs.injection = function () {
 
       if (handler.capture_next_frame)
       {
+        trace_start_time = new Date();
         handler.capture_next_frame = false;
         handler.capturing_frame = true;
         handler.snapshot = new Snapshot(handler);
@@ -1246,7 +1243,7 @@ cls.WebGL.RPCs.injection = function () {
        * Creates a object for easy pairing on the Dragonfly side.
        */
       var object_type_regexp = /^\[object (.*?)\]$/;
-      var make_trace_argument_object = function (obj, args)
+      var make_trace_linked_object = function (obj, args)
       {
         var type = obj.constructor.name;
         if (type === "Function.prototype")
@@ -1298,7 +1295,7 @@ cls.WebGL.RPCs.injection = function () {
         if (typeof(args[i]) === "object" && args[i] !== null)
         {
           var obj = args[i];
-          var trace_ref = make_trace_argument_object(obj);
+          var trace_ref = make_trace_linked_object(obj);
           var trace_ref_index = this.call_refs.push(trace_ref) - 1;
           call_args.push("@" + String(trace_ref_index));
         }
@@ -1308,17 +1305,11 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
 
-      // TODO: better fix
-      // http://www.glge.org/demos/canvasdemo/ (and possibly all GLGE
-      // applications?) adds an extra parameter to texImage2D, rendering the
-      // arguments "decoding" heuristic in DF invalid
-      if (function_name === "texImage2D")
+      if (typeof(result) === "object" && result !== null)
       {
-        call_args = call_args.slice(0, 9);
-        if (call_args.length > 6 && call_args.length < 9)
-        {
-          call_args = call_args.slice(0, 6);
-        }
+        var result_ref = make_trace_linked_object(result);
+        var result_ref_index = this.call_refs.push(result_ref) - 1;
+        result = "@" + String(result_ref_index);
       }
 
       this.call_locs.push(loc);
@@ -1364,8 +1355,9 @@ cls.WebGL.RPCs.injection = function () {
     {
       texture = texture instanceof WebGLTexture ? this.handler.lookup_texture(texture) : texture;
 
-      if (!texture)
-        return;
+      if (!texture) return;
+
+      var gl = this.handler.gl;
 
       /* Calculates texture data in a scope transission friendly way.
        * This function is never bound to the Handler object, but a texture object,
@@ -1468,7 +1460,7 @@ cls.WebGL.RPCs.injection = function () {
       // Clone data to new object, which is later released by scope
       var texture_state = {
         call_index : this.call_index,
-        index : texture.index,
+        index : texture.index
       };
 
       //if (texture.object)

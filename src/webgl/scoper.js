@@ -138,12 +138,17 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
     {
       var object_id = message[OBJECT][OBJECT_ID];
 
-      var targets = {};
-      targets[object_id] = this._object_reviver(this, "result", release, this.reviver_tree);
+      var object_targets = {};
+      object_targets[object_id] = [{
+        target: this,
+        key: "result",
+        reviver_tree: this.reviver_tree
+      }];
+      object_targets[object_id].release = release;
 
       if (this.reviver_tree._depth > 0)
       {
-        this._examine_level([object_id], targets);
+        this._examine_level(object_targets);
       }
       else
       {
@@ -183,19 +188,20 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
  * Examine a single object.
  *
  * @param {Object} object Object to examine, should have object_id and runtime_id properties.
- * @param {Boolean} release optional, True will release the object in Scope.
- *   Defaults to true.
+ * @param {Boolean} release optional, True will force release the object in Scope.
+ *   Otherwise the action in the reviver tree will decide.
  */
 cls.Scoper.prototype.examine_object = function(object, release)
 {
-  typeof(release) === "boolean" || (release = true);
+  typeof(release) === "boolean" || (release = false);
   this.runtime_id = object.runtime_id;
   this.current_depth = 0;
 
-  var targets = {};
-  targets[object.object_id] = this._object_reviver(this, "result", release, this.reviver_tree);
+  var object_targets = {};
+  this._prepair_object_examine("result", "object", this, object.object_id, object_targets, [], this.reviver_tree);
+  if (release) object_targets[object.object_id].release = true;
 
-  var args = [this.runtime_id, targets];
+  var args = [this.runtime_id, object_targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
       [this.runtime_id, [object.object_id], 0, 1]);
@@ -206,22 +212,28 @@ cls.Scoper.prototype.examine_object = function(object, release)
  *
  * @param {Number} runtime_id Runtime id.
  * @param {Array} objects Object ids of the objects to examine.
- * @param {Boolean} release optional, True will release the objects in Scope.
- *   Defaults to true.
+ * @param {Boolean} release optional, True will force release the objects in Scope.
+ *   Otherwise the action in the reviver tree will decide.
  */
 cls.Scoper.prototype.examine_objects = function(runtime_id, object_ids, release)
 {
-  typeof(release) === "boolean" || (release = true);
+  typeof(release) === "boolean" || (release = false);
   this.runtime_id = runtime_id;
   this.current_depth = 0;
   var targets = {};
   var base = [];
+  this.result = base;
+
+  var object_targets = {};
   for (var i = 0; i < object_ids.length; i++)
   {
-    targets[object_ids[i]] = this._object_reviver(base, i, release, this.reviver_tree);
+    var object_id = object_ids[i];
+    this._prepair_object_examine(i, "object", base, object_id, object_targets,
+        [], this.reviver_tree);
+    if (release) object_targets[object_id].release = true;
   }
 
-  var args = [this.runtime_id, targets];
+  var args = [runtime_id, object_targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
       [this.runtime_id, object_ids, 0, 1]);
@@ -230,18 +242,30 @@ cls.Scoper.prototype.examine_objects = function(runtime_id, object_ids, release)
 /**
  * Examines a depth level of objects in Scope.
  */
-cls.Scoper.prototype._examine_level = function(object_ids, object_targets)
+cls.Scoper.prototype._examine_level = function(object_targets)
 {
+  var list = [];
+  for (var id in object_targets)
+  {
+    list.push(Number(id));
+  }
+
+  if (list.length === 0)
+  {
+    this.callback.apply(this.callback_that, [this.result].concat(this.callback_arguments));
+    return;
+  }
+
   var args = [this.runtime_id, object_targets];
   var tag = tagManager.set_callback(this, this._examine_level_callback, args);
   window.services["ecmascript-debugger"].requestExamineObjects(tag,
-      [this.runtime_id, object_ids, 0, 1]);
+      [this.runtime_id, list, 0, 1]);
 };
 
 /**
  * Examines the next depth level of objects in Scope, if that is the action that is taken.
  */
-cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, targets)
+cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, in_object_targets)
 {
   if (status !== 0)
   {
@@ -251,27 +275,40 @@ cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, 
 
   this.current_depth++;
 
-  var object_ids = [];
   var release_ids = [];
-  var object_targets = {};
+  var out_object_targets = {};
 
   for (var i = 0; i < message[0].length; i++)
   {
     var object_id = message[0][i][0][0][0][0];
-    var target = targets[object_id];
+    var target = in_object_targets[object_id];
 
-    target.call(this, message[0][i][0][0], release_ids, object_ids, object_targets);
+    this._object_reviver(message[0][i][0][0], target, out_object_targets, release_ids);
   }
 
-  if (release_ids > 0) this.release_objects(release_ids);
+  this.release_objects(release_ids);
 
-  if (object_ids.length > 0)
+  this._examine_level(out_object_targets);
+};
+
+/**
+ * Releases a list of objects.
+ *
+ * @param {Object} object_ids object with object ids that should be released as properties.
+ */
+cls.Scoper.prototype.release_objects = function(object_ids)
+{
+  var list = [];
+  for (var id in object_ids)
   {
-    this._examine_level(object_ids, object_targets);
+    list.push(Number(id));
   }
-  else
+
+  if (list.length > 0)
   {
-    this.callback.apply(this.callback_that, [this.result].concat(this.callback_arguments));
+    window.services["ecmascript-debugger"].requestReleaseObjects(
+        cls.TagManager.IGNORE_RESPONSE,
+        [list]);
   }
 };
 
@@ -303,14 +340,15 @@ cls.Scoper.prototype.value_reviver = function(type, value)
 };
 
 /**
- * Sets up the reviver to revive an object when the data is available.
+ * Revives an object onto all the destinations that have previously been set up.
  */
-cls.Scoper.prototype._object_reviver = function(target_object, target_key, release, reviver_tree)
+cls.Scoper.prototype._object_reviver = function(message, object_target, out_object_targets, release_ids)
 {
-  return function(message, release_ids, object_ids, object_targets)
-  {
-    reviver_tree._reviver.call(this, target_object, target_key, release, message, release_ids, object_ids, object_targets, reviver_tree);
-  };
+  var release = object_target.release;
+  var scoper = this;
+  object_target.forEach(function(target_info){
+    target_info.target[target_info.key] = target_info.reviver_tree._reviver.call(scoper, release, message, release_ids, out_object_targets, target_info.reviver_tree);
+  });
 };
 
 /**
@@ -325,10 +363,64 @@ cls.Scoper.ACTIONS =
 };
 
 /**
+ * Takes information about an object prior to examination to know how to extract
+ * the data when it have been examined.
+ */
+cls.Scoper.prototype._prepair_object_examine = function(key, type, target, id,
+    object_targets, release_ids, reviver_tree)
+{
+  var action;
+  if (reviver_tree._depth != null && this.current_depth >= reviver_tree._depth)
+  {
+    action = cls.Scoper.ACTIONS.NOTHING;
+  }
+  else if (reviver_tree._action != null)
+  {
+    action = reviver_tree._action;
+  }
+  else
+  {
+    action = this.default_object_action;
+  }
+
+  switch (action)
+  {
+    case cls.Scoper.ACTIONS.NOTHING:
+      target[key] = type.indexOf("Array") !== -1 ? [] : {};
+      target[key].object_id = id;
+      target[key].runtime_id = this.runtime_id;
+      break;
+    case cls.Scoper.ACTIONS.RELEASE:
+      // currently overrides all other actions in terms of releasing.
+      target[key] = type.indexOf("Array") !== -1 ? [] : {};
+      release_ids[id] = true;
+      break;
+    case cls.Scoper.ACTIONS.EXAMINE:
+      if (!(id in object_targets)) object_targets[id] = [];
+      object_targets[id].push({
+        target: target,
+        key: key,
+        reviver_tree: reviver_tree
+      });
+      object_targets[id].release = false;
+      break;
+    default:
+      if (!(id in object_targets)) object_targets[id] = [];
+      object_targets[id].push({
+        target: target,
+        key: key,
+        reviver_tree: reviver_tree
+      });
+      // If already marked for not to be released then don't release it.
+      object_targets[id].release = object_targets[id].release !== false;
+  }
+};
+
+/**
  * Revives the result of a examine of a single object. Determines if it should be released, and what action to take on sub objects.
  */
-cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release,
-    message, release_ids, object_ids, object_targets, reviver_tree)
+cls.Scoper.prototype.reviver_basic = function(release, message, release_ids,
+    object_targets, reviver_tree)
 {
   var NAME = 0,
       TYPE = 1,
@@ -340,6 +432,8 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
   var obj_info = message[0];
   var msg_vars = message[1];
 
+  var object_id = obj_info[0];
+
   var target;
   if (reviver_tree._class)
   {
@@ -349,19 +443,18 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
   {
     target = obj_info[4].indexOf("Array") !== -1 ? [] : {};
   }
-  target_object[target_key] = target;
 
   if (release)
   {
-    release_ids.push(obj_info[0]);
+    release_ids[object_id] = true;
   }
   else
   {
-    target.object_id = obj_info[0];
+    target.object_id = object_id;
     target.runtime_id = this.runtime_id;
   }
 
-  if (msg_vars === undefined) return;
+  if (msg_vars === undefined) return target;
 
   if (reviver_tree._array_elements && reviver_tree._array_elements._depth)
   {
@@ -397,30 +490,22 @@ cls.Scoper.prototype.reviver_basic = function(target_object, target_key, release
     {
       var id = msg_vars[j][OBJECT][OBJECT_ID];
 
-      this._perform_object_action(key, type, target, id, object_ids, object_targets, release_ids, property_reviver_tree);
+      this._prepair_object_examine(key, type, target, id, object_targets, release_ids, property_reviver_tree);
     }
     else if (property_reviver_tree._ignore !== true)
     {
       target[key] = this.value_reviver(msg_vars[j][TYPE], msg_vars[j][VALUE]);
     }
   }
-};
 
-/**
- * Copies over some properties from the parent reviver tree to the child reviver tree.
- */
-cls.Scoper.prototype._inherit_reviver_properties = function(parent, child)
-{
-  if (child._action == null) child._action = parent._action;
-  if (child._depth == null) child._depth = parent._depth;
-  if (child._reviver == null) child._reviver = parent._reviver;
+  return target;
 };
 
 /**
  * Same as reviver_basic but will revive typed arrays correctly.
  */
-cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release,
-    message, release_ids, object_ids, object_targets, reviver_tree)
+cls.Scoper.prototype.reviver_typed = function(release, message, release_ids,
+    object_targets, reviver_tree)
 {
   var NAME = 0,
       TYPE = 1,
@@ -430,6 +515,7 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
       OBJECT_ID = 0;
 
   var target;
+  var object_id = message[0][0];
   var obj_class_name = message[0][4];
 
   var msg_vars = message[1];
@@ -504,19 +590,17 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
     target = {};
   }
 
-  target_object[target_key] = target;
-
   if (release)
   {
-    release_ids.push(message[0][0]);
+    release_ids.push(object_id);
   }
   else
   {
-    target.object_id = message[0][0];
+    target.object_id = object_id;
     target.runtime_id = this.runtime_id;
   }
 
-  if (msg_vars === undefined) return;
+  if (msg_vars === undefined) return target;
 
   if (reviver_tree._array_elements && reviver_tree._array_elements._depth)
   {
@@ -553,7 +637,7 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
     {
       var id = msg_vars[j][OBJECT][OBJECT_ID];
 
-      this._perform_object_action(key, type, target, id, object_ids,
+      this._prepair_object_examine(key, type, target, id,
           object_targets, release_ids, property_reviver_tree);
     }
     else if (property_reviver_tree._ignore !== true)
@@ -561,72 +645,18 @@ cls.Scoper.prototype.reviver_typed = function(target_object, target_key, release
       target[key] = this.value_reviver(msg_vars[j][TYPE], msg_vars[j][VALUE]);
     }
   }
+
+  return target;
 };
 
 /**
- * Determines what action to take on an object and perform it.
+ * Copies over some properties from the parent reviver tree to the child reviver tree.
  */
-cls.Scoper.prototype._perform_object_action = function(key, type, target, id,
-    object_ids, object_targets, release_ids, reviver_tree)
+cls.Scoper.prototype._inherit_reviver_properties = function(parent, child)
 {
-  var action;
-  if (reviver_tree._depth != null && this.current_depth >= reviver_tree._depth)
-  {
-    action = cls.Scoper.ACTIONS.NOTHING;
-  }
-  else if (reviver_tree._action != null)
-  {
-    action = reviver_tree._action;
-  }
-  else
-  {
-    action = this.default_object_action;
-  }
-
-  var reviver;
-  if (reviver_tree._reviver)
-  {
-    reviver = reviver_tree._reviver;
-  }
-  else
-  {
-    reviver = this._object_reviver;
-  }
-
-  switch (action)
-  {
-    case cls.Scoper.ACTIONS.NOTHING:
-      target[key] = type.indexOf("Array") !== -1 ? [] : {};
-      target[key].object_id = id;
-      target[key].runtime_id = this.runtime_id;
-      break;
-    case cls.Scoper.ACTIONS.RELEASE:
-      target[key] = type.indexOf("Array") !== -1 ? [] : {};
-      release_ids.push(id);
-      break;
-    case cls.Scoper.ACTIONS.EXAMINE:
-      object_ids.push(id);
-      target[key] = this._object_reviver(target, key, false, reviver_tree);
-      object_targets[id] = target[key];
-      break;
-    default:
-      object_ids.push(id);
-      target[key] = this._object_reviver(target, key, true, reviver_tree);
-      object_targets[id] = target[key];
-      release_ids.push(id);
-  }
-};
-
-/**
- * Releases a list of objects.
- *
- * @param {Array} object_ids list of object ids that should be released.
- */
-cls.Scoper.prototype.release_objects = function(object_ids)
-{
-  window.services["ecmascript-debugger"].requestReleaseObjects(
-      cls.TagManager.IGNORE_RESPONSE,
-      [object_ids]);
+  if (child._action == null) child._action = parent._action;
+  if (child._depth == null) child._depth = parent._depth;
+  if (child._reviver == null) child._reviver = parent._reviver;
 };
 
 cls.Scoper.prototype._have_error_callback = function()

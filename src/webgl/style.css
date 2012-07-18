@@ -21,7 +21,9 @@ img.flipped
 
 .webgl_view.buffer > div,
 .webgl_view.texture > div,
-.webgl_view.program > div
+.webgl_view.program > div,
+.webgl_view.call > div,
+.webgl_view.draw-call > div
 {
   text-align: left;
   padding: 10px;
@@ -137,7 +139,7 @@ pre.sh_sourceCode .webgl-hilight-uniform
 
 
 /* Draw Call */
-.webgl_view.draw-call > div
+.webgl_view .draw-call-info
 {
   padding: 10px;
 }

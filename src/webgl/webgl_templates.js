@@ -9,7 +9,7 @@ window.templates.webgl.reload_info = function(buffer)
   return [
     "div",
     [
-      "span", "",
+      "span", "Initialize WebGL Debugger",
       "class", "ui-button reload-window",
       "handler", "reload-window",
       "tabindex", "1"
@@ -139,30 +139,42 @@ window.templates.webgl.buffer_data_table = function(buffer)
   return [data_table, more_data];
 };
 
+window.templates.webgl.linked_object = function(obj, handler, data_name)
+{
+  var html = ["span", String(obj.text)];
+  if (obj.action)
+  {
+    html.push("handler", handler ? handler : "webgl-linked-object");
+    html.push("class", "link");
+  }
+
+  if (obj.tooltip) html.push("title", obj.tooltip);
+
+  html.push(data_name ? data_name : "data-linked-object", obj);
+
+  return html;
+};
+
 window.templates.webgl.trace_row = function(call, call_number, view_id)
 {
   var func_text = [
     "span", call.function_name
-  ]; // TODO click should jump to script tab...
+  ];
 
   var content = [func_text];
 
   content.push(["span", "("]);
 
-  var argobj = window.webgl.api.function_arguments_to_objects(call.function_name, call.args);
-  for (var i = 0; i < argobj.length; i++)
+  var args = window.webgl.api.function_arguments_to_objects(call.function_name, call.args);
+  for (var i = 0; i < args.length; i++)
   {
-    var arg = argobj[i];
-    var html = ["span", String(arg.text)];
-    if (arg.action)
+    var arg = args[i];
+    if (arg.data && arg.data.length > 4)
     {
-      html.push(
-          "handler", "webgl-trace-argument",
-          "class", "link");
+      arg.tooltip = arg.tooltip + "\n" + arg.text;
+      arg.text = arg.text.substr(0,10) + "...";
     }
-    html.push(
-        "data-call-number", call_number,
-        "data-argument-number", i);
+    var html = window.templates.webgl.linked_object(arg, "webgl-trace-argument");
 
     if (i > 0) content.push(", ");
     content.push(html);
@@ -170,10 +182,25 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
 
   content.push(["span", ")"]);
 
+  if (call.result)
+  {
+    var result_html;
+    if (typeof(call.result) === "object")
+    {
+      result_html = window.templates.webgl.linked_object(call.result, "webgl-trace-argument");
+    }
+    else
+    {
+      result_html = ["span", String(call.result)];
+    }
+    content.push(" = ", result_html);
+  }
+
   var row_class = "";
   if (call.have_error)
   {
-    content.push(" >> ", ["span", "error: " + String(call.error_code)]);
+    var error = window.webgl.api.constant_value_to_string(call.error_code);
+    content.push(" » ", ["span", "error: " + String(error)]);
     row_class = "trace-error";
   }
   else if (call.redundant)
@@ -330,47 +357,11 @@ window.templates.webgl.texture = function(texture)
   ];
 };
 
-// Argument draw_call may be undefined.
-window.templates.webgl.generic_call = function(trace_call, draw_call, call)
+/**
+ * Makes a link to the script tag to show where the call was made.
+ */
+window.templates.webgl.goto_script = function(trace_call)
 {
-  var function_name = trace_call.function_name;
-  var function_call =
-      window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
-  var callnr = parseInt(call) + 1; // Start call count on 1.
-
-  // Makes a link to the webgl specification of the actual function.
-  var spec_link = ["span", "Goto specification",
-                   "handler", "webgl-speclink-click",
-                   "class", "link",
-                   "function_name",
-                    window.webgl.api.function_to_speclink(function_name)
-                  ];
-
-  // The following code is to build a function call string. It checks for
-  // arguments that are clickable and makes it into a link.
-  var func_text = ["span", function_name];
-  var function_string = [["h2", func_text]];
-  function_string.push("(");
-  var argobj =
-      window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
-  for (var i=0; i<argobj.length; i++)
-  {
-    var arg = argobj[i];
-    var html = ["span", String(arg.text)];
-    if (arg.action)
-    {
-      html.push(
-          "handler", "webgl-draw-argument",
-          "class", "link",
-          "arg", arg);
-    }
-    if (i>0) function_string.push(", ");
-    function_string.push(html);
-  }
-  function_string.push(")");
-  // End
-
-  // Makes a link to the script tag to show where the call was made.
   var loc = trace_call.loc;
   var script_url = loc.short_url || loc.url;
   var script_ref;
@@ -395,22 +386,65 @@ window.templates.webgl.generic_call = function(trace_call, draw_call, call)
       "title", "Called from " + loc.caller_name + " in " + script_url
     ];
   }
-  // End
 
-  var ret = [["div", ["h2", "Call: " + callnr],
-                    ["p", function_string],
-                    ["p", spec_link],
-                    ["p", script_ref],
-                    "class", "draw-call-info"
-             ]];
+  return script_ref;
+};
 
-  // Add a draw call view if the call was a draw call.
-  if (draw_call)
+/**
+ * @param {Array} template optional, should contain a html structure of other
+ *   content that should be shown below the header.
+ */
+window.templates.webgl.generic_call = function(trace_call, call, template)
+{
+  var function_name = trace_call.function_name;
+  var function_call = window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
+  var callnr = parseInt(call) + 1; // Start call count on 1.
+
+  // Makes a link to the webgl specification of the actual function.
+  var spec_link = [
+    "span", "Goto specification",
+    "handler", "webgl-speclink-click",
+    "class", "link",
+    "function_name",
+    window.webgl.api.function_to_speclink(function_name)
+  ];
+
+  // Construct struture to display call arguments.
+  var function_arguments = [];
+  function_arguments.push(["span", "("]);
+  var argobj = window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
+  for (var i = 0; i < argobj.length; i++)
   {
-    ret.push(window.templates.webgl.drawcall(draw_call, trace_call));
+    var arg = argobj[i];
+    var html = window.templates.webgl.linked_object(arg, "webgl-draw-argument", "argument");
+    if (i > 0) function_arguments.push(["span", ", "]);
+    function_arguments.push(html);
   }
+  function_arguments.push(["span", ")"]);
 
-  return ret;
+  var script_ref = window.templates.webgl.goto_script(trace_call);
+
+  var header = [
+    "div", [
+      [
+        "h2", [
+          ["span", "Call " + callnr + ": "],
+          ["span", function_name]
+        ]
+      ],
+      function_arguments,
+      ["p", spec_link],
+      ["p", script_ref]
+    ],
+    "class", "draw-call-info"
+  ];
+
+  var res = [header];
+
+  // If additional content have been provided add it after the header.
+  if (template) res.push(template);
+
+  return res;
 };
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
