@@ -504,11 +504,17 @@ window.templates.webgl.drawcall_buffer = function (attributes)
       "select",
       [
         attributes.map(function(attribute) {
-          return [ "option",
+          var option = [ "option",
             attribute.name + " (" + attribute.buffer + ")",
             "value", attribute,
-            "attribute", attribute
+            "attribute", attribute,
           ];
+          if (!attribute.buffer)
+          {
+            option.push("disabled");
+            option.push("true");
+          }
+          return option;
         })
       ],
       "handler", "webgl-select-attribute",
