@@ -63,6 +63,10 @@ cls.WebGLSnapshotArray = function(context_id)
           }
         }
       },
+      state: {
+        _reviver: scoper.reviver_typed,
+        _class: cls.WebGLState
+      },
       programs: {
         _array_elements: {
           uniforms: {
@@ -98,6 +102,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.buffers = snapshot.buffers;
     this.programs = snapshot.programs;
     this.textures = snapshot.textures;
+    this.state = snapshot.state;
     this.drawcalls = [];
     this.trace = [];
 
@@ -208,10 +213,25 @@ cls.WebGLSnapshotArray = function(context_id)
       }
 
       this.trace = trace_list;
-
     }.bind(this);
 
     init_trace(snapshot.calls, snapshot.call_locs, snapshot.call_refs);
+
+    var init_state = function (state)
+    {
+      for (var key in state)
+      {
+        if (!state.hasOwnProperty(key)) continue;
+        var param = state[key];
+        for (var call in param)
+        {
+          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object") continue;
+          param[call] = new LinkedObject(param[call], call, this);
+        }
+      }
+    }.bind(this);
+
+    init_state(this.state);
 
     // Init draw calls
     var init_drawcall = function(drawcall)

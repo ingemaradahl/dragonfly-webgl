@@ -109,7 +109,8 @@ cls.WebGL.RPCs.injection = function () {
         var error = gl.getError();
         if (error !== gl.NO_ERROR)
         {
-          if (oldest_error === gl.NO_ERROR) {
+          if (oldest_error === gl.NO_ERROR)
+          {
             oldest_error = error;
           }
         }
@@ -540,6 +541,7 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
     };
+    // TODO below should be able to handle array as second argument instead of a sequence? see spec
     innerFuns.uniform1i = function(result, args)
     {
       var uniform_info = this.lookup_uniform(args[0]);
@@ -885,149 +887,6 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.request_snapshot = this.request_snapshot.bind(this);
 
-    this.get_state = function()
-    {
-      var gl = this.gl;
-
-      var pnames = [
-        "ALPHA_BITS",
-        "ACTIVE_TEXTURE",
-        "ALIASED_LINE_WIDTH_RANGE",
-        "ALIASED_POINT_SIZE_RANGE",
-        "ALPHA_BITS",
-        "ARRAY_BUFFER_BINDING",
-        "BLEND_DST_ALPHA",
-        "BLEND_DST_RGB",
-        "BLEND_EQUATION_ALPHA",
-        "BLEND_EQUATION_RGB",
-        "BLEND_SRC_ALPHA",
-        "BLEND_SRC_RGB",
-        "BLEND",
-        "BLEND_COLOR",
-        "BLUE_BITS",
-        "COLOR_CLEAR_VALUE",
-        "COLOR_WRITEMASK",
-        "COMPRESSED_TEXTURE_FORMATS",
-        "CULL_FACE",
-        "CULL_FACE_MODE",
-        "CURRENT_PROGRAM",
-        "DEPTH_BITS",
-        "DEPTH_CLEAR_VALUE",
-        "DEPTH_FUNC",
-        "DEPTH_RANGE",
-        "DEPTH_TEST",
-        "DEPTH_WRITEMASK",
-        "ELEMENT_ARRAY_BUFFER_BINDING",
-        "DITHER",
-        "FRAMEBUFFER_BINDING",
-        "FRONT_FACE",
-        "GENERATE_MIPMAP_HINT",
-        "GREEN_BITS",
-        "LINE_WIDTH",
-        "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
-        "MAX_TEXTURE_IMAGE_UNITS",
-        "MAX_CUBE_MAP_TEXTURE_SIZE",
-        "MAX_RENDERBUFFER_SIZE",
-        "MAX_TEXTURE_SIZE",
-        "MAX_VARYING_VECTORS",
-        "MAX_VERTEX_ATTRIBS",
-        "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
-        "MAX_VERTEX_UNIFORM_VECTORS",
-        "MAX_VIEWPORT_DIMS",
-        "PACK_ALIGNMENT",
-        "POLYGON_OFFSET_FACTOR", "POLYGON_OFFSET_FILL",
-        "POLYGON_OFFSET_UNITS",
-        "RED_BITS",
-        "RENDERBUFFER_BINDING",
-        "RENDERER",
-        "SAMPLE_BUFFERS",
-        "SAMPLE_COVERAGE_INVERT",
-        "SAMPLE_COVERAGE_VALUE",
-        "SAMPLES",
-        "SCISSOR_BOX",
-        "SCISSOR_TEST",
-        "SHADING_LANGUAGE_VERSION",
-        "STENCIL_BITS",
-        "STENCIL_CLEAR_VALUE",
-        "STENCIL_TEST",
-        "STENCIL_STENCIL_BACK_FAIL",
-        "STENCIL_BACK_FUNC",
-        "STENCIL_BACK_REF","STENCIL_BACK_VALUE_MASK",
-        "STENCIL_BACK_WRITEMASK",
-        "STENCIL_FAIL",
-        "STENCIL_FUNC",
-        "STENCIL_REF","STENCIL_VALUE_MASK",
-        "STENCIL_WRITEMASK",
-        "STENCIL_BACK_PASS_DEPTH_FAIL",
-        "STENCIL_BACK_PASS_DEPTH_PASS",
-        "STENCIL_PASS_DEPTH_FAIL",
-        "STENCIL_PASS_DEPTH_PASS",
-        "TEXTURE_BINDING_2D",
-        "TEXTURE_BINDING_CUBE_MAP",
-        "UNPACK_ALIGNMENT",
-        "UNPACK_COLORSPACE_CONVERSION_WEBGL",
-        "UNPACK_FLIP_Y_WEBGL",
-        "UNPACK_PREMULTIPLY_ALPHA_WEBGL",
-        "VENDOR",
-        "VERSION",
-        "VIEWPORT"
-      ];
-
-      // Create a back translation dict for GL enumerators
-      var back_dict = {};
-      for (var i in gl)
-      {
-        if (typeof gl[i] === "number")
-        {
-          back_dict[gl[i]] = i;
-        }
-      }
-
-      // Helper function for writing color values
-      var round = function (val)
-      {
-        return val.toFixed(2);
-      };
-
-      // Wrap up the entire state in an array of string as it permits dragonfly to
-      // get the state in two calls instead of one per parameter.
-      return pnames.map(function(p) {
-          var val = gl.getParameter(gl[p]);
-          switch (p) {
-            case "ALIASED_LINE_WIDTH_RANGE":
-            case "ALIASED_POINT_SIZE_RANGE":
-            case "DEPTH_RANGE":
-              return [p, String(val[0]) + "-" + String(val[1])].join("|");
-            case "BLEND_COLOR":
-            case "COLOR_CLEAR_VALUE":
-              return [p, "rgba: " + (Array.prototype.slice.call(val).map(round)).join(", ")].join("|");
-            case "SCISSOR_BOX":
-            case "VIEWPORT":
-              return [p, String(val[0]) + ", " + String(val[1]) + ": " + String(val[2]) + " x " + String(val[3])].join("|");
-            case "MAX_VIEWPORT_DIMS":
-              return [p, String(val[0]) + " x " + String(val[1])].join("|");
-            case "STENCIL_VALUE_MASK":
-            case "STENCIL_WRITEMASK":
-            case "STENCIL_BACK_VALUE_MASK":
-            case "STENCIL_BACK_WRITEMASK":
-              return [p, "0x" + Number(val).toString(16)].join("|");
-            default:
-              if (typeof val === "boolean") {
-                return [p, String(val)].join("|");
-              }
-              else if (!(val in back_dict))
-              {
-                return [p, String(val)].join("|");
-              }
-              else
-              {
-                return [p, String(back_dict[val])].join("|");
-              }
-          }
-      });
-    };
-    this._interface.get_state = this.get_state.bind(this);
-
     this.debugger_ready = function()
     {
       for (var key in events) // TODO this only needs to be done once per page
@@ -1100,8 +959,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       program = program || this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
 
-      if (!program)
-        return null;
+      if (!program) return null;
 
       var gl = this.gl;
       var program_obj = this.lookup_program(program);
@@ -1143,6 +1001,323 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       return state;
+    };
+
+    /**
+     * Gets the WebGL state.
+     * @param {String} function_name optional, will limit the returned
+     *   parameters to ones that can be modified by the function.
+     * @returns {Object} with name and values of parameters.
+     */
+    this.get_state = function(function_name)
+    {
+      var function_groups = {
+        "disableVertexAttribArray": "uniform",
+        "enableVertexAttribArray": "uniform",
+        "getActiveAttrib": "uniform",
+        "getActiveUniform": "uniform",
+        "getAttribLocation": "uniform",
+        "getUniform": "uniform",
+        "getUniformLocation": "uniform",
+        "getVertexAttrib": "uniform",
+        "getVertexAttribOffset": "uniform",
+        "uniform": "uniform",
+        "uniform1fv": "uniform",
+        "uniform1i": "uniform",
+        "uniform1iv": "uniform",
+        "uniform2f": "uniform",
+        "uniform2fv": "uniform",
+        "uniform2i": "uniform",
+        "uniform2iv": "uniform",
+        "uniform3f": "uniform",
+        "uniform3fv": "uniform",
+        "uniform3i": "uniform",
+        "uniform3iv": "uniform",
+        "uniform4f": "uniform",
+        "uniform4fv": "uniform",
+        "uniform4i": "uniform",
+        "uniform4iv": "uniform",
+        "uniformMatrix": "uniform",
+        "uniformMatrix2fv": "uniform",
+        "uniformMatrix3fv": "uniform",
+        "uniformMatrix4fv": "uniform",
+        "vertexAttrib": "uniform",
+        "vertexAttrib1f": "uniform",
+        "vertexAttrib1fv": "uniform",
+        "vertexAttrib2f": "uniform",
+        "vertexAttrib2fv": "uniform",
+        "vertexAttrib3f": "uniform",
+        "vertexAttrib3fv": "uniform",
+        "vertexAttrib4f": "uniform",
+        "vertexAttrib4fv": "uniform",
+        "vertexAttribPointer": "uniform",
+        "clear": "draw",
+        "drawArrays": "draw",
+        "drawElements": "draw",
+        "finish": "draw",
+        "flush": "draw",
+        "activeTexture": "stuff",
+        "blendColor": "stuff",
+        "blendEquation": "stuff",
+        "blendEquationSeparate": "stuff",
+        "blendFunc": "stuff",
+        "blendFuncSeparate": "stuff",
+        "clearColor": "stuff",
+        "clearDepth": "stuff",
+        "clearStencil": "stuff",
+        "colorMask": "stuff",
+        "cullFace": "stuff",
+        "depthFunc": "stuff",
+        "depthMask": "stuff",
+        "depthRange": "stuff",
+        "disable": "stuff",
+        "enable": "stuff",
+        "frontFace": "stuff",
+        "getError": "stuff",
+        "getParameter": "stuff",
+        "hint": "stuff",
+        "isEnabled": "stuff",
+        "lineWidth": "stuff",
+        "pixelStorei": "stuff",
+        "polygonOffset": "stuff",
+        "sampleCoverage": "stuff",
+        "stencilFunc": "stuff",
+        "stencilFuncSeparate": "stuff",
+        "stencilMask": "stuff",
+        "stencilMaskSeparate": "stuff",
+        "stencilOp": "stuff",
+        "stencilOpSeparate": "stuff",
+        "scissor": "viewport",
+        "viewport": "viewport",
+        "bindBuffer": "buffer",
+        "bufferData": "buffer",
+        "bufferSubData": "buffer",
+        "createBuffer": "buffer",
+        "deleteBuffer": "buffer",
+        "getBufferParameter": "buffer",
+        "isBuffer": "buffer",
+        "bindFramebuffer": "buffer",
+        "checkFramebufferStatus": "buffer",
+        "createFramebuffer": "buffer",
+        "deleteFramebuffer": "buffer",
+        "framebufferRenderbuffer": "buffer",
+        "framebufferTexture2D": "buffer",
+        "getFramebufferAttachmentParameter": "buffer",
+        "isFramebuffer": "buffer",
+        "bindRenderbuffer": "renderbuffer",
+        "createRenderbuffer": "renderbuffer",
+        "deleteRenderbuffer": "renderbuffer",
+        "getRenderbufferParameter": "renderbuffer",
+        "isRenderbuffer": "renderbuffer",
+        "renderbufferStorage": "renderbuffer",
+        "bindTexture": "texture",
+        "compressedTexImage2D": "texture",
+        "compressedTexSubImage2D": "texture",
+        "copyTexImage2D": "texture",
+        "copyTexSubImage2D": "texture",
+        "createTexture": "texture",
+        "deleteTexture": "texture",
+        "generateMipmap": "texture",
+        "getTexParameter": "texture",
+        "isTexture": "texture",
+        "texImage2D": "texture",
+        "texParameterf": "texture",
+        "texParameteri": "texture",
+        "texSubImage2D": "texture",
+        "attachShader": "shader",
+        "bindAttribLocation": "shader",
+        "compileShader": "shader",
+        "createProgram": "shader",
+        "createShader": "shader",
+        "deleteProgram": "shader",
+        "deleteShader": "shader",
+        "detachShader": "shader",
+        "getAttachedShaders": "shader",
+        "getProgramInfoLog": "shader",
+        "getProgramParameter": "shader",
+        "getShaderInfoLog": "shader",
+        "getShaderParameter": "shader",
+        "getShaderPrecisionFormat": "shader",
+        "getShaderSource": "shader",
+        "isProgram": "shader",
+        "isShader": "shader",
+        "linkProgram": "shader",
+        "shaderSource": "shader",
+        "useProgram": "shader",
+        "validateProgram": "shader"
+      };
+
+      var param_groups = {
+        uncategorized: [
+          "ALIASED_LINE_WIDTH_RANGE",
+          "ALIASED_POINT_SIZE_RANGE",
+          "ALPHA_BITS",
+          "BLEND",
+          "BLEND_COLOR",
+          "BLEND_DST_ALPHA",
+          "BLEND_DST_RGB",
+          "BLEND_EQUATION_ALPHA",
+          "BLEND_EQUATION_RGB",
+          "BLEND_SRC_ALPHA",
+          "BLEND_SRC_RGB",
+          "BLUE_BITS",
+          "COLOR_WRITEMASK",
+          "COMPRESSED_TEXTURE_FORMATS",
+          "CULL_FACE",
+          "CULL_FACE_MODE",
+          "CURRENT_PROGRAM",
+          "DEPTH_BITS",
+          "DEPTH_FUNC",
+          "DEPTH_RANGE",
+          "DEPTH_TEST",
+          "DEPTH_WRITEMASK",
+          "DITHER",
+          "FRAMEBUFFER_BINDING",
+          "FRONT_FACE",
+          "GENERATE_MIPMAP_HINT",
+          "GREEN_BITS",
+          "LINE_WIDTH",
+          "NUM_COMPRESSED_TEXTURE_FORMATS",
+          "PACK_ALIGNMENT",
+          "POLYGON_OFFSET_FACTOR",
+          "POLYGON_OFFSET_FILL",
+          "POLYGON_OFFSET_UNITS",
+          "RED_BITS",
+          "RENDERBUFFER_BINDING",
+          "SAMPLES",
+          "SAMPLE_BUFFERS",
+          "SAMPLE_COVERAGE_INVERT",
+          "SAMPLE_COVERAGE_VALUE",
+          "SCISSOR_BOX",
+          "SCISSOR_TEST",
+          "STENCIL_BACK_FAIL",
+          "STENCIL_BACK_FUNC",
+          "STENCIL_BACK_PASS_DEPTH_FAIL",
+          "STENCIL_BACK_PASS_DEPTH_PASS",
+          "STENCIL_BACK_REF",
+          "STENCIL_BACK_VALUE_MASK",
+          "STENCIL_BACK_WRITEMASK",
+          "STENCIL_BITS",
+          "STENCIL_FAIL",
+          "STENCIL_FUNC",
+          "STENCIL_PASS_DEPTH_FAIL",
+          "STENCIL_PASS_DEPTH_PASS",
+          "STENCIL_REF",
+          "STENCIL_TEST",
+          "STENCIL_VALUE_MASK",
+          "STENCIL_WRITEMASK",
+          "SUBPIXEL_BITS",
+          "UNPACK_ALIGNMENT",
+          "UNPACK_COLORSPACE_CONVERSION_WEBGL",
+          "UNPACK_FLIP_Y_WEBGL",
+          "UNPACK_PREMULTIPLY_ALPHA_WEBGL",
+          "VIEWPORT"
+        ],
+        buffer: [
+          "ARRAY_BUFFER_BINDING",
+          "ELEMENT_ARRAY_BUFFER_BINDING"
+        ],
+        constants: [
+          "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+          "MAX_CUBE_MAP_TEXTURE_SIZE",
+          "MAX_RENDERBUFFER_SIZE",
+          "MAX_FRAGMENT_UNIFORM_VECTORS",
+          "MAX_TEXTURE_IMAGE_UNITS",
+          "MAX_TEXTURE_SIZE",
+          "MAX_VARYING_VECTORS",
+          "MAX_VERTEX_ATTRIBS",
+          "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+          "MAX_VERTEX_UNIFORM_VECTORS",
+          "MAX_VIEWPORT_DIMS",
+          "RENDERER",
+          "SHADING_LANGUAGE_VERSION",
+          "VENDOR",
+          "VERSION"
+        ],
+        clear: [
+          "COLOR_CLEAR_VALUE",
+          "DEPTH_CLEAR_VALUE",
+          "STENCIL_CLEAR_VALUE"
+        ],
+        texture: [
+          "ACTIVE_TEXTURE",
+          "TEXTURE_BINDING_2D",
+          "TEXTURE_BINDING_CUBE_MAP"
+        ]
+      };
+
+      var all = !(function_name in function_groups);
+      var gl = this.gl;
+
+      var params = {};
+      var param_names, group, param, p;
+      if (all)
+      {
+        for (group in param_groups)
+        {
+          param_names = param_groups[group];
+          for (p = 0; p < param_names.length; p++)
+          {
+            param = param_names[p];
+            params[param] = gl.getParameter(gl[param]);
+          }
+        }
+      }
+      else
+      {
+        group = function_groups[function_name];
+        param_names = param_groups[group];
+        if(param_names == null) return this.get_state(); // TODO remove when the groups are complete
+
+        for (p = 0; p < param_names.length; p++)
+        {
+          param = param_names[p];
+          params[param] = gl.getParameter(gl[param]);
+        }
+      }
+
+      // TODO possibly format the params, otherwise do it in DF
+
+      return params;
+    };
+
+    /**
+     * Diffs two objects containing state parameters and returns only the
+     * parameters that differs.
+     */
+    this.diff_state = function(full_state, part_state)
+    {
+      var diff = {};
+      for (var param in part_state)
+      {
+        var old_value = full_state[param];
+        var new_value = part_state[param];
+
+        if (old_value === new_value) continue;
+
+        if (typeof(old_value) === "object" && typeof(new_value) === "object" && old_value !== null)
+        {
+          if (old_value.buffer instanceof ArrayBuffer || old_value instanceof Array)
+          {
+            if (old_value.length === new_value.length)
+            {
+              var changed = false;
+              for (var i = 0; i < old_value.length; i++)
+              {
+                if (old_value[i] !== new_value[i])
+                {
+                  changed = true;
+                  break;
+                }
+              }
+
+              if (!changed) continue;
+            }
+          }
+        }
+        diff[param] = part_state[param];
+      }
+      return diff;
     };
   }
 
@@ -1225,8 +1400,23 @@ cls.WebGL.RPCs.injection = function () {
         }
       }.bind(this);
 
+      var init_state = function ()
+      {
+        var state = this.handler.get_state();
+        this.full_state = state;
+        this.state = {};
+        for (var param in state)
+        {
+          var value = state[param];
+          this.state[param] = {
+            "-1": typeof(value) === "object" && value !== null ? this._make_linked_object(state[param]) : value
+          };
+        }
+      }.bind(this);
+
       init_buffers();
       init_programs();
+      init_state();
 
       // Init textures
       this.handler.textures.forEach(this.add_texture, this);
@@ -1235,59 +1425,59 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index++;
     }.bind(this);
 
+    /**
+     * Pairs a trace argument with a WebGL object.
+     * Creates a object for easy pairing on the Dragonfly side.
+     */
+    this._make_linked_object = function (obj)
+    {
+      var object_type_regexp = /^\[object (.*?)\]$/;
+      var type = obj.constructor.name;
+      if (type === "Function.prototype")
+      {
+        var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
+        if (re != null && re[1] != null) type = re[1];
+      }
+
+      var arg = {};
+      arg.type = type;
+      if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
+      {
+        arg.data = clone_array(obj);
+      }
+      else if (obj instanceof WebGLUniformLocation)
+      {
+        var uniform_info = handler.lookup_uniform(obj);
+        if (uniform_info != null)
+        {
+          arg.program_index = uniform_info.program_index;
+          arg.uniform_index = uniform_info.uniform_index;
+        }
+      }
+      else if (obj instanceof WebGLBuffer)
+      {
+        var buffer = handler.lookup_buffer(obj);
+        if (buffer == null) return arg;
+        arg.buffer_index = buffer.index;
+      }
+      else if (obj instanceof WebGLProgram)
+      {
+        var program = handler.lookup_program(obj);
+        if (program == null) return arg;
+        arg.program_index = program.index;
+      }
+      else if (obj instanceof WebGLTexture)
+      {
+        var texture = handler.lookup_texture(obj);
+        if (texture == null) return arg;
+        arg.texture_index = texture.index;
+      }
+      return arg;
+    };
+
     /* Adds a WebGL function call to the snapshot */
     this.add_call = function (function_name, error, args, result, redundant, loc)
     {
-      /**
-       * Pairs a trace argument with a WebGL object.
-       * Creates a object for easy pairing on the Dragonfly side.
-       */
-      var object_type_regexp = /^\[object (.*?)\]$/;
-      var make_trace_linked_object = function (obj, args)
-      {
-        var type = obj.constructor.name;
-        if (type === "Function.prototype")
-        {
-          var re = object_type_regexp.exec(Object.prototype.toString.call(obj));
-          if (re != null && re[1] != null) type = re[1];
-        }
-
-        var arg = {};
-        arg.type = type;
-        if (obj instanceof Array || (obj.buffer && obj.buffer instanceof ArrayBuffer))
-        {
-          arg.data = clone_array(obj);
-        }
-        else if (obj instanceof WebGLUniformLocation)
-        {
-          var uniform_info = handler.lookup_uniform(obj);
-          if (uniform_info != null)
-          {
-            arg.program_index = uniform_info.program_index;
-            arg.uniform_index = uniform_info.uniform_index;
-          }
-        }
-        else if (obj instanceof WebGLBuffer)
-        {
-          var buffer = handler.lookup_buffer(obj);
-          if (buffer == null) return arg;
-          arg.buffer_index = buffer.index;
-        }
-        else if (obj instanceof WebGLProgram)
-        {
-          var program = handler.lookup_program(obj);
-          if (program == null) return arg;
-          arg.program_index = program.index;
-        }
-        else if (obj instanceof WebGLTexture)
-        {
-          var texture = handler.lookup_texture(obj);
-          if (texture == null) return arg;
-          arg.texture_index = texture.index;
-        }
-        return arg;
-      };
-
       var call_args = [];
 
       for (var i = 0; i < args.length; i++)
@@ -1295,7 +1485,7 @@ cls.WebGL.RPCs.injection = function () {
         if (typeof(args[i]) === "object" && args[i] !== null)
         {
           var obj = args[i];
-          var trace_ref = make_trace_linked_object(obj);
+          var trace_ref = this._make_linked_object(obj);
           var trace_ref_index = this.call_refs.push(trace_ref) - 1;
           call_args.push("@" + String(trace_ref_index));
         }
@@ -1307,12 +1497,22 @@ cls.WebGL.RPCs.injection = function () {
 
       if (typeof(result) === "object" && result !== null)
       {
-        var result_ref = make_trace_linked_object(result);
+        var result_ref = this._make_linked_object(result);
         var result_ref_index = this.call_refs.push(result_ref) - 1;
         result = "@" + String(result_ref_index);
       }
 
       this.call_locs.push(loc);
+
+      var state = this.handler.get_state(function_name);
+      state = this.handler.diff_state(this.full_state, state);
+      for (var param in state)
+      {
+        var value = state[param];
+        this.state[param][this.call_index] = typeof(value) === "object" && value !== null ?
+          this._make_linked_object(value) : value;
+        this.full_state[param] = value;
+      }
 
       var res = result === undefined ? "" : result;
 
@@ -1322,7 +1522,6 @@ cls.WebGL.RPCs.injection = function () {
 
     this.add_drawcall = function (fbo, buffer_target, buffer_index, program_state)
     {
-
       this.drawcalls.push({
         call_index : this.call_index,
         fbo : fbo,
@@ -1513,6 +1712,7 @@ cls.WebGL.RPCs.injection = function () {
         calls : this.calls,
         call_locs : this.call_locs,
         call_refs : this.call_refs,
+        state : this.state,
         buffers : this.buffers,
         programs : this.programs,
         textures : this.textures,

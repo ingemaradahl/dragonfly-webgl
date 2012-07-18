@@ -18,15 +18,15 @@ cls.WebGLCallView = function(id, name, container_class)
     this._container = container;
     this._render();
   };
- 
+
   this._render = function()
   {
     this._container.clearAndRender(["div", "No call"]);
   };
 
-  this.display_by_call = function(trace_call, call)
+  this.display_by_call = function(snapshot, call_index)
   {
-    this.render_with_header(trace_call, call);
+    this.render_with_header(snapshot, call_index);
   };
 
   this._ondestroy = function()
