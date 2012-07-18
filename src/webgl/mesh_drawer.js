@@ -255,30 +255,30 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     var p2 = buffer_data[triangles[t][2]];
 
     // Edges
-    var v0 = [p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]];
+    //var v0 = [p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]];
     var v1 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
     var v2 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
 
     // Find vector normal
-    var cross_product = vec3.create()
     var normal = vec3.create();
-    vec3.cross(v2, v1, cross_product);
-    vec3.normalize(cross_product, normal);
+    vec3.cross(v2, v1, normal);
+    vec3.normalize(normal);
 
-    var area = vec3.length(cross_product) / 2;
+    // Supply each vertex with it's normal and the two other vertices
+    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
+    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
+    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
+    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
-    // Supply each vertex with it's normal and the distance to the opposing edge
-    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
-    vertex_data[i++] = area/vec3.length(v0); vertex_data[i++] = 0; vertex_data[i++] = 0;
-    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
+    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
+    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
+    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
-    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
-    vertex_data[i++] = 0; vertex_data[i++] = area/vec3.length(v1); vertex_data[i++] = 0;
-    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
-
-    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
-    vertex_data[i++] = 0; vertex_data[i++] = 0; vertex_data[i++] = area/vec3.length(v2);
-    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
+    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
+    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
+    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
   }
   var vertex_buffer = gl.createBuffer();
   vertex_buffer.count = triangles.length * 3;
@@ -383,28 +383,15 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
 
   gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
-
-  gl.uniform1f(program.scaleUniform, 250.0/2);
+  gl.uniform2f(program.windowScaleUniform, width, height);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, this._vertex_buffer);
-  var stride = 3*4*3; // 3 FLOAT * 4 BYTE * 3 ATTRIBS
-  gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, stride, 0);
-  gl.vertexAttribPointer(program.distanceAttrib, 3, gl.FLOAT, false, stride, 12);
-  gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 24);
-  //gl.vertexAttribPointer(program.positionAttrib, this.layout.size, this.layout.type,
-  //  this.layout.normalized, this.layout.stride, this.layout.offset);
+  var stride = 4*(4*3); // 4 BYTE * (3 FLOAT + 3 ATTRIBS * 4 FLOAT)
+  gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
+  gl.vertexAttribPointer(program.position1Attrib, 4, gl.FLOAT, false, stride, 16);
+  gl.vertexAttribPointer(program.position2Attrib, 4, gl.FLOAT, false, stride, 32);
+  //gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 48);
 
   gl.drawArrays(gl.TRIANGLES, 0, this._vertex_buffer.count);
-
-  // TODO cleanup, fix length
-  //if (this.element_buffer)
-  //{
-  //  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.element_buffer.gl_buffer);
-  //  gl.drawElements(this.state.mode, this.element_buffer.data.length, this.element_buffer.type, 0);
-  //}
-  //else
-  //{
-  //  gl.drawArrays(this.state.mode, 0, this.buffer.data.length/this.layout.size);
-  //}
 };
 
