@@ -430,7 +430,7 @@ window.templates.webgl.generic_call = function(trace_call, call, template)
       [
         "h2", [
           ["span", "Call " + callnr + ": "],
-          ["span", function_name]
+          ["span", function_name],
         ]
       ],
       function_arguments,
