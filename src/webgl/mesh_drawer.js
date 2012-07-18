@@ -267,20 +267,17 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 
     var area = vec3.length(cross_product) / 2;
 
-    // Supply each vertex with it's normal and the other two vertices
+    // Supply each vertex with it's normal and the distance to the opposing edge
     vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
-    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
-    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
+    vertex_data[i++] = area/vec3.length(v0); vertex_data[i++] = 0; vertex_data[i++] = 0;
     vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
     vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
-    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
-    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+    vertex_data[i++] = 0; vertex_data[i++] = area/vec3.length(v1); vertex_data[i++] = 0;
     vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
     vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
-    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
-    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+    vertex_data[i++] = 0; vertex_data[i++] = 0; vertex_data[i++] = area/vec3.length(v2);
     vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
   }
   var vertex_buffer = gl.createBuffer();
@@ -387,12 +384,13 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
 
+  gl.uniform1f(program.scaleUniform, 250.0/2);
+
   gl.bindBuffer(gl.ARRAY_BUFFER, this._vertex_buffer);
-  var stride = 3*4*4; // 
+  var stride = 3*4*3; // 3 FLOAT * 4 BYTE * 3 ATTRIBS
   gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, stride, 0);
-  gl.vertexAttribPointer(program.vertex2Attrib, 3, gl.FLOAT, false, stride, 12);
-  gl.vertexAttribPointer(program.vertex3Attrib, 3, gl.FLOAT, false, stride, 24);
-  gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 36);
+  gl.vertexAttribPointer(program.distanceAttrib, 3, gl.FLOAT, false, stride, 12);
+  gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 24);
   //gl.vertexAttribPointer(program.positionAttrib, this.layout.size, this.layout.type,
   //  this.layout.normalized, this.layout.stride, this.layout.offset);
 
