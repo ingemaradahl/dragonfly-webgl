@@ -9,7 +9,7 @@ window.templates.webgl.reload_info = function(buffer)
   return [
     "div",
     [
-      "span", "",
+      "span", "Initialize WebGL Debugger",
       "class", "ui-button reload-window",
       "handler", "reload-window",
       "tabindex", "1"
