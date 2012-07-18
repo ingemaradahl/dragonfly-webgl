@@ -9,7 +9,7 @@ window.templates.webgl.reload_info = function(buffer)
   return [
     "div",
     [
-      "span", "",
+      "span", "Initialize WebGL Debugger",
       "class", "ui-button reload-window",
       "handler", "reload-window",
       "tabindex", "1"
@@ -169,7 +169,11 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   for (var i = 0; i < args.length; i++)
   {
     var arg = args[i];
-
+    if (arg.data && arg.data.length > 4)
+    {
+      arg.tooltip = arg.tooltip + "\n" + arg.text;
+      arg.text = arg.text.substr(0,10) + "...";
+    }
     var html = window.templates.webgl.linked_object(arg, "webgl-trace-argument");
 
     if (i > 0) content.push(", ");
