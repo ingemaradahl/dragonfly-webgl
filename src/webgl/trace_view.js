@@ -103,8 +103,25 @@ cls.WebGLTraceView = function(id, name, container_class)
     }
     else
     {
+      for (var i=0; i<trace_call.args.length; i++)
+      {
+        var arg = trace_call.args[i];
+        var type = arg.type;
+        switch (type)
+        {
+          case "WebGLTexture":
+              arg.texture.show();
+              var template = window.templates.webgl.texture(arg.texture);
+              break;
+          case "WebGLBuffer":
+              arg.buffer.show();
+              var template = window.templates.webgl.buffer_base(arg.buffer);
+              break;
+          default: break;
+        }
+      }
       window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_call");
-      window.views.webgl_call.display_by_call(trace_call, call);
+      window.views.webgl_call.display_by_call(trace_call, call, template);
     }
   };
 
@@ -127,6 +144,14 @@ cls.WebGLTraceView = function(id, name, container_class)
     }
   };
 
+ // this._on_reload_window = function()
+ // {
+ //   if (this._container)
+ //   {
+ //     this._container.clearAndRender(["div", "Loading..."]);
+ //   }
+ // };
+
 
   this.tabledef = {
     column_order: ["number", "call"],
@@ -148,10 +173,12 @@ cls.WebGLTraceView = function(id, name, container_class)
   eh.click["webgl-trace-refresh"] = this._on_refresh.bind(this);
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
+  //eh.click["reload-window"] = this._on_reload_window.bind(this);
 
   messages.addListener('webgl-changed-snapshot', this._render.bind(this));
   messages.addListener('webgl-selected-snapshot', this._on_selected_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
+  //messages.addListener('reload-window', this._on_reload_window.bind(this));
 
   this.init(id, name, container_class);
 };

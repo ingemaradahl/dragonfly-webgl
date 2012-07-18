@@ -169,8 +169,9 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   for (var i = 0; i < args.length; i++)
   {
     var arg = args[i];
-    if (arg.data && arg.data.length > 4)
+    if (arg.data && arg.data.length > 4 && arg.contracted !== true)
     {
+      arg.contracted = true;
       arg.tooltip = arg.tooltip + "\n" + arg.text;
       arg.text = arg.text.substr(0,10) + "...";
     }
