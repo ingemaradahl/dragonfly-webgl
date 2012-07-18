@@ -35,6 +35,7 @@ cls.WebGLMeshDrawer = function(gl)
 
   var on_mousedown = function(evt, target)
   {
+    evt.preventDefault();
     this.mouse.x = evt.clientX;
     this.mouse.y = evt.clientY;
     document.addEventListener('mousemove', on_mousemove, false);
@@ -43,6 +44,7 @@ cls.WebGLMeshDrawer = function(gl)
 
   var on_mousewheel = function(evt, target)
   {
+    evt.preventDefault();
     this.prev_mouse.x = this.mouse.x;
     this.prev_mouse.y = this.mouse.y;
     this.zoom *= 1-evt.wheelDelta / 400; // TODO 400 :S
@@ -149,12 +151,64 @@ cls.WebGLMeshDrawer.prototype.get_triangles = function()
       {
         for(var i=start; i<end; i+=3)
         {
-          triangles.push([n, n+1, n+2]);
+          triangles.push([i, i+1, i+2]);
         }
       }
       break;
     case gl.TRIANGLE_STRIP:
+      if (state.indexed)
+      {
+        for (var i=start; i<end; i++)
+        {
+          if (indices[i] === indices[i+1])
+          {
+            // Degenerate triangle
+            continue;
+          }
+
+          if (i%2 === 0)
+          {
+            triangles.push([indices[i], indices[i+1], indices[i+2]]);
+          }
+          else
+          {
+            triangles.push([indices[i+2], indices[i+1], indices[i]]);
+          }
+        }
+      }
+      else
+      {
+        for (var i=start; i<end-2; i++)
+        {
+          if (i%2 === 0)
+          {
+            triangles.push([i, i+1, i+2]);
+          }
+          else
+          {
+            triangles.push([i+2, i+1, i]);
+          }
+        }
+      }
+      break;
     case gl.TRIANGLE_FAN:
+      if (state.indexed)
+      {
+        triangles.push([indices[start], indices[start + 1], indices[start + 2]]);
+        for (var i = start+2; i<end; i++) 
+        {
+          triangles.push([indices[start], indices[i], indices[i+1]]);
+        }
+      }
+      else
+      {
+        triangles.push([start, start+1, start+2]);
+        for (var i=start+2; i<end; i++)
+        {
+          triangles.push([start, i, i+1]);
+        }
+      }
+      break;
     default:
       break;
   }
@@ -221,7 +275,7 @@ cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
     case 3:
       get_vertex = function(d, i) { return [d[i], d[i+1], d[i+2], 0]; };
       break;
-    case 3:
+    case 4:
       get_vertex = function(d, i) { return [d[i], d[i+1], d[i+2], d[i+3]]; };
       break;
   }
@@ -243,9 +297,8 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   var triangles = this.get_triangles();
   var buffer_data = this.get_buffer_data();
 
-  var start = new Date();
   // Storing position, normal and wireframe data interleaved
-  var vertex_data = new Float32Array(triangles.length * 3 * 3 * 4);
+  var vertex_data = new Float32Array(triangles.length * 3 * 13*4);
   var i=0;
   for (var t=0; t<triangles.length; t++)
   {
@@ -265,28 +318,26 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     vec3.normalize(normal);
 
     // Supply each vertex with it's normal and the two other vertices
+    // Also, append the index which to use on the distance vector
     vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
-    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
-    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
-    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
+    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
     vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
-    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
-    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
-    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+    vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
+    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
 
     vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
-    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
-    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
-    //vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+    vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+    vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+    vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
   }
   var vertex_buffer = gl.createBuffer();
   vertex_buffer.count = triangles.length * 3;
   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
   gl.bufferData(gl.ARRAY_BUFFER, vertex_data, gl.STATIC_DRAW);
-
-  var end = new Date();
-  console.log("Buffer mekkamoj took " + (end-start)/1000 + "s");
 
   this._vertex_buffer = vertex_buffer;
   this.ready = true;
@@ -386,11 +437,11 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   gl.uniform2f(program.windowScaleUniform, width, height);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, this._vertex_buffer);
-  var stride = 4*(4*3); // 4 BYTE * (3 FLOAT + 3 ATTRIBS * 4 FLOAT)
+  var stride = 4*4 + 3*(3*4); //4*(4+2*3); // 4 BYTE * (4 FLOAT + 3 ATTRIBS * 3 FLOAT)
   gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
-  gl.vertexAttribPointer(program.position1Attrib, 4, gl.FLOAT, false, stride, 16);
-  gl.vertexAttribPointer(program.position2Attrib, 4, gl.FLOAT, false, stride, 32);
-  //gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 48);
+  gl.vertexAttribPointer(program.position1Attrib, 3, gl.FLOAT, false, stride, 16);
+  gl.vertexAttribPointer(program.position2Attrib, 3, gl.FLOAT, false, stride, 28);
+  gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 40);
 
   gl.drawArrays(gl.TRIANGLES, 0, this._vertex_buffer.count);
 };
