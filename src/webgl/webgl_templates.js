@@ -522,8 +522,8 @@ window.templates.webgl.drawcall_buffer = function (attributes)
     ],
     [
       "div",
-      "",
       "handler", "webgl-canvas",
+      "onresize", "alert(\"poopnoodl\");",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"
     ]

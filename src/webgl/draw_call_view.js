@@ -23,10 +23,6 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   {
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
-
-    // TODO temporary
-    window.webgl.gl.canvas.width = 640;
-    window.webgl.gl.canvas.height = 480;
   };
 
   var render_preview = function()

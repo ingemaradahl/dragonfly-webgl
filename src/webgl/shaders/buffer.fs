@@ -3,8 +3,8 @@ precision mediump float;
 varying vec3 dist;
 varying vec3 normal;
 
-const vec4 FILL_COL = vec4(1.0,1.0,1.0,1);
-const vec4 WIRE_COL = vec4(0.0,0.0,0.0,1);
+const vec4 WIRE_COL = vec4(1.0,1.0,1.0,1);
+const vec4 FILL_COL = vec4(0.0,0.0,0.0,1);
 
 void main(void) {
   float d = min(dist[0],min(dist[1],dist[2]));

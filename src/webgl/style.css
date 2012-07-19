@@ -139,6 +139,23 @@ pre.sh_sourceCode .webgl-hilight-uniform
 
 
 /* Draw Call */
+.webgl_view .webgl-holder
+{
+  border: 1px;
+  border-style: solid;
+  border-color: gray;
+
+  width: 100%;
+  max-width: 800;
+  overflow: hidden;
+}
+
+.webgl-holder > canvas
+{
+  width: 100%;
+  height: 100%;
+}
+
 .webgl_view .draw-call-info
 {
   padding: 10px;

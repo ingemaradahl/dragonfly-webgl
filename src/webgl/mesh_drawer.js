@@ -15,7 +15,10 @@ cls.WebGLMeshDrawer = function(gl)
   this.mouse = {x:0, y:0};
   this.prev_mouse = {x:0, y:0};
   this.rot = {x:0, y:0};
-  this.zoom = -10;
+  this.distance = 0;
+
+  this._prev_width;
+  this._prev_height;
 
   var on_mousemove = function(event)
   {
@@ -47,7 +50,7 @@ cls.WebGLMeshDrawer = function(gl)
     evt.preventDefault();
     this.prev_mouse.x = this.mouse.x;
     this.prev_mouse.y = this.mouse.y;
-    this.zoom *= 1-evt.wheelDelta / 400; // TODO 400 :S
+    this.distance *= 1-evt.wheelDelta / 400; // TODO 400 :S
     this.render();
   };
 
@@ -300,6 +303,15 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   // Storing position, normal and wireframe data interleaved
   var vertex_data = new Float32Array(triangles.length * 3 * 13*4);
   var i=0;
+  var extent = {
+    min_x:999,
+    max_x:-999,
+    min_y:999,
+    max_y:-999,
+    min_z:999,
+    max_z:-999
+  };
+
   for (var t=0; t<triangles.length; t++)
   {
     // Vertex positions
@@ -316,6 +328,14 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     var normal = vec3.create();
     vec3.cross(v2, v1, normal);
     vec3.normalize(normal);
+
+    // Find bounding box
+    extent.min_x = Math.min(extent.min_x, p0[0]);
+    extent.max_x = Math.max(extent.max_x, p0[0]);
+    extent.min_y = Math.min(extent.min_y, p0[1]);
+    extent.max_y = Math.max(extent.max_y, p0[1]);
+    extent.min_z = Math.min(extent.min_z, p0[2]);
+    extent.max_z = Math.max(extent.max_z, p0[2]);
 
     // Supply each vertex with it's normal and the two other vertices
     // Also, append the index which to use on the distance vector
@@ -334,12 +354,20 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
     vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
   }
+
   var vertex_buffer = gl.createBuffer();
   vertex_buffer.count = triangles.length * 3;
   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
   gl.bufferData(gl.ARRAY_BUFFER, vertex_data, gl.STATIC_DRAW);
-
   this._vertex_buffer = vertex_buffer;
+
+  // Figure out max distance from origo to bounding box corners
+  var exts = [extent.min_x, extent.max_x, extent.min_y, extent.max_y, extent.min_z, extent.max_z];
+  this.max_extent = exts.reduce(function(p, c) { return Math.max(p, Math.abs(c)) }, 0);
+
+  this.distance = this.max_extent * 2;
+  this.zfar = this.distance * 4;
+
   this.ready = true;
   this.render();
 };
@@ -354,7 +382,6 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(attribute, state, element
   this.state = state;
 
   this.rot = {x:0, y:0};
-  this.zoom = -5;
 
   var element_ok;
   if (this.element_buffer)
@@ -391,7 +418,7 @@ cls.WebGLMeshDrawer.prototype.model_view_matrix = function()
 {
   var mvMatrix = mat4.create();
   mat4.identity(mvMatrix);
-  mat4.translate(mvMatrix, [0.0, 0.0, this.zoom]);
+  mat4.translate(mvMatrix, [0.0, 0.0, -this.distance]);
   mat4.rotate(mvMatrix, this.deg_to_rad(this.rot.y), [1, 0, 0]);
   mat4.rotate(mvMatrix, this.deg_to_rad(this.rot.x), [0, 1, 0]);
 
@@ -409,16 +436,33 @@ cls.WebGLMeshDrawer.prototype.deg_to_rad = function(degrees)
   return degrees * Math.PI / 180;
 };
 
+cls.WebGLMeshDrawer.prototype.viewport = function()
+{
+  var gl = this.gl;
+  var width = gl.canvas.parentElement.clientWidth;
+  var height = gl.canvas.parentElement.clientHeight;
+
+  if (width === this._prev_width && height === this._prev_height)
+    return [width, height];
+
+  gl.canvas.width = width;
+  gl.canvas.height = height;
+
+  gl.viewport(0, 0, width, height);
+
+  return [width, height];
+};
+
 cls.WebGLMeshDrawer.prototype.render = function(program)
 {
   program = program || this.program;
 
   var gl = this.gl;
 
-  var width = gl.canvas.width;
-  var height = gl.canvas.height;
+  var viewport_dimension = this.viewport();
+  var width  = viewport_dimension[0];
+  var height = viewport_dimension[1];
 
-  gl.viewport(0, 0, width, height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   if (!this.buffers_ready() || !program)
@@ -427,7 +471,7 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   this.set_rotation();
 
   var pMatrix = mat4.create();
-  mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
+  mat4.perspective(45, width / height, 0.01, this.zfar, pMatrix);
   var mvMatrix = this.model_view_matrix();
 
   gl.useProgram(program);
@@ -437,7 +481,7 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   gl.uniform2f(program.windowScaleUniform, width, height);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, this._vertex_buffer);
-  var stride = 4*4 + 3*(3*4); //4*(4+2*3); // 4 BYTE * (4 FLOAT + 3 ATTRIBS * 3 FLOAT)
+  var stride = 52; // 4 Byte * (3*3 Float + 4 Float)
   gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
   gl.vertexAttribPointer(program.position1Attrib, 3, gl.FLOAT, false, stride, 16);
   gl.vertexAttribPointer(program.position2Attrib, 3, gl.FLOAT, false, stride, 28);
