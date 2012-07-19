@@ -9,9 +9,7 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLTraceView = function(id, name, container_class)
 {
-  this._state = null;
   this._container = null;
-  this._current_context = null;
   this._current_trace = null;
 
   this.createView = function(container)
@@ -74,38 +72,60 @@ cls.WebGLTraceView = function(id, name, container_class)
     }
   };
 
-  this._format_trace_table = function(trace)
-  {
-    var tbl_data = [];
-    for (var i = 0; i < trace.length; i++)
-    {
-      var call = trace[i];
-      var call_text = window.webgl.api.function_call_to_string(call.function_name, call.args);
-      if (trace[i].have_result) call_text += " = " + String(trace[i].result);
-      if (trace[i].have_error) call_text += " -> Error code: " + String(trace[i].error_code);
-      tbl_data.push({"number" : String(i + 1), "call" : call_text});
-    }
-    return tbl_data;
-  };
+  // TODO Commented out by Victor, private function that is never called. Delete?
+  //this._format_trace_table = function(trace)
+  //{
+  //  var tbl_data = [];
+  //  for (var i = 0; i < trace.length; i++)
+  //  {
+  //    var call = trace[i];
+  //    var call_text = window.webgl.api.function_call_to_string(call.function_name, call.args);
+  //    if (trace[i].have_result) call_text += " = " + String(trace[i].result);
+  //    if (trace[i].have_error) call_text += " -> Error code: " + String(trace[i].error_code);
+  //    tbl_data.push({"number" : String(i + 1), "call" : call_text});
+  //  }
+  //  return tbl_data;
+  //};
 
   this._on_row_click = function(evt, target)
   {
-
-    var call = target["data-call-number"];
+    var call_index = target["data-call-number"];
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
-    var draw_call = snapshot.drawcalls.get_by_call(call);
-    var trace_call = snapshot.trace[call];
+    var trace_call = snapshot.trace[call_index];
+    var template = null;
 
+    var view;
+    var tab;
     if (trace_call.drawcall)
     {
-      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_draw_call");
-      window.views.webgl_draw_call.display_by_call(trace_call, call, draw_call);
+      tab = "webgl_draw_call";
+      view = window.views.webgl_draw_call;
     }
     else
     {
-      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_call");
-      window.views.webgl_call.display_by_call(trace_call, call);
+      for (var i=0; i<trace_call.args.length; i++)
+      {
+        var arg = trace_call.args[i];
+        var type = arg.type;
+        switch (type)
+        {
+          case "WebGLTexture":
+              arg.texture.show();
+              var template = window.templates.webgl.texture(arg.texture);
+              break;
+          case "WebGLBuffer":
+              arg.buffer.show();
+              var template = window.templates.webgl.buffer_base(arg.buffer);
+              break;
+          default: break;
+        }
+      }
+      tab = "webgl_call";
+      view = window.views.webgl_call;
     }
+
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(tab);
+    view.display_by_call(snapshot, call_index, template);
   };
 
   this._on_argument_click = function(evt, target)
@@ -126,7 +146,6 @@ cls.WebGLTraceView = function(id, name, container_class)
       this._container.clearAndRender(window.templates.webgl.taking_snapshot());
     }
   };
-
 
   this.tabledef = {
     column_order: ["number", "call"],

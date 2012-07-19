@@ -169,8 +169,9 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   for (var i = 0; i < args.length; i++)
   {
     var arg = args[i];
-    if (arg.data && arg.data.length > 4)
+    if (arg.data && arg.data.length > 4 && arg.contracted !== true)
     {
+      arg.contracted = true;
       arg.tooltip = arg.tooltip + "\n" + arg.text;
       arg.text = arg.text.substr(0,10) + "...";
     }
@@ -394,7 +395,7 @@ window.templates.webgl.goto_script = function(trace_call)
  * @param {Array} template optional, should contain a html structure of other
  *   content that should be shown below the header.
  */
-window.templates.webgl.generic_call = function(trace_call, call, template)
+window.templates.webgl.generic_call = function(call, trace_call, state_parameters, template)
 {
   var function_name = trace_call.function_name;
   var function_call = window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
@@ -424,13 +425,31 @@ window.templates.webgl.generic_call = function(trace_call, call, template)
 
   var script_ref = window.templates.webgl.goto_script(trace_call);
 
+  var st = [];
+  for (var param in state_parameters)
+  {
+    if (!state_parameters.hasOwnProperty(param)) continue;
+    var value = state_parameters[param];
+    var state_content;
+    if (typeof(value) === "object")
+    {
+      state_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
+    }
+    else
+    {
+      state_content = String(value);
+    }
+    st.push(["tr", [["td", param], ["td", state_content]]]);
+  }
+
   var header = [
     "div", [
       [
         "h2", [
           ["span", "Call " + callnr + ": "],
-          ["span", function_name]
-        ]
+          ["span", function_name],
+        ],
+        "class", "compact"
       ],
       function_arguments,
       ["p", spec_link],
@@ -439,7 +458,7 @@ window.templates.webgl.generic_call = function(trace_call, call, template)
     "class", "draw-call-info"
   ];
 
-  var res = [header];
+  var res = [header, ["table", st]];
 
   // If additional content have been provided add it after the header.
   if (template) res.push(template);

@@ -50,11 +50,14 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     this._container = null;
   };
 
-  this.display_by_call = function(trace_call, call, draw_call)
+  this.display_by_call = function(snapshot, call_index)
   {
+    var draw_call = snapshot.drawcalls.get_by_call(call_index);
+    var trace_call = snapshot.trace[call_index];
+
     var draw_template = window.templates.webgl.drawcall(draw_call, trace_call);
 
-    this.render_with_header(trace_call, call, draw_template);
+    this.render_with_header(snapshot, call_index, draw_template);
 
     if (draw_call && window.webgl.gl)
     {

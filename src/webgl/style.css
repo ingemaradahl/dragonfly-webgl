@@ -185,6 +185,11 @@ pre.sh_sourceCode .webgl-hilight-uniform
   color: blue;
 }
 
+.draw-call-info h2.compact
+{
+  display: inline;
+}
+
 /* Texture */
 
 .checkerboard
