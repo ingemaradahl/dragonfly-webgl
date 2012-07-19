@@ -28,11 +28,10 @@ cls.WebGLTextureView = function(id, name, container_class)
     this._container = null;
   };
 
-  this.show_texture = function (texture)
+  this.show_texture = function(texture)
   {
     this._texture = texture;
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
     this._render();
   };
 
@@ -162,6 +161,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
     var texture = table_data[item_id].texture;
 
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
     texture.show();
   };
 

@@ -32,7 +32,6 @@ cls.WebGLBufferView = function(id, name, container_class)
 
   this.show_buffer = function(buffer)
   {
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
 
     this._buffer = buffer;
     this._content = window.templates.webgl.buffer_base(buffer);
@@ -144,6 +143,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     var table_data = this._table.get_data();
     var buffer = table_data[buffer_index].buffer;
 
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
     buffer.show();
   };
 
