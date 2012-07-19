@@ -310,29 +310,25 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.texImage2D = function(result, args)
     {
       // Last argument is the one containing the texture data.
-      var texture_container_object = args[args.length-1];
+      var texture_container_object = args[args.length >= 9 ? 8 : 5];
 
       var target = args[0];
       var bound_texture = this.texture_binding[target];
       var internalFormat = args[2];
 
-      for (var i=0; i<this.textures.length; i++)
+      for (var i = 0; i < this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
-          var texture = {
-            index : this.textures[i].index,
-            texture : bound_texture,
-            object : texture_container_object,
-            type : texture_container_object ? texture_container_object.toString() : null,
-            internalFormat : internalFormat,
-            texture_wrap_s : gl.getTexParameter(target, gl.TEXTURE_WRAP_S),
-            texture_wrap_t : gl.getTexParameter(target, gl.TEXTURE_WRAP_T),
-            texture_min_filter : gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER),
-            texture_mag_filter : gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER),
-          };
+          var texture = this.textures[i];
+          texture.object = texture_container_object;
+          texture.internalFormat = internalFormat;
+          texture.texture_wrap_s = gl.getTexParameter(target, gl.TEXTURE_WRAP_S);
+          texture.texture_wrap_t = gl.getTexParameter(target, gl.TEXTURE_WRAP_T);
+          texture.texture_min_filter = gl.getTexParameter(target, gl.TEXTURE_MIN_FILTER);
+          texture.texture_mag_filter = gl.getTexParameter(target, gl.TEXTURE_MAG_FILTER);
 
-          if (args.length === 9)
+          if (args.length >= 9)
           {
             texture.internalFormat = args[2];
             texture.width = args[3];
@@ -347,7 +343,6 @@ cls.WebGL.RPCs.injection = function () {
             texture.type = args[4];
           }
 
-          this.textures[i] = texture;
           return;
         }
       }
@@ -1576,10 +1571,14 @@ cls.WebGL.RPCs.injection = function () {
           var canvas_ctx = canvas.getContext("2d");
           canvas_ctx.drawImage(element, 0, 0);
           this.img.data = canvas.toDataURL("image/png");
-          this.img.source = element.src;
           this.element_type = "HTMLImageElement";
           this.width = element.width;
           this.height = element.height;
+          // Check if the soure on is an actual url, not image data
+          if (element.src.substr(0, 10) !== "data:image" && element.src.length < 2048)
+          {
+            this.url = element.src;
+          }
         }
         else if (element instanceof HTMLCanvasElement)
         {
