@@ -17,9 +17,6 @@ cls.WebGLMeshDrawer = function(gl)
   this.rot = {x:0, y:0};
   this.distance = 0;
 
-  this._prev_width;
-  this._prev_height;
-
   var on_mousemove = function(event)
   {
     this.prev_mouse.x = this.mouse.x;
@@ -51,6 +48,20 @@ cls.WebGLMeshDrawer = function(gl)
     this.prev_mouse.x = this.mouse.x;
     this.prev_mouse.y = this.mouse.y;
     this.distance *= 1-evt.wheelDelta / 400; // TODO 400 :S
+    this.render();
+  };
+
+  this.onresize = function()
+  {
+    var canvas = this.gl.canvas;
+    var parent = canvas.parentElement;
+    canvas.width  = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+
+    this.prev_mouse.x = this.mouse.x;
+    this.prev_mouse.y = this.mouse.y;
+
+    this.gl.viewport(0, 0, canvas.width, canvas.height);
     this.render();
   };
 
@@ -366,7 +377,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   this.max_extent = exts.reduce(function(p, c) { return Math.max(p, Math.abs(c)) }, 0);
 
   this.distance = this.max_extent * 2;
-  this.zfar = this.distance * 4;
+  this.zfar = this.distance * 8;
 
   this.ready = true;
   this.render();
@@ -398,6 +409,8 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(attribute, state, element
   {
     this.prepare_buffer();
   }
+
+  this.onresize();
 };
 
 cls.WebGLMeshDrawer.prototype.on_buffer_data = function(buffer)
@@ -436,32 +449,14 @@ cls.WebGLMeshDrawer.prototype.deg_to_rad = function(degrees)
   return degrees * Math.PI / 180;
 };
 
-cls.WebGLMeshDrawer.prototype.viewport = function()
-{
-  var gl = this.gl;
-  var width = gl.canvas.parentElement.clientWidth;
-  var height = gl.canvas.parentElement.clientHeight;
-
-  if (width === this._prev_width && height === this._prev_height)
-    return [width, height];
-
-  gl.canvas.width = width;
-  gl.canvas.height = height;
-
-  gl.viewport(0, 0, width, height);
-
-  return [width, height];
-};
-
 cls.WebGLMeshDrawer.prototype.render = function(program)
 {
   program = program || this.program;
 
   var gl = this.gl;
 
-  var viewport_dimension = this.viewport();
-  var width  = viewport_dimension[0];
-  var height = viewport_dimension[1];
+  var width = gl.canvas.width;
+  var height = gl.canvas.height;
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 

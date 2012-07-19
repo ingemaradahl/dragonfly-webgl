@@ -23,7 +23,9 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   {
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
-  };
+
+    this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
+  }.bind(this);
 
   var render_preview = function()
   {

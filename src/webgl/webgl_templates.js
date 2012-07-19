@@ -457,7 +457,8 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
     img.push("class", "flipped");
   }
 
-  var buffer_link_row = [];
+  var table_rows = [];
+
   if (draw_call.element_buffer)
   {
     var buffer_link = [ "span",
@@ -467,19 +468,14 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
       "buffer", draw_call.element_buffer
     ];
 
-    buffer_link_row = ["tr", ["th", "Element buffer"], ["td", buffer_link]];
+    table_rows.push(["tr", ["th", "Element buffer"], ["td", buffer_link]]);
   }
 
-  var state = [
-    "table",
-      [
-        buffer_link_row,
-        [ "tr",
-          [ "th", "Program" ],
-          [ "td", String(draw_call.program.index)]
-        ],
-      ],
-      "class", "draw-call-info"
+  table_rows.push([ "tr",  [ "th", "Program" ], [ "td", String(draw_call.program.index)]])
+
+  var state = [ "table",
+    table_rows,
+    "class", "draw-call-info"
   ];
 
   var buffer_display = [];
@@ -523,7 +519,6 @@ window.templates.webgl.drawcall_buffer = function (attributes)
     [
       "div",
       "handler", "webgl-canvas",
-      "onresize", "alert(\"poopnoodl\");",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"
     ]

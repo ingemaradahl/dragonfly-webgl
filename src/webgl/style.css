@@ -146,7 +146,8 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border-color: gray;
 
   width: 100%;
-  max-width: 800;
+  max-width: 450px;
+  height: 450px;
   overflow: hidden;
 }
 
