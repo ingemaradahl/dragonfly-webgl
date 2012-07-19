@@ -448,7 +448,8 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
         "h2", [
           ["span", "Call " + callnr + ": "],
           ["span", function_name],
-        ]
+        ],
+        "class", "compact"
       ],
       function_arguments,
       ["p", spec_link],
