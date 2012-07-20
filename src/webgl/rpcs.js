@@ -101,6 +101,9 @@ cls.WebGL.RPCs.injection = function () {
 
       return function ()
       {
+        // Discard eventual error produced by function wrapping
+        gl.getError();
+
         // Execute original function and save result.
         // TODO catch exceptions
         var result = original_function.apply(this, arguments);
