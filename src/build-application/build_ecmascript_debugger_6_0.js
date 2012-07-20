@@ -256,9 +256,23 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLDrawCallView("webgl_draw_call",
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
+    
     new cls.WebGLCallView("webgl_call",
                           "Call",
                           "scroll webgl_view call");
+
+    new cls.WebGLTextureCallView("webgl_texture_call",
+                                 "Texture call",
+                                 "scroll webgl_view texture-call");
+  
+    new cls.WebGLBufferCallView("webgl_buffer_call",
+                                "Buffer call",
+                                "scroll webgl_view buffer-call");  
+  
+    new cls.WebGLProgramCallView("webgl_program_call",
+                                 "Program call",
+                                 "scroll webgl_view program-call");
+    
 
     new cls.WebGLBufferView("webgl_buffer",
                             "Buffer", // TODO

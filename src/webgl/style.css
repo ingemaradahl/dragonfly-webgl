@@ -81,7 +81,8 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border-color: #145e00;
 }
 
-.program div.js-resource-content
+
+.program-call div.js-resource-content
 {
   border: 1px solid #ccc;
   overflow-y: hidden;
@@ -90,6 +91,14 @@ pre.sh_sourceCode .webgl-hilight-uniform
   margin-bottom: 15px;
 }
 
+.program div.js-resource-content
+{
+  border: 1px solid #ccc;
+  overflow-y: hidden;
+  overflow-x: auto;
+  margin-top: 0px;
+  margin-bottom: 15px;
+}
 .webgl_view .uniform-table .changed
 {
   color: red;

@@ -33,6 +33,13 @@ cls.WebGLCallView = function(id, name, container_class)
     this.render_with_header(snapshot, call_index, template);
   };
 
+  this.display_program = function(snapshot, call_index, template)
+  {
+    this.render_with_header(snapshot, call_index, template);
+    sh_highlightDocument(); 
+  };
+  
+
   this._ondestroy = function()
   {
     this._container = null;
@@ -56,9 +63,6 @@ cls.WebGLCallView = function(id, name, container_class)
     }
   };
   
-  messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
-  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
-
   this.init(id, name, container_class);
 };
 

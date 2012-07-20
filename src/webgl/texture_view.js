@@ -85,7 +85,7 @@ cls.WebGLTextureView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLTextureView.prototype = ViewBase;
+cls.WebGLTextureView.prototype = cls.WebGLHeaderViewBase;
 
 // ----------------------------------------------------------------------------
 
