@@ -860,10 +860,12 @@ cls.WebGL.RPCs.injection = function () {
 
     this.buffers = [];
     this.buffers.number = 0;
+    this.buffers.number_snapshot = 0;
     this.buffer_binding = {};
 
     this.textures = [];
     this.textures.number = 0;
+    this.textures.number_snapshot = 0;
     this.texture_binding = {};
     this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
@@ -1541,9 +1543,15 @@ cls.WebGL.RPCs.injection = function () {
     /* Adds a buffer state to the snapshot */
     this.add_buffer = function (buffer)
     {
+      if (!buffer.index_snapshot)
+      {
+        buffer.index_snapshot = this.handler.buffers.number_snapshot++;
+      }
+
       var buffer_state = {
-        call_index : this.call_index,
-        index : buffer.index,
+        call_index: this.call_index,
+        index: buffer.index,
+        index_snapshot: buffer.index_snapshot
       };
 
       if (buffer.data)
@@ -1565,6 +1573,11 @@ cls.WebGL.RPCs.injection = function () {
       if (!texture) return;
 
       var gl = this.handler.gl;
+
+      if (!texture.index_snapshot)
+      {
+        texture.index_snapshot = this.handler.textures.number_snapshot++;
+      }
 
       /* Calculates texture data in a scope transission friendly way.
        * This function is never bound to the Handler object, but a texture object,
@@ -1670,11 +1683,13 @@ cls.WebGL.RPCs.injection = function () {
 
       // Clone data to new object, which is later released by scope
       var texture_state = {
-        call_index : this.call_index,
-        index : texture.index
+        call_index: this.call_index,
+        index: texture.index,
+        index_snapshot: texture.index_snapshot
       };
 
-      //if (texture.object)
+      // TODO only perform below if data is set
+      //if (texture.type)
       //{
         texture_state.texture_mag_filter = texture.texture_mag_filter;
         texture_state.texture_min_filter = texture.texture_min_filter;
@@ -1690,16 +1705,16 @@ cls.WebGL.RPCs.injection = function () {
           texture_state.width = texture.width;
           texture_state.height = texture.height;
         }
-      //}
 
-      // Add texture data
-      if (texture_data instanceof Object)
-      {
-        texture_state.img = texture_data;
-      }
-      else {
-        get_texture_data.call(texture_state, texture.object);
-      }
+        // Add texture data
+        if (texture_data instanceof Object)
+        {
+          texture_state.img = texture_data;
+        }
+        else {
+          get_texture_data.call(texture_state, texture.object);
+        }
+      //}
 
       this.textures.push(texture_state);
     };

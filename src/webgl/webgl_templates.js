@@ -61,7 +61,7 @@ window.templates.webgl.buffer_base = function(buffer)
         [
           [
             "h2",
-            "Buffer " + String(buffer.index)
+            buffer.toString()
           ],
           [
             "table",
@@ -353,7 +353,7 @@ window.templates.webgl.texture = function(texture)
   ];
 
   return [ "div",
-    ["h2", "Texture " + String(texture.index)],
+    ["h2", texture.toString()],
     image,
     info_table
   ];

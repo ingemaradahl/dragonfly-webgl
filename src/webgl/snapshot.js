@@ -348,7 +348,8 @@ cls.WebGLSnapshotArray = function(context_id)
               for (var i = 0; i < textures.length; i++)
               {
                 var texture = textures[i];
-                texture.name = filename + "." + fileext + " (" + texture.index + ")";
+                // TODO add setting to control if the index_snapshot or index should be used.
+                texture.name = filename + "." + fileext + " (" + texture.index_snapshot + ")";
               }
             }
           }

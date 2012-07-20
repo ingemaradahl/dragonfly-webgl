@@ -121,7 +121,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
     if (this._content)
     {
-      this._table.set_data(this._content)
+      this._table.set_data(this._content);
       this._container.clearAndRender(this._table.render());
     }
     else
@@ -143,9 +143,9 @@ cls.WebGLTextureSideView = function(id, name, container_class)
         name: String(texture),
         dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
         texture: texture,
-        call_index_val : texture.call_index,
-        call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
-        id : i++
+        call_index_val: texture.call_index,
+        call_index: String(texture.call_index === -1 ? " " : texture.call_index+1),
+        id: i++
       };
 
     });
@@ -169,7 +169,9 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this.tabledef = {
     handler: "webgl-texture-table",
     column_order: ["call_index", "name", "dimension"],
-    idgetter: function(res) { return String(res.id); },
+    idgetter: function(res) {
+      return String(res.id);
+    },
     columns: {
       call_index : {
         label: "Call",
@@ -186,7 +188,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       call: {
         label: "call", // TODO
         grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0; }
       },
       texture: {
         label: "texture", // TODO

@@ -11,7 +11,7 @@ cls.WebGLBuffer = function()
 };
 
 
-/* Initiates a sequence of calls to update the metadata of a buffer and get the 
+/* Initiates a sequence of calls to update the metadata of a buffer and get the
  * current data.
  */
 cls.WebGLBuffer.prototype.get_buffer_data = function()
@@ -42,7 +42,8 @@ cls.WebGLBuffer.prototype.show = function()
 
 cls.WebGLBuffer.prototype.toString = function()
 {
-  return this.name ? this.name : "Buffer " + String(this.index);
+  // TODO add setting to control if the index_snapshot or index should be used.
+  return this.name ? this.name : "Buffer " + String(this.index_snapshot + 1);
 };
 
 cls.WebGLBuffer.prototype.usage_string = function()
