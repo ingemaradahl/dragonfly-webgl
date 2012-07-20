@@ -208,6 +208,11 @@ pre.sh_sourceCode .webgl-hilight-uniform
   font-size: 0px;
 }
 
+.texture-container.fit
+{
+  display: inline-block;
+}
+
 .texture-container.fit img
 {
   max-height: 100%;

@@ -269,7 +269,8 @@ window.templates.webgl.texture = function(texture)
     image = [
       "div",
       img,
-      "class", "texture-container"
+      "class", "texture-container",
+      "style", "max-width: " + String(texture.width) + "px"
     ];
   }
   else
