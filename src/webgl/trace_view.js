@@ -128,7 +128,6 @@ cls.WebGLTraceView = function(id, name, container_class)
               arg.buffer.show();
               break;
           case "WebGLUniformLocation":
-              // make callback after render: 1. highlightDocu 2. hilightuniform
               arg_found = true;
               tab = "webgl_program_call";
               view = window.views.webgl_program_call;
