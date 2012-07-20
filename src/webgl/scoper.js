@@ -678,6 +678,7 @@ cls.Scoper.prototype._error = function(message)
   {
     opera.postError(ui_strings.S_DRAGONFLY_INFO_MESSAGE +
         "cls.Scoper failed!" + (message != null ? " - " + message : ""));
+    throw "Scoper error";
   }
 };
 
