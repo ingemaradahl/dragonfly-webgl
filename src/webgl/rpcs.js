@@ -101,6 +101,9 @@ cls.WebGL.RPCs.injection = function () {
 
       return function ()
       {
+        // Discard eventual error produced by function wrapping
+        gl.getError();
+
         // Execute original function and save result.
         // TODO catch exceptions
         var result = original_function.apply(this, arguments);
@@ -467,7 +470,10 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.vertexAttribPointer = function(result, args)
     {
       var buffer = this.buffer_binding[this.gl.ARRAY_BUFFER];
-      var program = this.lookup_program(this.bound_program);
+
+      var program = this.lookup_program(this.bound_program
+        ? this.bound_program
+        : this.gl.getParameter(this.gl.CURRENT_PROGRAM));
 
       var index = args[0];
       var size = args[1];
@@ -965,11 +971,11 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_program_state = function(program)
     {
+      var gl = this.gl;
       program = program || this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
 
       if (!program) return null;
 
-      var gl = this.gl;
       var program_obj = this.lookup_program(program);
 
       var state =
@@ -1327,7 +1333,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       return diff;
     };
-  }
+  };
 
   /**
    * Queues messages for pickup by Dragonfly.
