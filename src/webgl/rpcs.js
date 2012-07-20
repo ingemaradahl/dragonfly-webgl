@@ -128,8 +128,7 @@ cls.WebGL.RPCs.injection = function () {
           }
           catch (e)
           {
-            var caller = arguments.callee.caller;
-            loc = analyse_stacktrace(e.stacktrace, caller);
+            loc = analyse_stacktrace(e.stacktrace);
           }
 
           handler.snapshot.add_call(function_name, error, arguments, result, redundant, loc);
@@ -145,7 +144,7 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     var stacktrace_regexp = new RegExp("^called from line (\\d+), column (\\d+) in ([^(]+)\\([^)]*\\) in (.+):$");
-    function analyse_stacktrace(stacktrace, caller)
+    function analyse_stacktrace(stacktrace)
     {
       var lines = stacktrace.split("\n");
       if (lines.length < 3) return null;
@@ -155,8 +154,7 @@ cls.WebGL.RPCs.injection = function () {
         line: Number(matches[1]),
         column: Number(matches[2]),
         caller_name: matches[3],
-        url: matches[4],
-        caller_function: caller
+        url: matches[4]
       };
     }
 

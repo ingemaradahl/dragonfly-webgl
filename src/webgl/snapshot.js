@@ -56,13 +56,6 @@ cls.WebGLSnapshotArray = function(context_id)
           }
         }
       },
-      call_locs: {
-        _array_elements: {
-          caller_function: {
-            _action: cls.Scoper.ACTIONS.NOTHING
-          }
-        }
-      },
       state: {
         _reviver: scoper.reviver_typed,
         _class: cls.WebGLState
@@ -127,9 +120,6 @@ cls.WebGLSnapshotArray = function(context_id)
     /**
      * Tries to find a matching script id to the provided url.
      * Can currently don't match inline scripts.
-     *
-     * TODO change implementation to make use of the Scope command GetFunctionPositions.
-     * The loc object in the trace call already contains the object id to the caller function.
      */
     var lookup_script_id = function(url)
     {
