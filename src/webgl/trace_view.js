@@ -102,6 +102,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     {
       tab = "webgl_draw_call";
       view = window.views.webgl_draw_call;
+      arg_found = true;
     }
     else
     {
