@@ -243,11 +243,11 @@ window.templates.webgl.trace_table = function(calls, view_id)
 window.templates.webgl.texture = function(texture)
 {
   var image_source = null;
-  if (texture.img && texture.img.source)
+  if (texture.url)
   {
     image_source = {
       name: "Image source",
-      value: texture.img.source
+      value: texture.url
     };
   }
 

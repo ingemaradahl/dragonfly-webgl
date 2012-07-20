@@ -287,6 +287,68 @@ cls.WebGLSnapshotArray = function(context_id)
 
       return result;
     }.bind(this.drawcalls);
+
+    var init_textures = function(textures)
+    {
+      // TODO perhaps this should be cross-snapshot so that the same texture always have same name. Even if one with the same filename is added.
+      var texture_names = {};
+
+      var update_names = function()
+      {
+        for (var filename in texture_names)
+        {
+          var extensions = texture_names[filename];
+          var number = 0;
+          var textures;
+          for (var fileext in extensions)
+          {
+            textures = extensions[fileext];
+            number += textures.length;
+            if (textures.length === 1)
+            {
+              textures[0].name = filename + "." + fileext;
+            }
+            else
+            {
+              for (var i = 0; i < textures.length; i++)
+              {
+                var texture = textures[i];
+                texture.name = filename + "." + fileext + " (" + texture.index + ")";
+              }
+            }
+          }
+
+          if (number === 1)
+          {
+            textures[0].name = filename;
+          }
+        }
+      };
+
+      var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
+      var add_texture_name = function(tex)
+      {
+        if (tex.element_type === "HTMLImageElement" && tex.url != null)
+        {
+          var file = file_regexp.exec(tex.url);
+          var filename = file[1];
+          var fileext = file[2];
+
+          if (!(filename in texture_names))
+          {
+            texture_names[filename] = {};
+          }
+          if (!(fileext in texture_names[filename]))
+          {
+            texture_names[filename][fileext] = [];
+          }
+          texture_names[filename][fileext].push(tex);
+        }
+      };
+      textures.forEach(add_texture_name);
+      update_names();
+    };
+    init_textures(snapshot.textures);
   };
 
   // ---------------------------------------------------------------------------

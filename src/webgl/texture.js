@@ -17,7 +17,7 @@ cls.WebGLTexture.prototype.get_texture_data = function()
   };
 
   var scoper = new cls.Scoper(finalize, this);
-  scoper.examine_object(this.img)
+  scoper.examine_object(this.img);
 };
 
 cls.WebGLTexture.prototype.show = function()
@@ -32,5 +32,5 @@ cls.WebGLTexture.prototype.show = function()
 
 cls.WebGLTexture.prototype.toString = function()
 {
-  return this.name ? this.name : "Texture " + String(this.index);
+  return this.name ? this.name : "Texture " + String(this.index + 1);
 };
