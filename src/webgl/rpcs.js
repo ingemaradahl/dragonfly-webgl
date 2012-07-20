@@ -172,8 +172,8 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buf = {};
       buf.buffer = buffer;
-      var i = this.buffers.push(buf);
-      buf.index = i - 1;
+      this.buffers.push(buf);
+      buf.index = this.buffers.number++;
       buf.data = [];
       buf.layouts = [];
     };
@@ -247,10 +247,11 @@ cls.WebGL.RPCs.injection = function () {
     };
     innerFuns.deleteBuffer = function(result, args)
     {
-      var buffer = this.lookup_buffer(args[0]);
-      if (buffer == null) return;
-      this.buffers.splice(buffer.index, 1);
+      var buffer_index = this.lookup_buffer_index(args[0]);
+      if (buffer_index == null) return;
+      this.buffers.splice(buffer_index, 1);
 
+      var buffer = this.buffers[buffer_index];
       for (var target in this.buffer_binding)
       {
         if (this.buffer_binding[target] === buffer)
@@ -259,7 +260,6 @@ cls.WebGL.RPCs.injection = function () {
         }
       }
     };
-
 
     // Texture code
     innerFuns.activeTexture = function(result, args)
@@ -286,15 +286,17 @@ cls.WebGL.RPCs.injection = function () {
     {
       var tex = {};
       tex.texture = texture;
-      var i = this.textures.push(tex);
-      tex.index = i - 1;
+      this.textures.push(tex);
+      tex.index = this.textures.number++;
     };
 
     innerFuns.deleteTexture = function(result, args)
     {
-      var texture = this.lookup_texture(args[0]);
-      if (texture == null) return;
-      this.textures.splice(texture.index, 1);
+      var texture_index = this.lookup_texture_index(args[0]);
+      if (texture_index == null) return;
+      this.textures.splice(texture_index, 1);
+
+      var texture = this.textures[texture_index];
       for (var target in this.texture_binding)
       {
         if (this.texture_binding[target] === texture)
@@ -857,10 +859,11 @@ cls.WebGL.RPCs.injection = function () {
     this.bound_program = null;
 
     this.buffers = [];
+    this.buffers.number = 0;
     this.buffer_binding = {};
 
-
     this.textures = [];
+    this.textures.number = 0;
     this.texture_binding = {};
     this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
@@ -892,22 +895,34 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
-
-    var generic_lookup = function(list, subkey)
+    var generic_lookup_index = function(list, subkey)
     {
       return function(value)
       {
         for(var key in list)
         {
-          if(list[key] != null && list[key][subkey] === value) return list[key];
+          if (!list.hasOwnProperty(key)) continue;
+          if (list[key] != null && list[key][subkey] === value) return key;
         }
         return null;
       };
     };
 
+    var generic_lookup = function(list, subkey)
+    {
+      var lookup = generic_lookup_index(list, subkey);
+      return function(value)
+      {
+        var index = lookup(value);
+        return index === null ? null : list[index];
+      };
+    };
+
     this.lookup_buffer = generic_lookup(this.buffers, "buffer");
+    this.lookup_buffer_index = generic_lookup_index(this.buffers, "buffer");
 
     this.lookup_texture = generic_lookup(this.textures, "texture");
+    this.lookup_texture_index = generic_lookup_index(this.textures, "texture");
 
     this.lookup_program = generic_lookup(this.programs, "program");
 

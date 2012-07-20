@@ -134,11 +134,6 @@ cls.WebGLTraceView = function(id, name, container_class)
     arg.action();
   };
 
-  this._on_selected_snapshot = function()
-  {
-    this._render();
-  };
-
   this._on_take_snapshot = function()
   {
     if (this._container)
@@ -169,7 +164,6 @@ cls.WebGLTraceView = function(id, name, container_class)
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
   messages.addListener('webgl-changed-snapshot', this._render.bind(this));
-  messages.addListener('webgl-selected-snapshot', this._on_selected_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);

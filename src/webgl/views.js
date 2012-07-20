@@ -160,14 +160,14 @@ cls.WebGLSnapshotSelect = function(id)
 
     if (take_snapshot !== undefined)
     {
-      messages.post('webgl-change-snapshot', context_id);
+      window.webgl.request_snapshot(context_id);
       return false;
     }
     else if (snapshot_index != null && this._selected_snapshot_index !== snapshot_index)
     {
       this._selected_snapshot_index = snapshot_index;
       this._selected_context_id = context_id;
-      messages.post('webgl-selected-snapshot');
+      messages.post('webgl-changed-snapshot', window.webgl.snapshots[context_id][snapshot_index]);
       return true;
     }
     return false;
@@ -185,7 +185,7 @@ cls.WebGLSnapshotSelect = function(id)
     }
   };
 
-  this._on_new_context = function(ctx_id)
+  var on_new_context = function(ctx_id)
   {
     if (!this.disabled) return;
     this.disabled = false;
@@ -193,7 +193,7 @@ cls.WebGLSnapshotSelect = function(id)
     refresh_tab();
   };
 
-  this._on_new_snapshot = function(ctx_id)
+  var on_new_snapshot = function(ctx_id)
   {
     var snapshots = window.webgl.snapshots;
     this.disabled = !window.webgl.available();
@@ -209,12 +209,7 @@ cls.WebGLSnapshotSelect = function(id)
     window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
   };
 
-  this._on_change_snapshot = function(context_id)
-  {
-    window.webgl.request_snapshot(context_id);
-  };
-
-  this._clear = function()
+  var clear = function()
   {
     this._selected_snapshot_index = null;
     this._selected_context_id = null;
@@ -226,10 +221,9 @@ cls.WebGLSnapshotSelect = function(id)
     }
   };
 
-  messages.addListener('webgl-new-context', this._on_new_context.bind(this));
-  messages.addListener('webgl-new-snapshot', this._on_new_snapshot.bind(this));
-  messages.addListener('webgl-change-snapshot', this._on_change_snapshot.bind(this));
-  messages.addListener('webgl-clear', this._clear.bind(this));
+  messages.addListener('webgl-new-context', on_new_context.bind(this));
+  messages.addListener('webgl-new-snapshot', on_new_snapshot.bind(this));
+  messages.addListener('webgl-clear', clear.bind(this));
 
   this.init(id);
 };
