@@ -28,9 +28,9 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index)
 
 cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index)
 {
-  var group = cls.WebGLState.function_groups[function_name];
-  var params = cls.WebGLState.parameter_groups[group];
-  if (params == null) params = cls.WebGLState.parameter_groups.uncategorized; // TODO remove when we have correct groups
+  var group = cls.WebGLState.FUNCTION_GROUPS[function_name];
+  var params = cls.WebGLState.PARAMETER_GROUPS[group];
+  if (params == null) params = cls.WebGLState.PARAMETER_GROUPS.uncategorized; // TODO remove when we have correct groups
 
   var result = {};
   for (var i = 0; i < params.length; i++)
@@ -42,7 +42,7 @@ cls.WebGLState.prototype.get_function_parameters = function(function_name, call_
   return result;
 };
 
-cls.WebGLState.function_groups = {
+cls.WebGLState.FUNCTION_GROUPS = {
   "disableVertexAttribArray": "uniform",
   "enableVertexAttribArray": "uniform",
   "getActiveAttrib": "uniform",
@@ -87,37 +87,37 @@ cls.WebGLState.function_groups = {
   "drawElements": "draw",
   "finish": "draw",
   "flush": "draw",
-  "activeTexture": "stuff",
-  "blendColor": "stuff",
-  "blendEquation": "stuff",
-  "blendEquationSeparate": "stuff",
-  "blendFunc": "stuff",
-  "blendFuncSeparate": "stuff",
-  "clearColor": "stuff",
-  "clearDepth": "stuff",
-  "clearStencil": "stuff",
-  "colorMask": "stuff",
-  "cullFace": "stuff",
-  "depthFunc": "stuff",
-  "depthMask": "stuff",
-  "depthRange": "stuff",
-  "disable": "stuff",
-  "enable": "stuff",
-  "frontFace": "stuff",
-  "getError": "stuff",
-  "getParameter": "stuff",
-  "hint": "stuff",
-  "isEnabled": "stuff",
-  "lineWidth": "stuff",
-  "pixelStorei": "stuff",
-  "polygonOffset": "stuff",
-  "sampleCoverage": "stuff",
-  "stencilFunc": "stuff",
-  "stencilFuncSeparate": "stuff",
-  "stencilMask": "stuff",
-  "stencilMaskSeparate": "stuff",
-  "stencilOp": "stuff",
-  "stencilOpSeparate": "stuff",
+  "activeTexture": "generic",
+  "blendColor": "generic",
+  "blendEquation": "generic",
+  "blendEquationSeparate": "generic",
+  "blendFunc": "generic",
+  "blendFuncSeparate": "generic",
+  "clearColor": "generic",
+  "clearDepth": "generic",
+  "clearStencil": "generic",
+  "colorMask": "generic",
+  "cullFace": "generic",
+  "depthFunc": "generic",
+  "depthMask": "generic",
+  "depthRange": "generic",
+  "disable": "generic",
+  "enable": "generic",
+  "frontFace": "generic",
+  "getError": "generic",
+  "getParameter": "generic",
+  "hint": "generic",
+  "isEnabled": "generic",
+  "lineWidth": "generic",
+  "pixelStorei": "generic",
+  "polygonOffset": "generic",
+  "sampleCoverage": "generic",
+  "stencilFunc": "generic",
+  "stencilFuncSeparate": "generic",
+  "stencilMask": "generic",
+  "stencilMaskSeparate": "generic",
+  "stencilOp": "generic",
+  "stencilOpSeparate": "generic",
   "scissor": "viewport",
   "viewport": "viewport",
   "bindBuffer": "buffer",
@@ -178,7 +178,7 @@ cls.WebGLState.function_groups = {
   "validateProgram": "shader"
 };
 
-cls.WebGLState.parameter_groups = {
+cls.WebGLState.PARAMETER_GROUPS = {
   uncategorized: [
     "ALIASED_LINE_WIDTH_RANGE",
     "ALIASED_POINT_SIZE_RANGE",

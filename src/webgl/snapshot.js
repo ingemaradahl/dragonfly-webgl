@@ -147,6 +147,22 @@ cls.WebGLSnapshotArray = function(context_id)
       return null;
     };
 
+    var init_state = function (state)
+    {
+      for (var key in state)
+      {
+        if (!state.hasOwnProperty(key)) continue;
+        var param = state[key];
+        for (var call in param)
+        {
+          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object") continue;
+          param[call] = new LinkedObject(param[call], call, this);
+        }
+      }
+    }.bind(this);
+
+    init_state(this.state);
+
     var init_trace = function (calls, call_locs, call_refs)
     {
       var trace_list = [];
@@ -209,29 +225,58 @@ cls.WebGLSnapshotArray = function(context_id)
         loc.script_id = script_id;
         loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
 
-        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args, loc));
+        var group = cls.WebGLState.FUNCTION_GROUPS[function_name];
+        var linked_object = null;
+        var target, param;
+        switch (group)
+        {
+          case "buffer":
+            switch (function_name)
+            {
+              case "createBuffer":
+                linked_object = result;
+                break;
+              case "deleteBuffer":
+              case "isBuffer":
+                linked_object = args[0];
+                break;
+              default:
+                target = args[0];
+                param = target === cls.WebGLAPI.CONSTANTS.ARRAY_BUFFER ? "ARRAY_BUFFER_BINDING" : "ELEMENT_ARRAY_BUFFER_BINDING";
+                linked_object = this.state.get_parameter(param, j);
+                break;
+            }
+            break;
+          case "texture":
+            switch (function_name)
+            {
+              case "activeTexture":
+                linked_object = null;
+                group = "generic";
+                break;
+              case "createTexture":
+                linked_object = result;
+                break;
+              case "deleteTexture":
+              case "isTexture":
+                linked_object = args[0];
+                break;
+              default:
+                target = args[0];
+                param = target === cls.WebGLAPI.CONSTANTS.TEXTURE_2D ? "TEXTURE_BINDING_2D" : "TEXTURE_BINDING_CUBE_MAP";
+                linked_object = this.state.get_parameter(param, j);
+                break;
+            }
+            break;
+        }
+
+        trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args, loc, group, linked_object));
       }
 
       this.trace = trace_list;
     }.bind(this);
 
     init_trace(snapshot.calls, snapshot.call_locs, snapshot.call_refs);
-
-    var init_state = function (state)
-    {
-      for (var key in state)
-      {
-        if (!state.hasOwnProperty(key)) continue;
-        var param = state[key];
-        for (var call in param)
-        {
-          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object") continue;
-          param[call] = new LinkedObject(param[call], call, this);
-        }
-      }
-    }.bind(this);
-
-    init_state(this.state);
 
     // Init draw calls
     var init_drawcall = function(drawcall)
@@ -356,7 +401,7 @@ cls.WebGLSnapshotArray = function(context_id)
   /**
    * Used to store a single function call in a frame trace.
    */
-  function TraceEntry(function_name, error_code, redundant, result, args, loc)
+  function TraceEntry(function_name, error_code, redundant, result, args, loc, group, linked_object)
   {
     this.function_name = function_name;
     this.error_code = error_code;
@@ -367,6 +412,8 @@ cls.WebGLSnapshotArray = function(context_id)
     this.have_result = result !== "";
     this.args = args;
     this.loc = loc;
+    this.group = group;
+    this.linked_object = linked_object;
 
     this.snapshot = null;
     this.have_snapshot = false;
