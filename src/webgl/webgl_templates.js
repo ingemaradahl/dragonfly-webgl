@@ -53,6 +53,8 @@ window.templates.webgl.buffer_base = function(buffer)
     ];
   });
 
+  var history = window.templates.webgl.history(buffer);
+
   return [
     "div",
     [
@@ -71,6 +73,7 @@ window.templates.webgl.buffer_base = function(buffer)
           ]
         ]
       ],
+      history,
       data_table
     ]
   ];
@@ -155,6 +158,74 @@ window.templates.webgl.linked_object = function(obj, handler, data_name)
   return html;
 };
 
+window.templates.webgl.history = function(object)
+{
+  if (object.history == null || object.history.length === 0) return [];
+  var arg_func = function(arg)
+  {
+    return arg.text;
+  };
+
+  var row_func = function(call)
+  {
+    var content = [["span",call.function_name]];
+    content.push(["span", "("]);
+
+    var args = window.webgl.api.function_arguments_to_objects(call.function_name, call.args);
+    for (var i = 0; i < args.length; i++)
+    {
+      var html = window.templates.webgl.linked_object(args[i], "webgl-trace-argument");
+
+      if (i > 0) content.push(["span", ", "]);
+      content.push(html);
+    }
+    content.push(["span", ")"]);
+
+    var call_row = [
+      "tr",
+      [
+        ["td", String(call.frame)],
+        [
+          "td",
+          content
+        ]
+      ]
+    ];
+    var goto_row = [
+      "tr",
+      [
+        ["td"],
+        [
+          "td",
+          window.templates.webgl.goto_script(call.loc)
+        ]
+      ]
+    ];
+    return [call_row, goto_row];
+  };
+
+  var his_list = [];
+  his_list.push(["tr", [["td", "Frame"], ["td", "Call"]]]);
+  if (object.history.create) his_list.push(row_func(object.history.create));
+
+  if (object.history.number > object.history.length)
+  {
+    var num = object.history.number - object.history.length;
+    his_list.push(["tr", [["td"], ["td", num + " calls omitted."]]]);
+  }
+
+  object.history.sort(function(a, b){return a.frame - b.frame;});
+  his_list.push(object.history.map(row_func));
+
+  return [
+    "div",
+    [
+      ["h2", "History"],
+      ["table", his_list]
+    ]
+  ];
+};
+
 window.templates.webgl.trace_row = function(call, call_number, view_id)
 {
   var func_text = [
@@ -177,7 +248,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
     }
     var html = window.templates.webgl.linked_object(arg, "webgl-trace-argument");
 
-    if (i > 0) content.push(", ");
+    if (i > 0) content.push(["span", ", "]);
     content.push(html);
   }
 
@@ -356,26 +427,24 @@ window.templates.webgl.texture = function(texture)
     "class", "table-info"
   ];
 
+  var history = window.templates.webgl.history(texture);
+
   return [ "div",
     ["h2", texture.toString()],
     image,
-    info_table
+    info_table,
+    history
   ];
 };
 
 /**
  * Makes a link to the script tag to show where the call was made.
  */
-window.templates.webgl.goto_script = function(trace_call)
+window.templates.webgl.goto_script = function(loc)
 {
-  var loc = trace_call.loc;
   var script_url = loc.short_url || loc.url;
   var script_ref;
-  if (trace_call.loc == null)
-  {
-    script_ref = [];
-  }
-  else if (trace_call.loc.script_id == null)
+  if (loc.script_id == null)
   {
     script_ref = [
       "span", "Called from " + loc.caller_name + " in " + script_url
@@ -428,7 +497,7 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
   }
   function_arguments.push(["span", ")"]);
 
-  var script_ref = window.templates.webgl.goto_script(trace_call);
+  var script_ref = trace_call.loc ? window.templates.webgl.goto_script(trace_call.loc) : [];
 
   var st = [];
   for (var param in state_parameters)

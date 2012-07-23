@@ -255,7 +255,7 @@ cls.WebGLAPI = function ()
    */
   this.constant_value_to_string = function(value)
   {
-    var str = cls.WebGLAPI.CONSTANTS[value];
+    var str = webgl_constants_back[value];
     return str != null ? str : String(value);
   };
 
@@ -410,7 +410,7 @@ cls.WebGLAPI = function ()
 
   GLParam.prototype.generate_string = function(value)
   {
-    if (typeof(value) === "object" && value.text != null) return value.text;
+    if (typeof(value) === "object" && value != null && value.text != null) return value.text;
     return String(value);
   };
 
@@ -421,7 +421,7 @@ cls.WebGLAPI = function ()
 
   GLParam.prototype.get_object = function(value)
   {
-    if (typeof(value) === "object")
+    if (typeof(value) === "object" && value != null)
     {
       if (!value.tooltip) value.tooltip = this.get_tooltip();
       return value;

@@ -153,19 +153,27 @@ cls.WebGLSnapshotArray = function(context_id)
 
     init_state(this.state);
 
+    var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
+    var base_url = new RegExp("^(.*)/[^/]*$").exec(runtime.uri)[1] + "/";
+    var short_url_regexp = new RegExp("^" + base_url + "(.*)$");
+    var init_loc = function(loc)
+    {
+      var script_id = lookup_script_id(loc.url);
+      loc.script_id = script_id;
+      loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
+    };
+
     var init_trace = function (calls, call_locs, call_refs)
     {
       var trace_list = [];
       var object_index_regexp = /^@([0-9]+)$/;
 
-      var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
-      var base_url = new RegExp("^(.*)/[^/]*$").exec(runtime.uri)[1] + "/";
-      var short_url_regexp = new RegExp("^" + base_url + "(.*)$");
-
       for (var j = 0; j < calls.length; j++)
       {
         var call = calls[j];
         var loc = call_locs[j];
+
+        init_loc(loc);
 
         // WebGL Function call
         var parts = call.split("|");
@@ -210,10 +218,6 @@ cls.WebGLSnapshotArray = function(context_id)
         {
           result = Number(result);
         }
-
-        var script_id = lookup_script_id(loc.url);
-        loc.script_id = script_id;
-        loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
 
         var group = cls.WebGLState.FUNCTION_GROUPS[function_name];
         var linked_object = null;
@@ -385,6 +389,21 @@ cls.WebGLSnapshotArray = function(context_id)
       update_names();
     };
     init_textures(snapshot.textures);
+
+    var init_history = function(textures, buffers)
+    {
+      var types = [textures, buffers];
+      types.forEach(function(type){
+        type.forEach(function(unit){
+          if (unit.history.create) init_loc(unit.history.create.loc);
+
+          unit.history.forEach(function(call){
+            init_loc(call.loc);
+          });
+        });
+      });
+    };
+    init_history(snapshot.textures, snapshot.buffers);
   };
 
   // ---------------------------------------------------------------------------
