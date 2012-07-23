@@ -82,20 +82,7 @@ window.templates.webgl.buffer_data_table = function(buffer)
   var data_table_rows = [];
   for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i+=2)
   {
-    var value1 = buffer.data[i];
-    var value2 = buffer.data[i];
-
-
-  //  var row = [];
-  //  for (var j=0; j<column_layout; j++)
-  //  {
-  //    row.push([
-  //                "td",
-  //                String(j),
-  //             ],      
-  //  }
-
-
+    var value = buffer.data[i];
 
     data_table_rows.push([
       "tr",
@@ -108,17 +95,7 @@ window.templates.webgl.buffer_data_table = function(buffer)
         ],
         [
           "td",
-          String(value1)
-        ],
-        [
-          "td",
-          String(i+1),
-          "style", // TODO make css class
-          "text-align: right"
-        ],
-        [
-          "td",
-          String(value2)
+          String(value)
         ]
       ]
     ]);
@@ -138,14 +115,6 @@ window.templates.webgl.buffer_data_table = function(buffer)
   var data_table_head = [
     "tr",
     [
-      [
-        "td",
-        "Index"
-      ],
-      [
-        "td",
-        "value"
-      ],
       [
         "td",
         "Index"
