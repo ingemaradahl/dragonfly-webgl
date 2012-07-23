@@ -77,52 +77,57 @@ window.templates.webgl.buffer_base = function(buffer)
 
 window.templates.webgl.buffer_data_table = function(buffer)
 {
-  var MAX_NUM_ELEMENTS = 1000;
   var column_layout = 3;
+  var MAX_ROWS = 1000 * column_layout;
   var data_table_rows = [];
-  for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i+=2)
+  for (var i = 0; i < Math.min(buffer.data.length, MAX_ROWS); i++)
   {
-    var value = buffer.data[i];
+    var rows = [];
+    // Index
+    rows.push(
+      [
+        "td",
+        String(i)
+      ]);
+    // Values
+    for (var j=0; j<column_layout; j++)
+    {
+      rows.push(
+        [
+          "td",
+          String(buffer.data[i*column_layout+j])
+        ]);
+    }
 
     data_table_rows.push([
       "tr",
       [
-        [
-          "td",
-          String(i),
-          "style", // TODO make css class
-          "text-align: right"
-        ],
-        [
-          "td",
-          String(value)
-        ]
+        rows
       ]
     ]);
   }
 
   // TODO temporary solution since Dragonfly will freeze when to many elements
   var more_data = [];
-  if (buffer.data.length > MAX_NUM_ELEMENTS)
+  if (buffer.data.length > MAX_ROWS)
   {
-    var diff = buffer.data.length - MAX_NUM_ELEMENTS;
+    var diff = buffer.data.length - MAX_ROWS;
     more_data = [
       "div",
       "There are " + String(diff) + " more elements."
     ];
   }
 
+  var table_head = [["td", "Index"]];
+  for (var k = 0; k<column_layout; k++)
+  { 
+    table_head.push(["td", String(k)]);  
+  }
+
   var data_table_head = [
     "tr",
     [
-      [
-        "td",
-        "Index"
-      ],
-      [
-        "td",
-        "value"
-      ]
+      table_head
     ],
     "class",
     "header"
