@@ -255,7 +255,7 @@ cls.WebGLAPI = function ()
    */
   this.constant_value_to_string = function(value)
   {
-    var str = cls.WebGLAPI.CONSTANTS[value];
+    var str = webgl_constants_back[value];
     return str != null ? str : String(value);
   };
 

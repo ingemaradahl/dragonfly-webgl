@@ -20,7 +20,6 @@ window.templates.webgl.reload_info = function(buffer)
 
 window.templates.webgl.buffer_base = function(buffer)
 {
-  var MAX_NUM_ELEMENTS = 1000;
   var data_table;
   if (buffer.data_is_loaded())
   {
@@ -79,10 +78,12 @@ window.templates.webgl.buffer_base = function(buffer)
 window.templates.webgl.buffer_data_table = function(buffer)
 {
   var MAX_NUM_ELEMENTS = 1000;
+  var column_layout = 3;
   var data_table_rows = [];
-  for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i++)
+  for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i+=2)
   {
     var value = buffer.data[i];
+
     data_table_rows.push([
       "tr",
       [
