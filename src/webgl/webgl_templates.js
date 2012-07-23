@@ -61,7 +61,7 @@ window.templates.webgl.buffer_base = function(buffer)
         [
           [
             "h2",
-            "Buffer " + String(buffer.index)
+            buffer.toString()
           ],
           [
             "table",
@@ -251,8 +251,12 @@ window.templates.webgl.texture = function(texture)
     };
   }
 
-  var image = [];
-  if (texture.img.data)
+  var image;
+  if (texture.img == null)
+  {
+    image = ["span", "No data."];
+  }
+  else if (texture.img.data)
   {
     var img = [
       "img",
@@ -353,7 +357,7 @@ window.templates.webgl.texture = function(texture)
   ];
 
   return [ "div",
-    ["h2", "Texture " + String(texture.index)],
+    ["h2", texture.toString()],
     image,
     info_table
   ];

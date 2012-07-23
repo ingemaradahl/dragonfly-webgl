@@ -87,4 +87,3 @@ cls.WebGLTextureView = function(id, name, container_class)
 
 cls.WebGLTextureView.prototype = cls.WebGLHeaderViewBase;
 
-

@@ -24,7 +24,7 @@ cls.WebGLTexture.prototype.show = function()
 {
   window.views.webgl_texture.show_texture(this);
 
-  if (!this.img.data)
+  if (this.img && !this.img.data)
   {
     this.get_texture_data();
   }
@@ -32,5 +32,6 @@ cls.WebGLTexture.prototype.show = function()
 
 cls.WebGLTexture.prototype.toString = function()
 {
-  return this.name ? this.name : "Texture " + String(this.index + 1);
+  // TODO add setting to control if the index_snapshot or index should be used.
+  return this.name ? this.name : "Texture " + String(this.index_snapshot + 1);
 };
