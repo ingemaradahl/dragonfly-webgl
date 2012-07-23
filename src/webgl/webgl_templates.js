@@ -251,8 +251,12 @@ window.templates.webgl.texture = function(texture)
     };
   }
 
-  var image = [];
-  if (texture.img.data)
+  var image;
+  if (texture.img == null)
+  {
+    image = ["span", "No data."];
+  }
+  else if (texture.img.data)
   {
     var img = [
       "img",

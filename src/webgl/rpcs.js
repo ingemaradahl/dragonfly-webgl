@@ -1722,6 +1722,8 @@ cls.WebGL.RPCs.injection = function () {
         }
       //}
 
+      if (texture_state.img.data == null) texture_state.img = null;
+
       this.textures.push(texture_state);
     };
 
