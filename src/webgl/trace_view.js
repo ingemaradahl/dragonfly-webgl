@@ -11,13 +11,13 @@ cls.WebGLTraceView = function(id, name, container_class)
 {
   this._container = null;
   this._current_trace = null;
+  this._loading_snapshot = false;
 
   this.createView = function(container)
   {
     this._container = container;
     this._table = this._table ||
                            new SortableTable(this.tabledef, null, null, null, null, false, "trace-table");
-
     this._render();
   };
 
@@ -29,6 +29,12 @@ cls.WebGLTraceView = function(id, name, container_class)
   this._render = function()
   {
     if (!this._container) return;
+
+    if (this._loading_snapshot)
+    {
+      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+      return;
+    }
 
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
@@ -69,23 +75,9 @@ cls.WebGLTraceView = function(id, name, container_class)
     if (ctx_id != null)
     {
       window.webgl.request_snapshot(ctx_id);
+      this._loading_snapshot = true;
     }
   };
-
-  // TODO Commented out by Victor, private function that is never called. Delete?
-  //this._format_trace_table = function(trace)
-  //{
-  //  var tbl_data = [];
-  //  for (var i = 0; i < trace.length; i++)
-  //  {
-  //    var call = trace[i];
-  //    var call_text = window.webgl.api.function_call_to_string(call.function_name, call.args);
-  //    if (trace[i].have_result) call_text += " = " + String(trace[i].result);
-  //    if (trace[i].have_error) call_text += " -> Error code: " + String(trace[i].error_code);
-  //    tbl_data.push({"number" : String(i + 1), "call" : call_text});
-  //  }
-  //  return tbl_data;
-  //};
 
   this._on_row_click = function(evt, target)
   {
@@ -156,9 +148,17 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_take_snapshot = function()
   {
+    window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
+    this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+    this._loading_snapshot = true;
+  };
+
+  this._on_changed_snapshot = function()
+  {
+    this._loading_snapshot = false;
     if (this._container)
     {
-      this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+      this._render();
     }
   };
 
@@ -183,7 +183,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
   eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
-  messages.addListener('webgl-changed-snapshot', this._render.bind(this));
+  messages.addListener('webgl-changed-snapshot', this._on_changed_snapshot.bind(this));
   messages.addListener('webgl-take-snapshot', this._on_take_snapshot.bind(this));
 
   this.init(id, name, container_class);
