@@ -67,6 +67,47 @@ cls.WebGLMeshDrawer = function(gl)
   var eh = window.eventHandlers;
   eh.mousedown["webgl-canvas"] = on_mousedown.bind(this);
   eh.mousewheel["webgl-canvas"] = on_mousewheel.bind(this);
+
+  this.cache = new (function()
+  {
+    var MAX_SIZE = 5;
+    var cache_arr = [];
+
+    this.post = function(gl_buffer, attribute, state, element_buffer)
+    {
+      cache_arr.push({
+        attrib:attribute, 
+        state:state, 
+        element_buffer:element_buffer, 
+        gl_buffer: gl_buffer
+      });
+      
+      cache_arr.splice(0, cache_arr.length-MAX_SIZE)
+    };
+
+    this.lookup = function(attribute, state, element_buffer)
+    {
+      for (var i=0; i<cache_arr.length; i++)
+      {
+        var c = cache_arr[i];
+        if (c.attrib === attribute
+            && c.state === state
+            && c.element_buffer === element_buffer)
+        {
+          if (i !== MAX_SIZE)
+          {
+            // Bubble up the accessed entry
+            cache_arr.splice(i, 1);
+            cache_arr.push(c);
+          }
+          return c.gl_buffer;
+        }
+      }
+
+      return null;
+    };
+  })();
+
 };
 
 cls.WebGLMeshDrawer.prototype.set_program = function(program)
@@ -345,11 +386,8 @@ cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
 // TODO: add callback for when data mangling starts
 cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 {
-  var preview = this.buffer.preview_buffer;
-  if (!(preview 
-        && preview.attrib === this.layout 
-        && preview.state === this.state 
-        && preview.element_buffer === this.element_buffer))
+  var preview = this.cache.lookup(this.layout, this.state, this.element_buffer)
+  if (!preview)
   {
     var gl = this.gl;
     var triangles = this.get_triangles();
@@ -421,17 +459,18 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     var exts = [extent.min_x, extent.max_x, extent.min_y, extent.max_y, extent.min_z, extent.max_z];
     var max_extent = exts.reduce(function(p, c) { return Math.max(p, Math.abs(c)) }, 0);
 
-    this.buffer.preview_buffer = {
+    preview = {
       buffer : vertex_buffer,
-      attrib : this.layout,
-      element_buffer : this.element_buffer,
-      state : this.state,
       count : triangles.length * 3,
       max_extent : max_extent
     };
+
+    this.cache.post(preview, this.layout, this.state, this.element_buffer);
   }
 
-  this.distance = this.buffer.preview_buffer.max_extent * 2;
+  this.preview = preview;
+
+  this.distance = preview.max_extent * 2;
   this.zfar = this.distance * 8;
 
   this.render();
@@ -441,9 +480,10 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(attribute, state, element
 {
   this.element_buffer = element_buffer;
   this.buffer = attribute.buffer;
-  this.init_buffer();
   this.layout = attribute.pointer.layout;
   this.state = state;
+
+  this.init_buffer();
 
   this.rot = {x:0, y:0};
 
@@ -481,11 +521,10 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
 
   var width = gl.canvas.width;
   var height = gl.canvas.height;
-  var preview = this.buffer.preview_buffer;
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  if (!(preview && program))
+  if (!(this.preview && program))
     return;
 
   this.set_rotation();
@@ -500,13 +539,13 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
   gl.uniform2f(program.windowScaleUniform, width, height);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, preview.buffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.preview.buffer);
   var stride = 52; // 4 Byte * (3*3 Float + 4 Float)
   gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
   gl.vertexAttribPointer(program.position1Attrib, 3, gl.FLOAT, false, stride, 16);
   gl.vertexAttribPointer(program.position2Attrib, 3, gl.FLOAT, false, stride, 28);
   gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 40);
 
-  gl.drawArrays(gl.TRIANGLES, 0, preview.count);
+  gl.drawArrays(gl.TRIANGLES, 0, this.preview.count);
 };
 
