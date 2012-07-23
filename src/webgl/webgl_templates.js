@@ -543,6 +543,7 @@ window.templates.webgl.drawcall_buffer = function (attributes)
     ],
     [
       "div",
+      [ "div", "id", "webgl-canvas-info-box" ],
       "handler", "webgl-canvas",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"

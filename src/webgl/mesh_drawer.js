@@ -64,6 +64,27 @@ cls.WebGLMeshDrawer = function(gl)
     this.render();
   };
 
+  this.on_buffer_download = function()
+  {
+    var info = document.getElementById("webgl-canvas-info-box");
+    info.innerText = "Downloading buffer data...";
+    info.style.visibility = "visible";
+  };
+
+  this.on_buffer_prepare = function()
+  {
+    var info = document.getElementById("webgl-canvas-info-box");
+    info.innerText = "Preparing buffer data...";
+    info.style.visibility = "visible";
+  };
+
+  this.disable_info_box = function()
+  {
+    var info = document.getElementById("webgl-canvas-info-box");
+    info.style.visibility = "hidden";
+
+  };
+
   var eh = window.eventHandlers;
   eh.mousedown["webgl-canvas"] = on_mousedown.bind(this);
   eh.mousewheel["webgl-canvas"] = on_mousewheel.bind(this);
@@ -193,6 +214,7 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function()
     }.bind(this);
 
     messages.addListener('webgl-buffer-data', listener);
+    this.on_buffer_download();
 
     if (!this.buffer.data_is_loaded())
     {
@@ -389,6 +411,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   var preview = this.cache.lookup(this.layout, this.state, this.element_buffer)
   if (!preview)
   {
+    this.on_buffer_prepare();
     var gl = this.gl;
     var triangles = this.get_triangles();
     var buffer_data = this.get_buffer_data();
@@ -472,6 +495,8 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 
   this.distance = preview.max_extent * 2;
   this.zfar = this.distance * 8;
+
+  this.disable_info_box();
 
   this.render();
 };
