@@ -84,7 +84,14 @@ cls.WebGLMeshDrawer.prototype.buffers_ready = function()
     : !(this.buffer.data instanceof Array || this.buffer.data.downloading);
 };
 
-cls.WebGLMeshDrawer.prototype.init_buffer = function(buffer)
+cls.WebGLMeshDrawer.prototype.buffers_loaded = function()
+{
+  return this.element_buffer
+    ? this.buffer.data_is_loaded() && this.element_buffer.data_is_loaded()
+    : this.buffer.data_is_loaded();
+}
+
+cls.WebGLMeshDrawer.prototype.init_buffer = function()
 {
   var build_buffer = function (buffer)
   {
@@ -105,6 +112,11 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(buffer)
         throw "Invalid constructor: " + buffer.constructor + " in init_buffer";
     }
 
+    if (buffer.data instanceof constructor)
+    {
+      return;
+    }
+
     buffer.data = new constructor(buffer.data);
 
     if (buffer.target === this.gl.ELEMENT_ARRAY_BUFFER)
@@ -115,33 +127,40 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(buffer)
     }
   }.bind(this);
 
-  if (buffer.data_is_loaded())
+  var prepare = function ()
   {
-    build_buffer(buffer);
+    build_buffer(this.buffer);
+    if (this.element_buffer)
+      build_buffer(this.element_buffer);
 
-    if (this.buffers_ready())
-    {
-      this.prepare_buffer();
-    }
+    this.prepare_buffer();
+  }.bind(this);
+
+  if (this.buffers_loaded())
+  {
+    prepare();
   }
   else
   {
     var listener = function(buffer)
     {
-      if (this.buffer === buffer || this.element_buffer === buffer)
-      {
-        build_buffer(buffer);
-      }
-
-      if (this.buffers_ready())
+      if (this.buffers_loaded())
       {
         messages.removeListener('webgl-buffer-data', listener);
-        this.prepare_buffer();
+        prepare();
       }
     }.bind(this);
 
     messages.addListener('webgl-buffer-data', listener);
-    buffer.get_buffer_data();
+
+    if (!this.buffer.data_is_loaded())
+    {
+      this.buffer.get_buffer_data();
+    }
+    if (this.element_buffer && !this.element_buffer.data_is_loaded())
+    {
+      this.element_buffer.get_buffer_data();
+    }
   }
 };
 
@@ -420,18 +439,13 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 
 cls.WebGLMeshDrawer.prototype.set_attribute = function(attribute, state, element_buffer)
 {
-  this.buffer = attribute.buffer;
-  this.init_buffer(this.buffer);
-  this.layout = attribute.pointer.layout;
   this.element_buffer = element_buffer;
+  this.buffer = attribute.buffer;
+  this.init_buffer();
+  this.layout = attribute.pointer.layout;
   this.state = state;
 
   this.rot = {x:0, y:0};
-
-  if (this.element_buffer)
-  {
-    this.init_buffer(element_buffer);
-  }
 
   // Refit the viewport to the canvas
   this.onresize();
