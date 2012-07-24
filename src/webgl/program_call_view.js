@@ -25,13 +25,28 @@ cls.WebGLProgramCallView = function(id, name, container_class)
         var child_node = program.childNodes[j];
         if (regex.test(child_node.data))
         {
-          // TODO: Only wrap non-white space characters
-          var new_span = document.createElement("span");
-          new_span.className = "webgl-hilight-uniform";
-          new_span.appendChild(document.createTextNode(child_node.data));
+          // Some processing is needed to not wrap whitespace characters in the
+          // hilight
+          var span = document.createElement("span");
+          var em = document.createElement("em");
+          em.className = "search-highlight-selected";
+          var non_ws = child_node.data.replace(/^\s+|\s+$/g, '');
+          em.appendChild(document.createTextNode(non_ws));
+
+          // Add whitespace before the uniform symbol
+          var start_ws = child_node.data.match(/^\s+/);
+          if (start_ws)
+            span.appendChild(document.createTextNode(start_ws[0]));
+
+          span.appendChild(em);
+
+          // ..and add whitespace after the uniform symbol
+          var end_ws = child_node.data.match(/\s+$/);
+          if (end_ws)
+            span.appendChild(document.createTextNode(end_ws));
 
           var par = child_node.parentNode;
-          par.replaceChild(new_span, child_node);
+          par.replaceChild(span, child_node);
         }
       }
 

@@ -70,18 +70,6 @@ img.flipped
 }
 
 /* Program */
-pre.sh_sourceCode .webgl-hilight-uniform
-{
-  background-color: #9ee38a;
-  font-weight: bold;
-  font-style: normal;
-
-  border-style: dashed;
-  border-width: 1px;
-  border-color: #145e00;
-}
-
-
 .program-call div.js-resource-content
 {
   border: 1px solid #ccc;
