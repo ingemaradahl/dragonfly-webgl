@@ -215,8 +215,15 @@ window.templates.webgl.history = function(object)
     his_list.push(["tr", [["td"], ["td", num + " calls omitted."]]]);
   }
 
-  object.history.sort(function(a, b){return a.frame - b.frame;});
-  his_list.push(object.history.map(row_func));
+  var number = object.history.number % object.history.length;
+  for (var i = number; i < object.history.length; i++)
+  {
+    his_list.push(row_func(object.history[i]));
+  }
+  for (i = 0; i < number; i++)
+  {
+    his_list.push(row_func(object.history[i]));
+  }
 
   return [
     "div",
@@ -383,7 +390,7 @@ window.templates.webgl.texture = function(texture)
     base_image = window.templates.webgl.texture_image(level0);
   }
 
-  var mipmap_table = null;
+  var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
