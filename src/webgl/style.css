@@ -158,12 +158,32 @@ pre.sh_sourceCode .webgl-hilight-uniform
   max-width: 450px;
   height: 450px;
   overflow: hidden;
+
+  position:relative;
+  text-align: center;
 }
 
-.webgl-holder > canvas
+.webgl-holder canvas
 {
   width: 100%;
   height: 100%;
+  position: absolute;
+}
+
+.webgl-holder > div
+{
+  position: absolute;
+  visibility: hidden;
+  width: 100%;
+  height: 100%;
+  padding-top: 150px;
+
+  background-color: rgba(0, 0, 0, 0.5);
+  text-color: #ffffff;
+
+  font-weight: bold;
+  vertical-align: middle;
+  z-index: 2;
 }
 
 .webgl_view .draw-call-info
