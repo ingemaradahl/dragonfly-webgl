@@ -472,7 +472,6 @@ window.templates.webgl.goto_script = function(loc)
 window.templates.webgl.generic_call = function(call, trace_call, state_parameters, template)
 {
   var function_name = trace_call.function_name;
-  var function_call = window.webgl.api.function_call_to_string(trace_call.function_name, trace_call.args);
   var callnr = parseInt(call) + 1; // Start call count on 1.
 
   // Makes a link to the webgl specification of the actual function.
@@ -487,7 +486,7 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
   // Construct struture to display call arguments.
   var function_arguments = [];
   function_arguments.push(["span", "("]);
-  var argobj = window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
+  var argobj = window.webgl.api.function_arguments_to_objects(function_name, trace_call.args);
   for (var i = 0; i < argobj.length; i++)
   {
     var arg = argobj[i];
@@ -505,7 +504,7 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
     if (!state_parameters.hasOwnProperty(param)) continue;
     var value = state_parameters[param];
     var state_content;
-    if (typeof(value) === "object")
+    if (typeof(value) === "object" && value != null)
     {
       state_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
     }

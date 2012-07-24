@@ -19,11 +19,15 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._container = container;
   };
 
-  this.display_by_call = function(snapshot, call_index, template)
+  this.display_by_call = function(snapshot, call_index)
   {
     this._snapshot = snapshot;
     this._call_index = call_index;
-    
+
+    var call = snapshot.trace[call_index];
+    var template = window.templates.webgl.buffer_base(call.linked_object.buffer);
+    call.linked_object.buffer.show();
+
     this.render_with_header(snapshot, call_index, template);
   };
 
@@ -40,7 +44,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       this.render_with_header(this._snapshot, this._call_index, template);
     }
   };
-  
+
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
 
   this.init(id, name, container_class);

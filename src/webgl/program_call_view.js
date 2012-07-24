@@ -43,12 +43,13 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     this._container = container;
   };
 
-  this.display_by_call = function(snapshot, call_index, template, real_arg)
+  this.display_by_call = function(snapshot, call_index)
   {
+    var call = snapshot.trace[call_index];
+    var template = window.templates.webgl.program(call_index, call.linked_object.program);
     this.render_with_header(snapshot, call_index, template);
     sh_highlightDocument();
-    hilight_uniform(real_arg.uniform);
-    
+    if (call.linked_object.uniform) hilight_uniform(call.linked_object.uniform);
   };
 
   this._ondestroy = function()

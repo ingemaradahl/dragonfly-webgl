@@ -76,61 +76,19 @@ cls.WebGLTraceView = function(id, name, container_class)
   {
     var call_index = target["data-call-number"];
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
-    var trace_call = snapshot.trace[call_index];
-    var template = null;
-    var view;
-    var tab;
-    var real_arg;
-    var arg_found = false;
-    
-    if (trace_call.drawcall)
-    {
-      tab = "webgl_draw_call";
-      view = window.views.webgl_draw_call;
-      arg_found = true;
-    }
-    else
-    {
-      for (var i=0; i<trace_call.args.length && (!arg_found); i++)
-      {
-        var arg = trace_call.args[i];
-        var type = arg.type;
-        switch (type)
-        {
-          case "WebGLTexture":
-              arg_found = true;
-              tab = "webgl_texture_call";
-              view = window.views.webgl_texture_call;
-              template = window.templates.webgl.texture(arg.texture);
-              arg.texture.show();
-              break;
-          case "WebGLBuffer":
-              arg_found = true;
-              tab = "webgl_buffer_call";
-              view = window.views.webgl_buffer_call;
-              template = window.templates.webgl.buffer_base(arg.buffer);
-              real_arg = arg;
-              arg.buffer.show();
-              break;
-          case "WebGLUniformLocation":
-              arg_found = true;
-              tab = "webgl_program_call";
-              view = window.views.webgl_program_call;
-              template = window.templates.webgl.program(call_index, arg.program);
-              real_arg = arg;
-              break;
-          default: 
-              break;
-        }
-      }
-    }
-    if (!arg_found)
+    var call = snapshot.trace[call_index];
+
+    var group = call.group;
+    if (group === "uniform") group = "program";
+    var tab = "webgl_" + group + "_call";
+    var view = window.views["webgl_" + group + "_call"];
+    if (view == null)
     {
       tab = "webgl_call";
       view = window.views.webgl_call;
     }
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(tab);
-    view.display_by_call(snapshot, call_index, template, real_arg);
+    view.display_by_call(snapshot, call_index);
   };
 
   this._on_argument_click = function(evt, target)

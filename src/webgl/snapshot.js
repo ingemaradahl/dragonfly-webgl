@@ -145,7 +145,7 @@ cls.WebGLSnapshotArray = function(context_id)
         var param = state[key];
         for (var call in param)
         {
-          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object") continue;
+          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object" || param[call] == null) continue;
           param[call] = new LinkedObject(param[call], call, this);
         }
       }
@@ -262,7 +262,12 @@ cls.WebGLSnapshotArray = function(context_id)
                 break;
             }
             break;
+          case "uniform":
+            linked_object = args[0];
+            break;
         }
+
+        if (linked_object == null && group !== "draw") group = "generic";
 
         trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args, loc, group, linked_object));
       }

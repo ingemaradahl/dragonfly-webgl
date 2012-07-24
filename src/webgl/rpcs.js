@@ -1580,8 +1580,6 @@ cls.WebGL.RPCs.injection = function () {
       // Init textures
       this.handler.textures.forEach(this.add_texture, this);
       //init_fbos();
-
-      this.call_index++;
     }.bind(this);
 
     /* Adds a WebGL function call to the snapshot */
@@ -1618,15 +1616,14 @@ cls.WebGL.RPCs.injection = function () {
       for (var param in state)
       {
         var value = state[param];
-        this.state[param][this.call_index] = typeof(value) === "object" && value !== null ?
+        this.state[param][this.call_index + 1] = typeof(value) === "object" && value !== null ?
           this.handler.make_linked_object(value) : value;
         this.full_state[param] = value;
       }
 
       var res = result === undefined ? "" : result;
 
-      // Ternary expression below casts redundant, which may be undefined, to a boolean,
-      this.call_index = this.calls.push([function_name, error, res, redundant ? true : false].concat(call_args).join("|")) - 1;
+      this.call_index = this.calls.push([function_name, error, res, Boolean(redundant)].concat(call_args).join("|")) - 1;
     };
 
     this.add_drawcall = function (fbo, buffer_target, buffer_index, program_state)
