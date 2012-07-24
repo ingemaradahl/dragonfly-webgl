@@ -402,6 +402,7 @@ window.templates.webgl.texture = function(texture)
         image_source = { name: "Image source", value: level.url };
       
       var level_info_rows = [
+        { name: "Level", value: String(level.level) },
         { name: "Source", value: level.element_type },
         image_source,
         { name: "Dimensions", value: level.height + "x" + level.width + " px" },

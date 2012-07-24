@@ -848,6 +848,7 @@ cls.WebGL.RPCs.injection = function () {
       add_history.call(this, texture, function_name, args, loc);
     };
     history_functions.texSubImage2D = history_functions.texImage2D;
+    history_functions.generateMipmap = history_functions.texImage2D;
 
     history_functions.createBuffer = function(result, args, function_name, loc)
     {
@@ -1794,7 +1795,7 @@ cls.WebGL.RPCs.injection = function () {
 
       var clone_level = function (level)
       {
-        var lvl = {};
+        var lvl = { level: level.level };
 
         if (level.width)
         {
