@@ -206,7 +206,6 @@ cls.WebGLSnapshotSelect = function(id)
     messages.post("webgl-changed-snapshot", snapshot);
     this.updateElement();
 
-    window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
   };
 
   var clear = function()
