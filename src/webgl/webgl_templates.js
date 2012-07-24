@@ -373,17 +373,8 @@ window.templates.webgl.texture = function(texture)
 
   var level0 = texture.levels[0];
 
-  var image_source = null;
-  if (level0.url)
-  {
-    image_source = {
-      name: "Image source",
-      value: level0.url
-    };
-  }
-
   var base_image;
-  if (level0.img == null && !texture.mipmapped)
+  if (!level0 || level0.img == null && !texture.mipmapped)
   {
     base_image = ["span", "No data."];
   }
@@ -429,21 +420,12 @@ window.templates.webgl.texture = function(texture)
 
   var const_to_string = window.webgl.api.constant_value_to_string;
 
-  var border_info = !level0.border ? null : {
+  var border_info = !level0 || !level0.border ? null : {
     name: "Border",
     value: String(level0.border)
   };
 
   var texture_info = [
-    {
-      name: "Source",
-      value: level0.element_type
-    },
-    image_source,
-    {
-      name: "Dimensions",
-      value: level0.height + "x" + level0.width + " px"
-    },
     {
       name: "Format",
       value: const_to_string(texture.format)
@@ -474,6 +456,27 @@ window.templates.webgl.texture = function(texture)
       value: const_to_string(texture.texture_mag_filter)
     }
   ];
+
+  if (level0)
+  {
+    texture_info.unshift({
+      name: "Dimensions",
+      value: level0.height + "x" + level0.width + " px"
+    });
+
+    if (level0.url)
+    {
+      texture_info.unshift({
+        name: "Image source",
+        value: level0.url
+      });
+    }
+
+    texture_info.unshift({
+      name: "Source",
+      value: level0.element_type
+    });
+  }
 
   var info_table_rows = texture_info.map(build_info_row);
 
