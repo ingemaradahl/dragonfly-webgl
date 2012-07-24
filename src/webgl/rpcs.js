@@ -488,6 +488,7 @@ cls.WebGL.RPCs.injection = function () {
           pointer : {layout : null, buffer_index:null}
         });
       }
+      attributes.reverse();
       program_obj.attributes = attributes;
     };
 
