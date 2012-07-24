@@ -350,7 +350,7 @@ window.templates.webgl.texture_image = function(level)
   }
 
   return image;
-}
+};
 
 window.templates.webgl.texture = function(texture)
 {
@@ -391,7 +391,7 @@ window.templates.webgl.texture = function(texture)
       var image_source = null;
       if (level.url)
         image_source = { name: "Image source", value: level.url };
-      
+
       var level_info_rows = [
         { name: "Level", value: String(level.level) },
         { name: "Source", value: level.element_type },
@@ -411,7 +411,7 @@ window.templates.webgl.texture = function(texture)
       ];
     });
 
-    mipmap_table = [ "div", 
+    mipmap_table = [ "div",
       [ "h3", "Custom mipmap levels" ],
       [ "table", mipmap_levels, "class", "sortable-table" ],
       "class", "mipmap-table"
@@ -537,11 +537,12 @@ window.templates.webgl.state_parameters = function(state_parameters)
     {
       if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
       {
-        var values = (value[0] * 255) + ", " + (value[1] * 255) + ", " + (value[2] * 255) + ", " + value[3];
+        var color = value.data;
+        var colors = (color[0] * 255) + ", " + (color[1] * 255) + ", " + (color[2] * 255) + ", " + color[3];
         param_content = [
           "div",
           [
-            ["div", ["div", "style", "background-color: rgba(" + values + ")"], "class", "color-box checkerboard"],
+            ["div", ["div", "style", "background-color: rgba(" + colors + ")"], "class", "color-box checkerboard"],
             ["span", value.text]
           ]
         ];
