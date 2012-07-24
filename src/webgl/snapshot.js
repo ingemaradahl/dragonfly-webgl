@@ -74,8 +74,10 @@ cls.WebGLSnapshotArray = function(context_id)
       textures: {
         _array_elements: {
           _class: cls.WebGLTexture,
-          img: {
-            _action: cls.Scoper.ACTIONS.NOTHING
+          levels: {
+            img: {
+              _action: cls.Scoper.ACTIONS.NOTHING
+            }
           },
         }
       },
@@ -379,9 +381,10 @@ cls.WebGLSnapshotArray = function(context_id)
       var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
       var add_texture_name = function(tex)
       {
-        if (tex.element_type === "HTMLImageElement" && tex.url != null)
+        var lvl0 = tex.levels[0];
+        if (lvl0 && lvl0.element_type === "HTMLImageElement" && lvl0.url != null)
         {
-          var file = file_regexp.exec(tex.url);
+          var file = file_regexp.exec(lvl0.url);
           var filename = file[1];
           var fileext = file[2];
 

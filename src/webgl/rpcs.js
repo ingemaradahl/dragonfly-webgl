@@ -296,7 +296,7 @@ cls.WebGL.RPCs.injection = function () {
 
     innerFuns.createTexture = function(texture, args)
     {
-      var tex = {};
+      var tex = { levels: [], mipmapped: false };
       tex.texture = texture;
       this.textures.push(tex);
       tex.index = this.textures.number++;
@@ -319,6 +319,13 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
+    innerFuns.generateMipmap = function(result, args)
+    {
+      var target = args[0];
+      var texture = this.lookup_texture(this.texture_binding[target]);
+      texture.mipmapped = true;
+    };
+
     // TODO All texImage functions must be wrapped and handled
     innerFuns.texImage2D = function(result, args)
     {
@@ -328,13 +335,18 @@ cls.WebGL.RPCs.injection = function () {
       var target = args[0];
       var bound_texture = this.texture_binding[target];
       var internalFormat = args[2];
+      var level = args[1];
 
       for (var i = 0; i < this.textures.length; i++)
       {
         if (this.textures[i].texture === bound_texture)
         {
           var texture = this.textures[i];
-          texture.object = texture_container_object;
+          var mipmap_level = {
+            object : texture_container_object,
+            level : level
+          };
+
           texture.internalFormat = internalFormat;
           texture.texture_wrap_s = gl.getTexParameter(target, gl.TEXTURE_WRAP_S);
           texture.texture_wrap_t = gl.getTexParameter(target, gl.TEXTURE_WRAP_T);
@@ -343,10 +355,10 @@ cls.WebGL.RPCs.injection = function () {
 
           if (args.length >= 9)
           {
-            texture.internalFormat = args[2];
-            texture.width = args[3];
-            texture.height = args[4];
-            texture.border = args[5];
+            mipmap_level.width = args[3];
+            mipmap_level.height = args[4];
+            mipmap_level.border = args[5];
+
             texture.format = args[6];
             texture.type = args[7];
           }
@@ -355,6 +367,8 @@ cls.WebGL.RPCs.injection = function () {
             texture.format = args[3];
             texture.type = args[4];
           }
+
+          texture.levels[level] = mipmap_level;
 
           return;
         }
@@ -1677,13 +1691,12 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       /* Calculates texture data in a scope transission friendly way.
-       * This function is never bound to the Handler object, but a texture object,
-       * thus "this" refers to that object.
+       * This function is never bound to the Handler object, but a texture level
+       * object, thus "this" refers to that object.
        */
       var get_texture_data = function (element)
       {
         this.img = { flipped : false };
-
 
         if (element instanceof HTMLImageElement)
         {
@@ -1778,43 +1791,62 @@ cls.WebGL.RPCs.injection = function () {
         return this;
       };
 
+      var clone_level = function (level)
+      {
+        var lvl = {};
+
+        if (level.width)
+        {
+          lvl.width = level.width;
+          lvl.height = level.height;
+        }
+
+        get_texture_data.call(lvl, level.object);
+
+        if (lvl.img.data == null) 
+          lvl.img = null;
+         
+        return lvl;
+      };
+
       // Clone data to new object, which is later released by scope
       var texture_state = {
         history: clone_history(texture.history),
         call_index: this.call_index,
         index: texture.index,
-        index_snapshot: texture.index_snapshot
+        index_snapshot: texture.index_snapshot,
+
+        mipmapped : texture.mipmapped,
+        texture_mag_filter : texture.texture_mag_filter,
+        texture_min_filter : texture.texture_min_filter,
+        texture_min_filter : texture.texture_min_filter,
+        texture_wrap_s : texture.texture_wrap_s,
+        texture_wrap_t : texture.texture_wrap_s,
+        internalFormat : texture.internalFormat,
+        format : texture.format,
+        type : texture.type
       };
 
-      // TODO only perform below if data is set
-      //if (texture.type)
-      //{
-        texture_state.texture_mag_filter = texture.texture_mag_filter;
-        texture_state.texture_min_filter = texture.texture_min_filter;
-        texture_state.texture_min_filter = texture.texture_min_filter;
-        texture_state.texture_wrap_s = texture.texture_wrap_s;
-        texture_state.texture_wrap_t = texture.texture_wrap_s;
-        texture_state.internalFormat = texture.internalFormat;
-        texture_state.format = texture.format;
-        texture_state.type = texture.type;
+      // Add texture data (texture written to by a draw call)
+      if (texture_data instanceof Object)
+      {
+        // Assume no mipmapping is done
+        var lvl0 = {
+          img: texture_data
+        }
 
-        if (texture.width)
+        if (texture.levels[0] && texture.levels[0].width)
         {
-          texture_state.width = texture.width;
-          texture_state.height = texture.height;
+          var level = texture.levels[0];
+          lvl0.width = level.width;
+          lvl0.height = level.height;
         }
-
-        // Add texture data
-        if (texture_data instanceof Object)
-        {
-          texture_state.img = texture_data;
-        }
-        else {
-          get_texture_data.call(texture_state, texture.object);
-        }
-      //}
-
-      if (texture_state.img.data == null) texture_state.img = null;
+        texture_state.levels = [lvl0];
+      }
+      else 
+      {
+        texture_state.levels = texture.levels.map(clone_level);
+      }
 
       this.textures.push(texture_state);
     };
