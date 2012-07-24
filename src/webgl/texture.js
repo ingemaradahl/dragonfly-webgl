@@ -10,14 +10,23 @@ cls.WebGLTexture = function ()
 // Retrieves the image data
 cls.WebGLTexture.prototype.get_texture_data = function()
 {
-  var finalize = function (img)
+  var finalize = function (level_imgs)
   {
-    this.img = img;
+    for (var i=0; i<this.levels.length; i++)
+    {
+      if (this.levels[i])
+      {
+        this.levels[i].img = level_imgs.shift();
+      }
+    }
+    
     messages.post('webgl-texture-data', { texture : this });
   };
 
+  var levels = this.levels.map(function(l) { if (l) { return l.img } });
+
   var scoper = new cls.Scoper(finalize, this);
-  scoper.examine_object(this.img);
+  scoper.examine_objects(levels);
 };
 
 cls.WebGLTexture.prototype.show = function()

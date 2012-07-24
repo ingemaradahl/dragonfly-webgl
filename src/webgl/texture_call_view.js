@@ -76,7 +76,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   };  
   
  
-   messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
+  messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
 
   this.init(id, name, container_class);
 };
@@ -135,9 +135,10 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   {
     var i = 0;
     this._content = snapshot.textures.map(function(texture) {
+      var lvl0 = texture.levels[0];
       return {
         name: String(texture),
-        dimension: texture.width ? String(texture.width) + "x" + String(texture.height) : "?",
+        dimension: lvl0.width ? String(lvl0.width) + "x" + String(lvl0.height) : "?",
         texture: texture,
         call_index_val : texture.call_index,
         call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),

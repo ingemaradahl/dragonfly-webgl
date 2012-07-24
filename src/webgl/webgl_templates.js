@@ -241,31 +241,22 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.texture = function(texture)
+window.templates.webgl.texture_image = function(level)
 {
-  var image_source = null;
-  if (texture.url)
-  {
-    image_source = {
-      name: "Image source",
-      value: texture.url
-    };
-  }
-
   var image;
-  if (texture.img == null)
+  if (level.img == null)
   {
     image = ["span", "No data."];
   }
-  else if (texture.img.data)
+  else if (level.img.data)
   {
     var img = [
       "img",
-      "src", texture.img.data,
+      "src", level.img.data,
       "handler", "webgl-texture-image"
     ];
     var classes = ["checkerboard"];
-    if (texture.img.flipped)
+    if (level.img.flipped)
     {
       classes.push("flipped");
     }
@@ -275,7 +266,7 @@ window.templates.webgl.texture = function(texture)
       "div",
       img,
       "class", "texture-container",
-      "style", "max-width: " + String(texture.width) + "px"
+      "style", "max-width: " + String(level.width) + "px"
     ];
   }
   else
@@ -283,26 +274,103 @@ window.templates.webgl.texture = function(texture)
     image = ["div",
       ["img", "src", "./ui-images/loading.png"],
       "class", "loading-image",
-      "style", "width: " + String(texture.width ? texture.width : 128) + "px; height: " + String(texture.height ? texture.height : 128) + "px;"
+      "style", "width: " + String(level.width ? level.width : 128) + "px; height: " + String(level.height ? level.height : 128) + "px;"
+    ];
+  }
+
+  return image;
+}
+
+window.templates.webgl.texture = function(texture)
+{
+  var build_info_row = function(info)
+  {
+    return info == null ? [] : [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  };
+
+  var level0 = texture.levels[0];
+
+  var image_source = null;
+  if (level0.url)
+  {
+    image_source = {
+      name: "Image source",
+      value: level0.url
+    };
+  }
+
+  var base_image;
+  if (level0.img == null && !texture.mipmapped)
+  {
+    base_image = ["span", "No data."];
+  }
+  else
+  {
+    base_image = window.templates.webgl.texture_image(level0);
+  }
+
+  var mipmap_table = null;
+  if (texture.mipmapped && texture.levels.length > 1)
+  {
+    var mipmap_levels = texture.levels.slice(1).map(function(level) {
+      var image = window.templates.webgl.texture_image(level);
+      var image_source = null;
+      if (level.url)
+        image_source = { name: "Image source", value: level.url };
+      
+      var level_info_rows = [
+        { name: "Source", value: level.element_type },
+        image_source,
+        { name: "Dimensions", value: level.height + "x" + level.width + " px" },
+      ].map(build_info_row);
+
+      var info_table = [
+        "table",
+        level_info_rows,
+        "class", "table-info"
+      ];
+
+      return [ "tr",
+        [ "th", image ],
+        [ "td", info_table ]
+      ];
+    });
+
+    mipmap_table = [ "div", 
+      [ "div", "Custom mipmap levels" ],
+      [ "table", mipmap_levels, "class", "sortable-table" ],
+      "class", "mipmap-table"
     ];
   }
 
   var const_to_string = window.webgl.api.constant_value_to_string;
 
-  var border_info = !texture.border ? null : {
+  var border_info = !level0.border ? null : {
     name: "Border",
-    value: String(texture.border)
+    value: String(level0.border)
   };
 
   var texture_info = [
     {
       name: "Source",
-      value: texture.element_type
+      value: level0.element_type
     },
     image_source,
     {
       name: "Dimensions",
-      value: texture.height + "x" + texture.width + " px"
+      value: level0.height + "x" + level0.width + " px"
     },
     {
       name: "Format",
@@ -335,21 +403,7 @@ window.templates.webgl.texture = function(texture)
     }
   ];
 
-  var info_table_rows = texture_info.map(function(info){
-    return info == null ? [] : [
-      "tr",
-      [
-        [
-          "th",
-          info.name
-        ],
-        [
-          "td",
-          info.value
-        ]
-      ]
-    ];
-  });
+  var info_table_rows = texture_info.map(build_info_row);
 
   var info_table = [
     "table",
@@ -359,8 +413,9 @@ window.templates.webgl.texture = function(texture)
 
   return [ "div",
     ["h2", texture.toString()],
-    image,
-    info_table
+    base_image,
+    info_table,
+    mipmap_table
   ];
 };
 
