@@ -145,8 +145,14 @@ cls.WebGLSnapshotArray = function(context_id)
         var param = state[key];
         for (var call in param)
         {
-          if (!param.hasOwnProperty(call) || typeof(param[call]) !== "object" || param[call] == null) continue;
-          param[call] = new LinkedObject(param[call], call, this);
+          if (!param.hasOwnProperty(call) ||
+              typeof(param[call]) !== "object" ||
+              param[call] == null) continue;
+          param[call] = new cls.WebGLLinkedObject(param[call], call, this);
+          if (window.webgl.api.has_state_parameter_type(key))
+          {
+            param[call].text = window.webgl.api.state_parameter_to_string(key, param[call].data);
+          }
         }
       }
     }.bind(this);
@@ -196,7 +202,7 @@ cls.WebGLSnapshotArray = function(context_id)
           if (object_index_regexp.test(arg))
           {
             var index = object_index_regexp.exec(arg)[1];
-            args[k] = new LinkedObject(call_refs[index], j, this);
+            args[k] = new cls.WebGLLinkedObject(call_refs[index], j, this);
           }
           else if (!isNaN(arg))
           {
@@ -212,7 +218,7 @@ cls.WebGLSnapshotArray = function(context_id)
         else if (object_index_regexp.test(result))
         {
           var res_index = object_index_regexp.exec(result)[1];
-          result = new LinkedObject(call_refs[res_index], j, this);
+          result = new cls.WebGLLinkedObject(call_refs[res_index], j, this);
         }
         else if (!isNaN(result))
         {
@@ -439,61 +445,61 @@ cls.WebGLSnapshotArray = function(context_id)
     this.snapshot = snapshot;
     this.have_snapshot = true;
   };
-
-  /**
-   * Creates a object that can be used to link in the UI to a WebGL object.
-   */
-  function LinkedObject(object, call_index, snapshot)
-  {
-    for (var key in object)
-    {
-      if (object.hasOwnProperty(key)) this[key] = object[key];
-    }
-
-    var matched = false;
-    switch (this.type)
-    {
-      case "WebGLBuffer":
-        if (this.buffer_index == null) return;
-        this.buffer = snapshot.buffers[this.buffer_index];
-        this.text = String(this.buffer);
-        this.action = this.buffer.show.bind(this.buffer);
-        matched = true;
-        break;
-      case "WebGLTexture":
-        if (this.texture_index == null) return;
-        this.texture = snapshot.textures.lookup(this.texture_index, call_index);
-        if (this.texture == null) return;
-        this.text = String(this.texture);
-        this.action = this.texture.show.bind(this.texture);
-        matched = true;
-        break;
-      case "WebGLUniformLocation":
-        if (this.program_index == null) return;
-        this.program = snapshot.programs[this.program_index];
-        this.uniform = this.program.uniforms[this.uniform_index];
-        this.text = this.uniform.name;
-        this.action = function()
-        {
-          window.views.webgl_program.show_uniform(call_index, this.program, this.uniform);
-        };
-        matched = true;
-        break;
-    }
-
-    if (!matched)
-    {
-      if (this.data && typeof(this.data) !== "function")
-      {
-        this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
-      }
-      else
-      {
-        this.text = this.type;
-      }
-    }
-  }
 };
 
 cls.WebGLSnapshotArray.prototype = new Array();
 cls.WebGLSnapshotArray.prototype.constructor = cls.WebGLSnapshotArray;
+
+  /**
+   * Creates a object that can be used to link in the UI to a WebGL object.
+   */
+cls.WebGLLinkedObject = function(object, call_index, snapshot)
+{
+  for (var key in object)
+  {
+    if (object.hasOwnProperty(key)) this[key] = object[key];
+  }
+
+  var matched = false;
+  switch (this.type)
+  {
+    case "WebGLBuffer":
+      if (this.buffer_index == null) return;
+      this.buffer = snapshot.buffers[this.buffer_index];
+      this.text = String(this.buffer);
+      this.action = this.buffer.show.bind(this.buffer);
+      matched = true;
+      break;
+    case "WebGLTexture":
+      if (this.texture_index == null) return;
+      this.texture = snapshot.textures.lookup(this.texture_index, call_index);
+      if (this.texture == null) return;
+      this.text = String(this.texture);
+      this.action = this.texture.show.bind(this.texture);
+      matched = true;
+      break;
+    case "WebGLUniformLocation":
+      if (this.program_index == null) return;
+      this.program = snapshot.programs[this.program_index];
+      this.uniform = this.program.uniforms[this.uniform_index];
+      this.text = this.uniform.name;
+      this.action = function()
+      {
+        window.views.webgl_program.show_uniform(call_index, this.program, this.uniform);
+      };
+      matched = true;
+      break;
+  }
+
+  if (!matched)
+  {
+    if (this.data && typeof(this.data) !== "function")
+    {
+      this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
+    }
+    else
+    {
+      this.text = this.type;
+    }
+  }
+};

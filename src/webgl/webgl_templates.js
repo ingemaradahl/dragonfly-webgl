@@ -466,6 +466,41 @@ window.templates.webgl.goto_script = function(loc)
   return script_ref;
 };
 
+window.templates.webgl.state_parameters = function(state_parameters)
+{
+  var content = [];
+  for (var param in state_parameters)
+  {
+    if (!state_parameters.hasOwnProperty(param)) continue;
+    var value = state_parameters[param];
+    var param_content;
+    if (value != null && value instanceof cls.WebGLLinkedObject)
+    {
+      if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
+      {
+        var values = (value[0] * 255) + ", " + (value[1] * 255) + ", " + (value[2] * 255) + ", " + value[3];
+        param_content = [
+          "div",
+          [
+            ["div", ["div", "style", "background-color: rgba(" + values + ")"], "class", "color-box checkerboard"],
+            ["span", value.text]
+          ]
+        ];
+      }
+      else
+      {
+        param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
+      }
+    }
+    else
+    {
+      param_content = window.webgl.api.state_parameter_to_string(param, value);
+    }
+    content.push(["tr", [["td", param], ["td", param_content]]]);
+  }
+  return content;
+};
+
 /**
  * @param {Array} template optional, should contain a html structure of other
  *   content that should be shown below the header.
@@ -499,22 +534,7 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
 
   var script_ref = trace_call.loc ? window.templates.webgl.goto_script(trace_call.loc) : [];
 
-  var st = [];
-  for (var param in state_parameters)
-  {
-    if (!state_parameters.hasOwnProperty(param)) continue;
-    var value = state_parameters[param];
-    var state_content;
-    if (typeof(value) === "object" && value != null)
-    {
-      state_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
-    }
-    else
-    {
-      state_content = String(value);
-    }
-    st.push(["tr", [["td", param], ["td", state_content]]]);
-  }
+  var state = window.templates.webgl.state_parameters(state_parameters);
 
   var header = [
     "div", [
@@ -532,7 +552,7 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
     "class", "draw-call-info"
   ];
 
-  var res = [header, ["table", st]];
+  var res = [header, ["table", state]];
 
   // If additional content have been provided add it after the header.
   if (template) res.push(template);

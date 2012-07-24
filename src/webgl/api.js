@@ -48,6 +48,74 @@ cls.WebGLAPI = function ()
     TYPES_BACK[TYPES[type]] = type;
   }
 
+  this.STATE_PARAMETER_TYPES = {
+    "ACTIVE_TEXTURE": this.TYPES.ENUM,
+    "ALIASED_LINE_WIDTH_RANGE": this.TYPES.RANGE,
+    "ALIASED_POINT_SIZE_RANGE": this.TYPES.RANGE,
+    "BLEND_COLOR": this.TYPES.COLOR,
+    "BLEND_DST_ALPHA": this.TYPES.ENUM,
+    "BLEND_DST_RGB": this.TYPES.ENUM,
+    "BLEND_EQUATION_ALPHA": this.TYPES.ENUM,
+    "BLEND_EQUATION_RGB": this.TYPES.ENUM,
+    "BLEND_SRC_ALPHA": this.TYPES.ENUM,
+    "BLEND_SRC_RGB": this.TYPES.ENUM,
+    "COLOR_CLEAR_VALUE": this.TYPES.COLOR,
+    "COLOR_WRITEMASK": this.TYPES.COLORMASK,
+    "CULL_FACE_MODE": this.TYPES.ENUM,
+    "DEPTH_FUNC": this.TYPES.ENUM,
+    "DEPTH_RANGE": this.TYPES.RANGE,
+    "FRAGMENT_SHADER_DERIVATIVE_HINT_OES": this.TYPES.ENUM,
+    "FRONT_FACE": this.TYPES.ENUM,
+    "GENERATE_MIPMAP_HINT": this.TYPES.ENUM,
+    "MAX_VIEWPORT_DIMS": this.TYPES.WH,
+    "SCISSOR_BOX": this.TYPES.RECT,
+    "STENCIL_BACK_FAIL": this.TYPES.ENUM,
+    "STENCIL_BACK_FUNC": this.TYPES.ENUM,
+    "STENCIL_BACK_PASS_DEPTH_FAIL": this.TYPES.ENUM,
+    "STENCIL_BACK_PASS_DEPTH_PASS": this.TYPES.ENUM,
+    "STENCIL_BACK_VALUE_MASK": this.TYPES.BITMASK,
+    "STENCIL_BACK_WRITEMASK": this.TYPES.BITMASK,
+    "STENCIL_FAIL": this.TYPES.ENUM,
+    "STENCIL_FUNC": this.TYPES.ENUM,
+    "STENCIL_PASS_DEPTH_FAIL": this.TYPES.ENUM,
+    "STENCIL_PASS_DEPTH_PASS": this.TYPES.ENUM,
+    "STENCIL_VALUE_MASK": this.TYPES.BITMASK,
+    "STENCIL_WRITEMASK": this.TYPES.BITMASK,
+    "UNPACK_COLORSPACE_CONVERSION_WEBGL": this.TYPES.ENUM,
+    "VIEWPORT": this.TYPES.RECT
+  };
+
+  this.has_state_parameter_type = function(parameter_name)
+  {
+    return (parameter_name in this.STATE_PARAMETER_TYPES);
+  };
+
+  this.state_parameter_to_string = function(parameter_name, value)
+  {
+    if (parameter_name in this.STATE_PARAMETER_TYPES && value != null)
+    {
+      var type = this.STATE_PARAMETER_TYPES[parameter_name];
+      switch (type)
+      {
+        case this.TYPES.BITMASK:
+          return "0x" + value.toString(16).toUpperCase();
+        case this.TYPES.COLOR:
+          return "rgba(" + Array.prototype.join.call(value, ", ") + ")";
+        case this.TYPES.ENUM:
+          return this.constant_value_to_string(value);
+        case this.TYPES.COLORMASK:
+          return Array.prototype.join.call(value, ", ");
+        case this.TYPES.RANGE:
+          return String(value[0]) + " - " + String(value[1]);
+        case this.TYPES.RECT:
+          return "(" + String(value[0]) + ", " + String(value[1]) + ") " + String(value[2]) + "x" + String(value[3]);
+        case this.TYPES.WH:
+          return String(value[0]) + "x" + String(value[1]);
+      }
+    }
+    return String(value);
+  };
+
   this.function_call_to_string = function(function_name, args)
   {
     if (!(function_name in this.functions))

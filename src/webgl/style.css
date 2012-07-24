@@ -110,6 +110,23 @@ pre.sh_sourceCode .webgl-hilight-uniform
   border: 1px solid #999999;
 }
 
+.color-box
+{
+  border: 1px solid #ccc;
+  width: 12px;
+  height: 12px;
+  background-position: 0px 0px, 6px 6px !important;
+  background-size: 12px 12px !important;
+  float: left;
+  margin-right: 5px;
+}
+
+.color-box > div
+{
+  width: 12px;
+  height: 12px;
+}
+
 /* Buffer */
 
 .buffer-data-table

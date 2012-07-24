@@ -474,7 +474,6 @@ cls.WebGL.RPCs.injection = function () {
           pointer : {layout : null, buffer_index:null}
         });
       }
-      attributes.reverse();
       program_obj.attributes = attributes;
     };
 
@@ -1617,8 +1616,8 @@ cls.WebGL.RPCs.injection = function () {
       for (var param in state)
       {
         var value = state[param];
-        this.state[param][this.call_index + 1] = typeof(value) === "object" && value !== null ?
-          this.handler.make_linked_object(value) : value;
+        this.state[param][this.call_index + 1] = typeof(value) === "object" &&
+          value !== null ? this.handler.make_linked_object(value) : value;
         this.full_state[param] = value;
       }
 
