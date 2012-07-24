@@ -67,21 +67,30 @@ cls.WebGLMeshDrawer = function(gl)
   this.on_buffer_download = function()
   {
     var info = document.getElementById("webgl-canvas-info-box");
-    info.innerText = "Downloading buffer data...";
-    info.style.visibility = "visible";
+    if (info)
+    {
+      info.innerText = "Downloading buffer data...";
+      info.style.visibility = "visible";
+    }
   };
 
   this.on_buffer_prepare = function()
   {
     var info = document.getElementById("webgl-canvas-info-box");
-    info.innerText = "Preparing buffer data...";
-    info.style.visibility = "visible";
+    if (info)
+    {
+      info.innerText = "Preparing buffer data...";
+      info.style.visibility = "visible";
+    }
   };
 
   this.disable_info_box = function()
   {
     var info = document.getElementById("webgl-canvas-info-box");
-    info.style.visibility = "hidden";
+    if (info)
+    {
+      info.style.visibility = "hidden";
+    }
 
   };
 

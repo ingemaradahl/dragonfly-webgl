@@ -221,6 +221,21 @@ pre.sh_sourceCode .webgl-hilight-uniform
 
 /* Texture */
 
+div.mipmap-table
+{
+  margin-top: 10px;
+}
+
+.mipmap-table > div
+{
+  font-weight: bold;
+}
+
+.mipmap-table > .sortable-table
+{
+  border: 1px solid #ccc;
+}
+
 .checkerboard
 {
   background-color: #fefefe;
