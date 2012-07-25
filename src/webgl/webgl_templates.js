@@ -534,11 +534,8 @@ window.templates.webgl.goto_script = function(loc)
 
 window.templates.webgl.state_parameters = function(state_parameters)
 {
-  var content = [];
-  for (var param in state_parameters)
+  var value_to_html = function(value)
   {
-    if (!state_parameters.hasOwnProperty(param)) continue;
-    var value = state_parameters[param];
     var param_content;
     if (value != null && value instanceof cls.WebGLLinkedObject)
     {
@@ -561,11 +558,40 @@ window.templates.webgl.state_parameters = function(state_parameters)
     }
     else
     {
-      param_content = window.webgl.api.state_parameter_to_string(param, value);
+      param_content = ["span", window.webgl.api.state_parameter_to_string(param, value)];
+    }
+
+    return param_content;
+  };
+
+  var content = [];
+  for (var param in state_parameters)
+  {
+    if (!state_parameters.hasOwnProperty(param)) continue;
+    var value = state_parameters[param].value;
+    var param_content = value_to_html(value);
+    if (state_parameters[param].old_value)
+    {
+      var old_value = state_parameters[param].old_value;
+      var old_param_content = value_to_html(old_value);
+      old_param_content.push("class", "old-value");
+      param_content = [
+        old_param_content,
+        ["span", " » "],
+        param_content
+      ];
     }
     content.push(["tr", [["td", param], ["td", param_content]]]);
   }
-  return content;
+  return [
+    "div", [
+      ["h3", "State parameters"],
+      [
+        "table", content,
+        "class", "state-table sortable-table"
+      ]
+    ]
+  ];
 };
 
 /**
@@ -614,12 +640,13 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
       ],
       function_arguments,
       ["p", spec_link],
-      ["p", script_ref]
+      ["p", script_ref],
+      state
     ],
     "class", "draw-call-info"
   ];
 
-  var res = [header, ["table", state]];
+  var res = [header];
 
   // If additional content have been provided add it after the header.
   if (template) res.push(template);

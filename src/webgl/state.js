@@ -6,12 +6,13 @@ cls.WebGLState = function ()
 {
 };
 
-cls.WebGLState.prototype.get_parameter = function(param_name, call_index)
+cls.WebGLState.prototype.get_parameter = function(param_name, call_index, include_old_value)
 {
   var param = this[param_name];
   if (call_index == null || call_index === -1) return param[-1];
 
   var max_call = -1;
+  var second_max_call = -1;
   for (var c in param)
   {
     if (!param.hasOwnProperty(c)) continue;
@@ -19,15 +20,25 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index)
     var call = Number(c);
     if (call <= call_index && max_call < call)
     {
+      second_max_call = max_call;
       max_call = call;
     }
   }
 
-  return param[max_call];
+  if (!include_old_value) return param[max_call];
+
+  var result = {value: param[max_call]};
+  if (max_call === call_index && second_max_call !== max_call)
+  {
+    result.old_value = param[second_max_call];
+  }
+
+  return result;
 };
 
-cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index)
+cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index, include_old_value)
 {
+  include_old_value = Boolean(include_old_value);
   var group = cls.WebGLState.FUNCTION_GROUPS[function_name];
   var params = cls.WebGLState.PARAMETER_GROUPS[group];
   if (params == null) params = cls.WebGLState.PARAMETER_GROUPS.uncategorized; // TODO remove when we have correct groups
@@ -36,7 +47,7 @@ cls.WebGLState.prototype.get_function_parameters = function(function_name, call_
   for (var i = 0; i < params.length; i++)
   {
     var param = params[i];
-    result[param] = this.get_parameter(param, call_index);
+    result[param] = this.get_parameter(param, call_index, include_old_value);
   }
 
   return result;

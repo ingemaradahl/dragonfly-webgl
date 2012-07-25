@@ -10,7 +10,7 @@ cls.WebGLHeaderViewBase = Object.create(ViewBase,
         function(snapshot, call_index, template)
         {
           var trace = snapshot.trace[call_index];
-          var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index);
+          var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
           this._container.clearAndRender(
           window.templates.webgl.generic_call(call_index, trace, state_parameters, template));
         }
