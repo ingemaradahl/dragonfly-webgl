@@ -383,7 +383,7 @@ window.templates.webgl.texture = function(texture)
     base_image = window.templates.webgl.texture_image(level0);
   }
 
-  var mipmap_table = null;
+  var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
     var mipmap_levels = texture.levels.slice(1).map(function(level) {

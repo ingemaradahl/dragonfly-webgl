@@ -481,10 +481,11 @@ cls.WebGL.RPCs.injection = function () {
         var active_attribute = gl.getActiveAttrib(program, a);
         var loc = gl.getAttribLocation(program, active_attribute.name);
         attributes.push({
-          name : active_attribute.name,
-          loc  : loc,
-          type : active_attribute.type,
-          size : active_attribute.size,
+          name  : active_attribute.name,
+          index : a,
+          loc   : loc,
+          type  : active_attribute.type,
+          size  : active_attribute.size,
           pointer : {layout : null, buffer_index:null}
         });
       }
@@ -753,6 +754,18 @@ cls.WebGL.RPCs.injection = function () {
       var texture = this.texture_binding[target];
 
       this.snapshot.add_texture(texture);
+    };
+
+    snapshot_functions.vertexAttribPointer = function (result, args, redundant)
+    {
+      if (redundant) return;
+
+      var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
+      if (!program) return;
+
+      var gl = this.gl;
+      var attribute = args[0];
+      this.snapshot.add_attribpointer(this.lookup_program(program), attribute);
     };
 
     var snapshot_function_uniform = function(result, args, redundant)
@@ -1067,7 +1080,7 @@ cls.WebGL.RPCs.injection = function () {
       return {
         index : program_info.index,
         shaders : program_info.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
-        attributes : program_info.attributes,
+        attributes : program_info.attributes.map(function (a) { return {index:a.index, loc:a.loc, name:a.name, size:a.size, type:a.type, pointers:[{call_index: -1, buffer_index: a.pointer.buffer_index, layout: a.pointer.layout}] }}),
         uniforms : program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type, values:[{call_index: -1, value:u.value}]}; })
       };
     };
@@ -1862,6 +1875,25 @@ cls.WebGL.RPCs.injection = function () {
         call_index: this.call_index,
         value: value
       });
+    };
+
+    this.add_attribpointer = function (program, attribute)
+    {
+      for (var i=0; i<program.attributes.length; i++)
+      {
+        var attrib = program.attributes[i];
+        if (attrib.loc !== attribute) continue;
+        
+
+        var pointers = this.programs[program.index].attributes[attrib.index].pointers;
+        pointers.push({
+          call_index: this.call_index,
+          buffer_index: attrib.pointer.buffer_index,
+          layout: attrib.pointer.layout // TODO Clone
+        });
+
+        break;
+      }
     };
 
     /* Wraps up the frame in a complete package for transmission to DF */
