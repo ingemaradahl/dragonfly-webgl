@@ -275,7 +275,7 @@ cls.Scoper.prototype._examine_level_callback = function(status, message, rt_id, 
 
   this.current_depth++;
 
-  var release_ids = [];
+  var release_ids = {};
   var out_object_targets = {};
 
   for (var i = 0; i < message[0].length; i++)
@@ -592,7 +592,7 @@ cls.Scoper.prototype.reviver_typed = function(release, message, release_ids,
 
   if (release)
   {
-    release_ids.push(object_id);
+    release_ids[object_id] = true;
   }
   else
   {

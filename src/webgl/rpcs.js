@@ -1105,6 +1105,7 @@ cls.WebGL.RPCs.injection = function () {
 
       for (var index=0; index<program_obj.uniforms.length; index++)
       {
+        // TODO this should be removed since its duplicate data.
         var uniform = program_obj.uniforms[index];
         state.uniforms.push({
           name : uniform.name,
@@ -1112,8 +1113,8 @@ cls.WebGL.RPCs.injection = function () {
           type : uniform.type,
           size : uniform.size,
           values : [{
-            call_index: -1,
-            value: uniform.value
+            call_index: -1
+            //value: uniform.value
           }]
         });
       }
