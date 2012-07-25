@@ -44,7 +44,7 @@ cls.WebGLBufferView = function(id, name, container_class)
     this._render();
   };
 
-  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
+  //messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   this.init(id, name, container_class);
 };
 
