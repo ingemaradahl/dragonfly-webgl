@@ -137,8 +137,6 @@ cls.WebGLSnapshotSelect = function(id)
         }
       }
 
-      // TODO add handler
-      // Adding a take snapshot entry
       ret.push([
         "cst-option",
         "Take snapshot",

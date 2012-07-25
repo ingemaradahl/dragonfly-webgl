@@ -13,6 +13,9 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this._container = null;
   this._snapshot = null;
   this._call_index = null;
+  this._template = null;
+  this._buffer = null;
+  this._inputbox_hidden = true;
 
   this.createView = function(container)
   {
@@ -23,6 +26,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   {
     this._snapshot = snapshot;
     this._call_index = call_index;
+    this._template = template;    
 
     var call = snapshot.trace[call_index];
     var template = window.templates.webgl.buffer_base(call.linked_object.buffer);
@@ -38,14 +42,60 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   this._on_buffer_data = function(msg)
   {
+    this._buffer = msg;
     if (this._container)
     {
-      var template = window.templates.webgl.buffer_base(msg);
-      this.render_with_header(this._snapshot, this._call_index, template);
+      var template = window.templates.webgl.buffer_base(this._buffer);
+      this.display_by_call(this._snapshot, this._call_index, template);
+    }
+  };
+  
+  this._on_layout_select = function()
+  {
+    if (!this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var select = document.getElementById("webgl-layout-selector");
+      var coordinates = select.options[select.selectedIndex].value;
+      if (coordinates === "custom")
+      {
+        var inputbox = document.getElementById("webgl-layout-input"); 
+        inputbox.hidden = false;
+        this._inputbox_hidden = false;
+        return;
+      }
+      else
+      {
+        var template = window.templates.webgl.buffer_base(this._buffer,
+          coordinates);
+        this.display_by_call(this._snapshot, this._call_index, template); 
+      } 
+    }
+  };
+
+  this._on_layout_input = function()
+  {
+    if (!this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var inputbox = document.getElementById("webgl-layout-input");
+      var coordinates = inputbox.value;
+      var template = window.templates.webgl.buffer_base(this._buffer,
+        coordinates);
+      if (!this._inputbox_hidden)
+      {
+        var inputbox = document.getElementById("webgl-layout-input");
+        inputbox.hidden = false;
+      }
+      this.display_by_call(this._snapshot, this._call_index, template);
     }
   };
 
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
+
+  var eh = window.eventHandlers;
+  eh.click["webgl-select-layout"] = this._on_layout_select.bind(this);
+  eh.change["webgl-input-layout"] = this._on_layout_input.bind(this);
 
   this.init(id, name, container_class);
 };

@@ -18,12 +18,12 @@ window.templates.webgl.reload_info = function(buffer)
   ];
 };
 
-window.templates.webgl.buffer_base = function(buffer)
+window.templates.webgl.buffer_base = function(buffer, coordinates)
 {
   var data_table;
   if (buffer.data_is_loaded())
   {
-    data_table = window.templates.webgl.buffer_data_table(buffer);
+    data_table = window.templates.webgl.buffer_data_table(buffer, coordinates);
   }
   else
   {
@@ -52,7 +52,27 @@ window.templates.webgl.buffer_base = function(buffer)
     ];
   });
 
-  var history = window.templates.webgl.history(buffer);
+  var coordinate_selector = ["div", 
+      ["select", 
+          ["option", "(x)", "value", "x"],
+          ["option", "(x,y,z)", "value", "x,y,z"],
+          ["option", "(u,v)", "value", "u,v"],
+          ["option", "(x,y,z,u,v)", "value", "x,y,z,u,v"],
+          ["option", "Custom", "value", "custom"],
+      "handler", "webgl-select-layout",
+      "id", "webgl-layout-selector"
+      ],
+    ];
+  
+var history = window.templates.webgl.history(buffer);
+
+  var inputbox = ["div", 
+      ["input", "type", "text", "handler",
+          "webgl-input-layout", "id", "webgl-layout-input", 
+          "hidden", "true", "maxlength", "20",
+          "value", "E.g. \"a,b,c,d\""
+        ],
+    ];
 
   return [
     "div",
@@ -69,7 +89,9 @@ window.templates.webgl.buffer_base = function(buffer)
             info_table_rows,
             "class",
             "table-info"
-          ]
+          ],
+          coordinate_selector,
+          inputbox
         ]
       ],
       history,
@@ -78,54 +100,52 @@ window.templates.webgl.buffer_base = function(buffer)
   ];
 };
 
-window.templates.webgl.buffer_data_table = function(buffer)
+window.templates.webgl.buffer_data_table = function(buffer, coordinates)
 {
-  var MAX_NUM_ELEMENTS = 1000;
-  var column_layout = 3;
+  var coordinate_list = coordinates || "x";
+      coordinate_list = coordinate_list.split(",");  
+  var columns = coordinate_list.length || 1;
   var data_table_rows = [];
-  for (var i = 0; i < Math.min(buffer.data.length, MAX_NUM_ELEMENTS); i+=2)
-  {
-    var value = buffer.data[i];
+  var number_of_rows = Math.ceil(buffer.data.length/columns);
+  var max_rows = 100;
+  var max_elements = max_rows * columns;
 
-    data_table_rows.push([
-      "tr",
-      [
-        [
-          "td",
-          String(i),
-          "style", // TODO make css class
-          "text-align: right"
-        ],
-        [
-          "td",
-          String(value)
-        ]
-      ]
-    ]);
+  var row_number = 0;
+  for (var i = 0; i < Math.min(number_of_rows, max_rows); i++)
+  {
+    var next_row = [];
+    next_row.push(["td", String(row_number)]);
+    for (var j=0; j<columns; j++)
+    {
+      next_row.push(
+        ["td", String(buffer.data[row_number*columns+j])]);
+    }
+    row_number++;
+
+    data_table_rows.push(["tr", [next_row]]);
   }
 
   // TODO temporary solution since Dragonfly will freeze when to many elements
   var more_data = [];
-  if (buffer.data.length > MAX_NUM_ELEMENTS)
+  if (buffer.data.length > max_elements)
   {
-    var diff = buffer.data.length - MAX_NUM_ELEMENTS;
+    var diff = buffer.data.length - max_elements;
     more_data = [
       "div",
       "There are " + String(diff) + " more elements."
     ];
   }
 
+  var table_head = [["td", "Index"]];
+  for (var k=0; k<columns; k++)
+  { 
+    table_head.push(["td", coordinate_list[k]]);  
+  }
+
   var data_table_head = [
     "tr",
     [
-      [
-        "td",
-        "Index"
-      ],
-      [
-        "td",
-        "value"
-      ]
+      table_head
     ],
     "class",
     "header"
