@@ -22,6 +22,16 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._container = container;
   };
 
+  var clear = function()
+  {
+    this._container = null:
+    this._call_index = null;
+    this._snapshot = null;
+    this._buffer = null;
+    this._buffer_layouts = null;
+    this._inputbox_hidden = null;    
+  };
+
   this.display_by_call = function(snapshot, call_index, buffer)
   { 
     if (call_index !== -1)
@@ -30,17 +40,21 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     }
     this._buffer = buffer;
     this._call_index = call_index;
+    this._snapshot = snapshot;
+    
     var template = window.templates.webgl.buffer_base(buffer,
       this._buffer_layouts[this._buffer.index_snapshot]);
-    this.render_with_header(snapshot, call_index, template);
-    this._snapshot = snapshot;
+    
     buffer.request_data();
+    this.render_with_header(snapshot, call_index, template);
   };
 
   this._ondestroy = function()
   {
     this._container = null;
   };
+
+  this._cle
 
   this._on_buffer_data = function(msg)
   {
