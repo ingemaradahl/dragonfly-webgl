@@ -241,22 +241,12 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
 
-    new cls.WebGLBufferSideView("buffer-side-panel",
-                                "Buffers", // TODO
-                                "scroll side-panel buffer");
-    cls.WebGLBufferSideView.create_ui_widgets();
-
-    new cls.WebGLTextureSideView("texture-side-panel",
-                                 "Textures",
-                                 "scroll side-panel texture");
-    cls.WebGLTextureSideView.create_ui_widgets();
-
     // Tabs on the left side
 
     new cls.WebGLDrawCallView("webgl_draw_call",
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
-    
+
     new cls.WebGLCallView("webgl_call",
                           "Call",
                           "scroll webgl_view call");
@@ -264,15 +254,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLTextureCallView("webgl_texture_call",
                                  "Texture call",
                                  "scroll webgl_view texture-call");
-  
+
     new cls.WebGLBufferCallView("webgl_buffer_call",
                                 "Buffer call",
-                                "scroll webgl_view buffer-call");  
-  
+                                "scroll webgl_view buffer-call");
+
     new cls.WebGLProgramCallView("webgl_program_call",
                                  "Program call",
                                  "scroll webgl_view program-call");
-    
+
 
     new cls.WebGLBufferView("webgl_buffer",
                             "Buffer", // TODO
@@ -294,11 +284,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "scroll webgl_view trace");
     cls.WebGLTraceView.create_ui_widgets();
 
-    new cls.WebGLStateView("state-side-panel",
-                           "State", // TODO
-                           "scroll webgl_view state");
-    cls.WebGLStateView.create_ui_widgets();
+    new cls.WebGLBufferSideView("buffer-side-panel",
+                                "Buffers", // TODO
+                                "scroll side-panel buffer");
+    cls.WebGLBufferSideView.create_ui_widgets();
 
+    new cls.WebGLTextureSideView("texture-side-panel",
+                                 "Textures",
+                                 "scroll side-panel texture");
+    cls.WebGLTextureSideView.create_ui_widgets();
 
     /* the following views must be created to get entry in the Settings tab */
 

@@ -1806,9 +1806,9 @@ cls.WebGL.RPCs.injection = function () {
 
         get_texture_data.call(lvl, level.object);
 
-        if (lvl.img.data == null) 
+        if (lvl.img.data == null)
           lvl.img = null;
-         
+
         return lvl;
       };
 
@@ -1821,7 +1821,6 @@ cls.WebGL.RPCs.injection = function () {
 
         mipmapped : texture.mipmapped,
         texture_mag_filter : texture.texture_mag_filter,
-        texture_min_filter : texture.texture_min_filter,
         texture_min_filter : texture.texture_min_filter,
         texture_wrap_s : texture.texture_wrap_s,
         texture_wrap_t : texture.texture_wrap_s,
@@ -1836,7 +1835,7 @@ cls.WebGL.RPCs.injection = function () {
         // Assume no mipmapping is done
         var lvl0 = {
           img: texture_data
-        }
+        };
 
         if (texture.levels[0] && texture.levels[0].width)
         {
@@ -1846,7 +1845,7 @@ cls.WebGL.RPCs.injection = function () {
         }
         texture_state.levels = [lvl0];
       }
-      else 
+      else
       {
         texture_state.levels = texture.levels.map(clone_level);
       }

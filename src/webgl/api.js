@@ -482,16 +482,18 @@ cls.WebGLAPI = function ()
     return String(value);
   };
 
-  GLParam.prototype.get_tooltip = function()
+  GLParam.prototype.get_tooltip = function(extra_tooltip)
   {
-    return TYPES_BACK[this.type] + " " + this.name;
+    var tooltip = TYPES_BACK[this.type] + " " + this.name;
+    if (extra_tooltip) tooltip += "\n" + extra_tooltip;
+    return tooltip;
   };
 
   GLParam.prototype.get_object = function(value)
   {
     if (typeof(value) === "object" && value != null)
     {
-      if (!value.tooltip) value.tooltip = this.get_tooltip();
+      if (!value.tooltip) value.tooltip = this.get_tooltip(value.extra_tooltip);
       return value;
     }
 

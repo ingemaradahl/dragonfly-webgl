@@ -215,8 +215,15 @@ window.templates.webgl.history = function(object)
     his_list.push(["tr", [["td"], ["td", num + " calls omitted."]]]);
   }
 
-  object.history.sort(function(a, b){return a.frame - b.frame;});
-  his_list.push(object.history.map(row_func));
+  var number = object.history.number % object.history.length;
+  for (var i = number; i < object.history.length; i++)
+  {
+    his_list.push(row_func(object.history[i]));
+  }
+  for (i = 0; i < number; i++)
+  {
+    his_list.push(row_func(object.history[i]));
+  }
 
   return [
     "div",
@@ -241,12 +248,6 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   for (var i = 0; i < args.length; i++)
   {
     var arg = args[i];
-    if (arg.data && arg.data.length > 4 && arg.contracted !== true)
-    {
-      arg.contracted = true;
-      arg.tooltip = arg.tooltip + "\n" + arg.text;
-      arg.text = arg.text.substr(0,10) + "...";
-    }
     var html = window.templates.webgl.linked_object(arg, "webgl-trace-argument");
 
     if (i > 0) content.push(["span", ", "]);
@@ -350,7 +351,7 @@ window.templates.webgl.texture_image = function(level)
   }
 
   return image;
-}
+};
 
 window.templates.webgl.texture = function(texture)
 {
@@ -391,7 +392,7 @@ window.templates.webgl.texture = function(texture)
       var image_source = null;
       if (level.url)
         image_source = { name: "Image source", value: level.url };
-      
+
       var level_info_rows = [
         { name: "Level", value: String(level.level) },
         { name: "Source", value: level.element_type },
@@ -411,7 +412,7 @@ window.templates.webgl.texture = function(texture)
       ];
     });
 
-    mipmap_table = [ "div", 
+    mipmap_table = [ "div",
       [ "h3", "Custom mipmap levels" ],
       [ "table", mipmap_levels, "class", "sortable-table" ],
       "class", "mipmap-table"
@@ -527,21 +528,19 @@ window.templates.webgl.goto_script = function(loc)
 
 window.templates.webgl.state_parameters = function(state_parameters)
 {
-  var content = [];
-  for (var param in state_parameters)
+  var value_to_html = function(value)
   {
-    if (!state_parameters.hasOwnProperty(param)) continue;
-    var value = state_parameters[param];
     var param_content;
     if (value != null && value instanceof cls.WebGLLinkedObject)
     {
       if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
       {
-        var values = (value[0] * 255) + ", " + (value[1] * 255) + ", " + (value[2] * 255) + ", " + value[3];
+        var color = value.data;
+        var colors = (color[0] * 255) + ", " + (color[1] * 255) + ", " + (color[2] * 255) + ", " + color[3];
         param_content = [
           "div",
           [
-            ["div", ["div", "style", "background-color: rgba(" + values + ")"], "class", "color-box checkerboard"],
+            ["div", ["div", "style", "background-color: rgba(" + colors + ")"], "class", "color-box checkerboard"],
             ["span", value.text]
           ]
         ];
@@ -553,11 +552,40 @@ window.templates.webgl.state_parameters = function(state_parameters)
     }
     else
     {
-      param_content = window.webgl.api.state_parameter_to_string(param, value);
+      param_content = ["span", window.webgl.api.state_parameter_to_string(param, value)];
+    }
+
+    return param_content;
+  };
+
+  var content = [];
+  for (var param in state_parameters)
+  {
+    if (!state_parameters.hasOwnProperty(param)) continue;
+    var value = state_parameters[param].value;
+    var param_content = value_to_html(value);
+    if (state_parameters[param].old_value)
+    {
+      var old_value = state_parameters[param].old_value;
+      var old_param_content = value_to_html(old_value);
+      old_param_content.push("class", "old-value");
+      param_content = [
+        old_param_content,
+        ["span", " » "],
+        param_content
+      ];
     }
     content.push(["tr", [["td", param], ["td", param_content]]]);
   }
-  return content;
+  return [
+    "div", [
+      ["h3", "State parameters"],
+      [
+        "table", content,
+        "class", "state-table sortable-table"
+      ]
+    ]
+  ];
 };
 
 /**
@@ -606,12 +634,13 @@ window.templates.webgl.generic_call = function(call, trace_call, state_parameter
       ],
       function_arguments,
       ["p", spec_link],
-      ["p", script_ref]
+      ["p", script_ref],
+      state
     ],
     "class", "draw-call-info"
   ];
 
-  var res = [header, ["table", state]];
+  var res = [header];
 
   // If additional content have been provided add it after the header.
   if (template) res.push(template);

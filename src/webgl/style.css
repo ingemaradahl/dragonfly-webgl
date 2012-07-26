@@ -48,6 +48,35 @@ img.flipped
   width: 140px;
 }
 
+/* Call header */
+.state-table
+{
+  width: 0% !important;
+  border: 1px solid #ccc;
+}
+
+.state-table .old-value
+{
+  color: #686868;
+}
+
+.color-box
+{
+  border: 1px solid #ccc;
+  width: 12px;
+  height: 12px;
+  background-position: 0px 0px, 6px 6px !important;
+  background-size: 12px 12px !important;
+  float: left;
+  margin-right: 5px;
+}
+
+.color-box > div
+{
+  width: 12px;
+  height: 12px;
+}
+
 /* Texture */
 .webgl_view div.loading-image
 {
@@ -57,16 +86,16 @@ img.flipped
   border: 1px;
   border-style: solid;
   border-color: gray;
-  position:relative;
+  position: relative;
 }
 
 .loading-image > img
 {
-  position:absolute;
-  top:50%;
-  left:50%;
-  margin-top:-8px;
-  margin-left:-8px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
 }
 
 /* Program */
@@ -96,23 +125,6 @@ img.flipped
 {
   margin-bottom: 10px;
   border: 1px solid #999999;
-}
-
-.color-box
-{
-  border: 1px solid #ccc;
-  width: 12px;
-  height: 12px;
-  background-position: 0px 0px, 6px 6px !important;
-  background-size: 12px 12px !important;
-  float: left;
-  margin-right: 5px;
-}
-
-.color-box > div
-{
-  width: 12px;
-  height: 12px;
 }
 
 /* Buffer */
