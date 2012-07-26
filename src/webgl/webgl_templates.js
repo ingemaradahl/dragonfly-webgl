@@ -818,14 +818,17 @@ window.templates.webgl.attribute_table = function(call_index, program)
         ],
         [
           "td",
-          String(pointer.buffer),
+          pointer.buffer ? String(pointer.buffer) : "",
           "class", changed_this_call ? "changed" : ""
         ],
         [
           "td",
-          String(pointer.layout.size) + "x"
-            + window.webgl.api.constant_value_to_string(pointer.layout.type) + ",  +"
-            + String(pointer.layout.offset) + "/" + String(pointer.layout.stride),
+          pointer.layout
+         	? String(pointer.layout.size) + "x"
+              + window.webgl.api.constant_value_to_string(pointer.layout.type)
+              + ",  +" + String(pointer.layout.offset) + "/"
+              + String(pointer.layout.stride)
+            : "",
           "class", changed_this_call ? "changed" : ""
         ]
       ]
