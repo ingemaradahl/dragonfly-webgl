@@ -714,6 +714,81 @@ window.templates.webgl.shader_source = function(source)
   ]);
 };
 
+window.templates.webgl.attribute_table = function(call_index, program)
+{
+  var attributes = program.attributes;
+  var rows = [];
+
+  rows.push([
+    "tr",
+    [
+      [
+        "td",
+        "Attribute name"
+      ],
+      [
+        "td",
+        "Type"
+      ],
+      [
+        "td",
+        "Buffer"
+      ],
+      [
+        "td",
+        "Layout"
+      ],
+    ],
+    "class", "header"
+  ]);
+
+  for (var i=0; i<attributes.length; i++)
+  {
+    var attribute = attributes[i];
+    var pointer = attribute.pointers.lookup(call_index);
+    var changed_this_call = pointer.call_index === call_index;
+
+    rows.push([
+      "tr",
+      [
+        [
+          "td",
+          attribute.name
+        ],
+        [
+          "td",
+          window.webgl.api.constant_value_to_string(attribute.type)
+        ],
+        [
+          "td",
+          String(pointer.buffer),
+          "class", changed_this_call ? "changed" : ""
+        ],
+        [
+          "td",
+          String(pointer.layout.size) + "x" 
+            + window.webgl.api.constant_value_to_string(pointer.layout.type) + ",  +"
+            + String(pointer.layout.offset) + "/" + String(pointer.layout.stride),
+          "class", changed_this_call ? "changed" : ""
+        ]
+      ]
+    ]);
+  }
+
+  var table = [
+    "div",
+    [
+      "table",
+      rows,
+      "class", "sortable-table uniform-table"
+    ],
+    "class", "uniforms"
+  ];
+
+  return table;
+
+};
+
 window.templates.webgl.uniform_table = function(call_index, program)
 {
   var uniforms = program.uniforms;
@@ -829,11 +904,13 @@ window.templates.webgl.program = function(call_index, program)
     ]);
   }
 
+  var attribute_table = window.templates.webgl.attribute_table(call_index, program);
   var uniform_table = window.templates.webgl.uniform_table(call_index, program);
 
   var html =
   [
     "div",
+     attribute_table,
      uniform_table,
      programs
   ];
