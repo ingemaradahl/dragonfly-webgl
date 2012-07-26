@@ -463,7 +463,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
     if (object.hasOwnProperty(key)) this[key] = object[key];
   }
 
-  var matched = false;
+  var matched = true;
   switch (this.type)
   {
     case "WebGLBuffer":
@@ -471,7 +471,6 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
       this.action = this.buffer.show.bind(this.buffer);
-      matched = true;
       break;
     case "WebGLTexture":
       if (this.texture_index == null) return;
@@ -479,7 +478,6 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.texture == null) return;
       this.text = String(this.texture);
       this.action = this.texture.show.bind(this.texture);
-      matched = true;
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
@@ -490,15 +488,24 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       {
         window.views.webgl_program.show_uniform(call_index, this.program, this.uniform);
       };
-      matched = true;
       break;
+    default:
+      matched = false;
   }
 
   if (!matched)
   {
     if (this.data && typeof(this.data) !== "function")
     {
-      this.text = "[" + Array.prototype.join.call(this.data, ", ") + "]";
+      var text = "";
+      if (this.data.length > 0)
+      {
+        text = Array.prototype.slice.call(this.data, 0, 4).map(function(val){
+          return String(Math.round(val * 100) / 100);
+        }).join(", ");
+        if (this.data.length > 4) text += ", ...";
+      }
+      this.text = "[" + text + "]";
     }
     else
     {
