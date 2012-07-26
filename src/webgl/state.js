@@ -285,5 +285,9 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "ACTIVE_TEXTURE",
     "TEXTURE_BINDING_2D",
     "TEXTURE_BINDING_CUBE_MAP"
+  ],
+  attrib: [
+    "ARRAY_BUFFER_BINDING",
+    "CURRENT_PROGRAM"
   ]
 };
