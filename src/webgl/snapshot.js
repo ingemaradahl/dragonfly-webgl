@@ -517,7 +517,8 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.buffer_index == null) return;
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
-      this.action = this.buffer.show.bind(this.buffer);
+      // TODO Define an action
+      //this.action = this.buffer.show.bind(this.buffer);
       break;
     case "WebGLTexture":
       if (this.texture_index == null) return;

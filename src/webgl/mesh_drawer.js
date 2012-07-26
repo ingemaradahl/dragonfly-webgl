@@ -227,11 +227,11 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function()
 
     if (!this.buffer.data_is_loaded())
     {
-      this.buffer.get_buffer_data();
+      this.buffer.request_data();
     }
     if (this.element_buffer && !this.element_buffer.data_is_loaded())
     {
-      this.element_buffer.get_buffer_data();
+      this.element_buffer.request_data();
     }
   }
 };

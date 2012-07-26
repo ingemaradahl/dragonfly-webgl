@@ -9,10 +9,18 @@ cls.WebGLHeaderViewBase = Object.create(ViewBase,
       {value:
         function(snapshot, call_index, template)
         {
-          var trace = snapshot.trace[call_index];
-          var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
-          this._container.clearAndRender(
-          window.templates.webgl.generic_call(call_index, trace, state_parameters, template));
+          if (call_index === -1)
+          {
+            var template = window.templates.webgl.info_with_header(template);
+          }
+          else
+          {
+            var trace = snapshot.trace[call_index];
+            var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index);
+            var template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, template);
+          }      
+    
+          this._container.clearAndRender(template);
         }
       }
     });
@@ -137,8 +145,6 @@ cls.WebGLSnapshotSelect = function(id)
         }
       }
 
-      // TODO add handler
-      // Adding a take snapshot entry
       ret.push([
         "cst-option",
         "Take snapshot",
