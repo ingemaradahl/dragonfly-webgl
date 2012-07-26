@@ -11,10 +11,10 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
   this._container = null;
-  this._snapshot = null;
   this._call_index = null;
-  this._template = null;
+  this._snapshot = null;
   this._buffer = null;
+  this._buffer_layouts = {};
   this._inputbox_hidden = true;
 
   this.createView = function(container)
@@ -22,17 +22,19 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._container = container;
   };
 
-  this.display_by_call = function(snapshot, call_index)
-  {
-    this._snapshot = snapshot;
+  this.display_by_call = function(snapshot, call_index, buffer)
+  { 
+    if (call_index !== -1)
+    {
+      buffer = snapshot.trace[call_index].linked_object.buffer;
+    }
+    this._buffer = buffer;
     this._call_index = call_index;
-    this._template = template;    
-
-    var call = snapshot.trace[call_index];
-    var template = window.templates.webgl.buffer_base(call.linked_object.buffer);
-    call.linked_object.buffer.show();
-
+    var template = window.templates.webgl.buffer_base(buffer,
+      this._buffer_layouts[this._buffer.index_snapshot]);
     this.render_with_header(snapshot, call_index, template);
+    this._snapshot = snapshot;
+    buffer.request_data();
   };
 
   this._ondestroy = function()
@@ -42,11 +44,12 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   this._on_buffer_data = function(msg)
   {
-    this._buffer = msg;
-    if (this._container)
+    var buffer = msg;
+    if (this._container && this._buffer === buffer)
     {
-      var template = window.templates.webgl.buffer_base(this._buffer);
-      this.display_by_call(this._snapshot, this._call_index, template);
+      var template = window.templates.webgl.buffer_base(buffer,
+                      this._buffer_layouts[this._buffer.index_snapshot]);
+      this.render_with_header(this._snapshot, this._call_index, template);
     }
   };
   
@@ -66,9 +69,8 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       }
       else
       {
-        var template = window.templates.webgl.buffer_base(this._buffer,
-          coordinates);
-        this.display_by_call(this._snapshot, this._call_index, template); 
+        this._buffer_layouts[this._buffer.index_snapshot] = coordinates;
+        this.display_by_call(this._snapshot, this._call_index, this._buffer);
       } 
     }
   };
@@ -79,15 +81,13 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     if (this._buffer.data_is_loaded())
     {
       var inputbox = document.getElementById("webgl-layout-input");
-      var coordinates = inputbox.value;
-      var template = window.templates.webgl.buffer_base(this._buffer,
-        coordinates);
+      this._buffer_layouts[this._buffer.index_snapshot] = inputbox.value;
       if (!this._inputbox_hidden)
       {
         var inputbox = document.getElementById("webgl-layout-input");
         inputbox.hidden = false;
       }
-      this.display_by_call(this._snapshot, this._call_index, template);
+      this.display_by_call(this._snapshot, this._call_index, this._buffer);
     }
   };
 
@@ -193,9 +193,12 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     var buffer_index = Number(target.getAttribute("data-object-id"));
     var table_data = this._table.get_data();
     var buffer = table_data[buffer_index].buffer;
+    var snapshot =
+      window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer");
-    buffer.show();
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer_call");
+    window.views["webgl_buffer_call"].display_by_call(snapshot,
+      buffer.call_index, buffer);
   };
 
   this._on_take_snapshot = function()
@@ -208,6 +211,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
 
   this._on_refresh = function()
   {
+    // TODO Check this... get context?
     var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
     if (ctx_id != null)
     {

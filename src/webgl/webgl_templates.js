@@ -90,11 +90,11 @@ var history = window.templates.webgl.history(buffer);
             "class",
             "table-info"
           ],
-          coordinate_selector,
-          inputbox
         ]
       ],
       history,
+      coordinate_selector,
+      inputbox,
       data_table
     ]
   ];
@@ -592,7 +592,30 @@ window.templates.webgl.state_parameters = function(state_parameters)
  * @param {Array} template optional, should contain a html structure of other
  *   content that should be shown below the header.
  */
-window.templates.webgl.generic_call = function(call, trace_call, state_parameters, template)
+
+window.templates.webgl.info_with_header = function(template)
+{
+  var header = [
+    "div", [
+      [
+        "h2", [
+          ["span", "Start of frame"],
+        ],
+      ]
+    ],
+    "class", "draw-call-info"
+  ];
+
+    var html = [header];
+    if (template)
+    {
+      html.push(template);
+    } 
+    
+    return html;      
+};
+
+window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, template)
 {
   var function_name = trace_call.function_name;
   var callnr = parseInt(call) + 1; // Start call count on 1.

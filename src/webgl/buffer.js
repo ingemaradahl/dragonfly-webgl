@@ -14,7 +14,7 @@ cls.WebGLBuffer = function()
 /* Initiates a sequence of calls to update the metadata of a buffer and get the
  * current data.
  */
-cls.WebGLBuffer.prototype.get_buffer_data = function()
+cls.WebGLBuffer.prototype.request_data = function()
 {
   if (this.data_is_loaded() || this.data.downloading)
     return;
@@ -28,16 +28,6 @@ cls.WebGLBuffer.prototype.get_buffer_data = function()
   var scoper = new cls.Scoper(finalize, this);
   scoper.examine_object(this.data, true);
   this.data.downloading = true;
-};
-
-cls.WebGLBuffer.prototype.show = function()
-{
-  window.views.webgl_buffer.show_buffer(this);
-
-  if (!this.data_is_loaded())
-  {
-    this.get_buffer_data();
-  }
 };
 
 cls.WebGLBuffer.prototype.toString = function()
