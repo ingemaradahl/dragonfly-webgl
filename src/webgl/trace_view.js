@@ -106,9 +106,9 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this._on_take_snapshot = function()
   {
-    window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
-    this._container.clearAndRender(window.templates.webgl.taking_snapshot());
     this._loading_snapshot = true;
+    window.views.webgl_mode.cell.children[1].children[0].tab.setActiveTab("trace-side-panel");
+    this._render();
   };
 
   this._on_changed_snapshot = function()
