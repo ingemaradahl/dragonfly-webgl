@@ -139,6 +139,36 @@ cls.WebGLSnapshotArray = function(context_id)
       return null;
     };
 
+    /**
+     * Finds an attribute based on a call_index. To be bound to an array of
+     * vertex attribute pointers. Assumes that the array is sorted by call index.
+     */
+    var lookup_attrib = function(call_index)
+    {
+      var highest_call = -1;
+      for (var i=this.length-1; i>=0; i--)
+      {
+        if (this[i].call_index <= call_index)
+        {
+          return this[i];
+        }
+      }
+
+      return null;
+    };
+
+    // Finds a program based on its id (index, but not index in array)
+    this.programs.lookup = function(index)
+    {
+      for (var i=0; i<this.length; i++)
+      {
+        if (this[i].index === index)
+          return this[i];
+      }
+
+      return null;
+    }.bind(this.programs);
+
     var init_state = function (state)
     {
       for (var key in state)
@@ -273,6 +303,9 @@ cls.WebGLSnapshotArray = function(context_id)
           case "uniform":
             linked_object = args[0];
             break;
+          case "attrib":
+            // TODO figure out program stuff
+            linked_object = args[0];
         }
 
         if (linked_object == null && group !== "draw") group = "generic";
@@ -297,27 +330,41 @@ cls.WebGLSnapshotArray = function(context_id)
         drawcall.element_buffer = this.buffers.lookup(drawcall.element_buffer, call_index);
       }
 
-      // Connect buffers to vetrex attribute bindings
+      // Link up program
+      drawcall.program = this.programs.lookup(drawcall.program_index);
+      delete drawcall.program_index;
+
       for (var i=0; i<drawcall.program.attributes.length; i++)
       {
         var attribute = drawcall.program.attributes[i];
-        var buffer = this.buffers.lookup(attribute.pointer.buffer_index, call_index);
-        if (buffer == null) continue;
-        attribute.buffer = buffer;
-        delete attribute.buffer_index;
+        
+        // Add lookup function
+        attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 
-        if (buffer.vertex_attribs[call_index])
+        // Connect buffers to vetrex attribute bindings
+        for (var j=0; j<attribute.pointers.length; j++)
         {
-          buffer.vertex_attribs[call_index].push(attribute);
-        }
-        else
-        {
-          buffer.vertex_attribs[call_index] = [attribute];
-        }
+          var pointer = attribute.pointers[j];
+          var buffer = this.buffers.lookup(pointer.buffer_index, call_index);
 
-        if (drawcall.element_buffer)
-        {
-          buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
+          if (buffer == null) continue;
+
+          pointer.buffer = buffer;
+          delete pointer.buffer_index;
+
+          if (buffer.vertex_attribs[call_index])
+          {
+            buffer.vertex_attribs[call_index].push(attribute);
+          }
+          else
+          {
+            buffer.vertex_attribs[call_index] = [attribute];
+          }
+
+          if (drawcall.element_buffer)
+          {
+            buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
+          }
         }
       }
 
@@ -490,6 +537,22 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       {
         window.views.webgl_program.show_uniform(call_index, this.program, this.uniform);
       };
+      matched = true;
+      break;
+    case "WebGLVertexLocation":
+      if (this.program_index == null) return;
+      this.program = snapshot.programs[this.program_index];
+      // Find right attribute based on loc index
+      for (var i=0; i<this.program.attributes.length; i++)
+      {
+        if (this.program.attributes[i].loc === this.loc_index)
+        {
+          this.attribute = this.program.attributes[i];
+          break;
+        }
+      }
+      this.text = this.attribute.name;
+      this.action = function() {  /* alert("attribute!"); */ };
       matched = true;
       break;
   }

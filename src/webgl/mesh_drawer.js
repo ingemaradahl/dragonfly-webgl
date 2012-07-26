@@ -510,11 +510,11 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   this.render();
 };
 
-cls.WebGLMeshDrawer.prototype.set_attribute = function(attribute, state, element_buffer)
+cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_buffer)
 {
   this.element_buffer = element_buffer;
-  this.buffer = attribute.buffer;
-  this.layout = attribute.pointer.layout;
+  this.buffer = pointer.buffer;
+  this.layout = pointer.layout;
   this.state = state;
 
   this.init_buffer();

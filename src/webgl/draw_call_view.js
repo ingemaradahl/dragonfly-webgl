@@ -33,10 +33,10 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var preview = window.webgl.preview;
 
     var select = document.getElementById("webgl-attribute-selector");
-    var attribute = select.options[select.selectedIndex].attribute;
+    var pointer = select.options[select.selectedIndex].pointer;
 
     preview.set_program(window.webgl.gl.programs.buffer);
-    preview.set_attribute(attribute, this._state, this._element_buffer);
+    preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
   }.bind(this);
 
@@ -59,7 +59,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
     this.render_with_header(snapshot, call_index, draw_template);
 
-    if (draw_call && window.webgl.gl)
+    if (window.webgl.gl)
     {
       this._element_buffer = draw_call.element_buffer;
       var state = {

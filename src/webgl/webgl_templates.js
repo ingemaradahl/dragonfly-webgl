@@ -653,7 +653,7 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   var buffer_display = [];
   if (window.webgl.gl)
   {
-    buffer_display = window.templates.webgl.drawcall_buffer(draw_call.program.attributes);
+    buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
   }
 
   var html = [ "div",
@@ -665,19 +665,22 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   return html;
 };
 
-window.templates.webgl.drawcall_buffer = function (attributes)
+window.templates.webgl.drawcall_buffer = function (draw_call)
 {
+  var call_index = draw_call.call_index;
+  var attributes = draw_call.program.attributes;
   return ["div",
     [
       "select",
       [
         attributes.map(function(attribute) {
+          var pointer = attribute.pointers.lookup(call_index);
           var option = [ "option",
-            attribute.name + " (" + attribute.buffer + ")",
+            attribute.name + " (" + pointer.buffer + ")",
             "value", attribute,
-            "attribute", attribute,
+            "pointer", pointer 
           ];
-          if (!attribute.buffer)
+          if (!pointer.buffer)
           {
             option.push("disabled");
             option.push("true");

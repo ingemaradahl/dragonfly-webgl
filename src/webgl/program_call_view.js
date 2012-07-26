@@ -12,6 +12,7 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 {
   this._container = null;
 
+  // Can be used to hilight attributes as well
   var hilight_uniform = function(uniform)
   {
     var regex = new RegExp("(\\s|^)(" + uniform.name + ")(\\s|$)");
@@ -64,7 +65,10 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     var template = window.templates.webgl.program(call_index, call.linked_object.program);
     this.render_with_header(snapshot, call_index, template);
     sh_highlightDocument();
-    if (call.linked_object.uniform) hilight_uniform(call.linked_object.uniform);
+
+    // Hilight eventual uniform/attribute
+    var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
+    if (uniattrib) hilight_uniform(uniattrib);
   };
 
   this._ondestroy = function()

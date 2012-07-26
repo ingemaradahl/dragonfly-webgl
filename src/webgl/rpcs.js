@@ -80,6 +80,21 @@ cls.WebGL.RPCs.injection = function () {
   }
 
   /**
+   * Shallow clone of objects
+   */
+  function clone_object(obj)
+  {
+    var ret = {};
+    for (var key in obj)
+    {
+      if (obj.hasOwnProperty(key))
+        ret[key] = obj[key];
+    }
+
+    return ret;
+  }
+
+  /**
    * Wrap all WebGL functions, copy all other values and create a handler
    */
   function wrap_context(canvas)
@@ -696,10 +711,6 @@ cls.WebGL.RPCs.injection = function () {
 
         ctx.putImageData(img_data, 0, 0);
 
-        // Figure out buffer binding, which buffer we are drawing
-        var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
-        var buffer = this.buffer_binding[target];
-
         var img = {
           data : canvas.toDataURL("image/png"),
           width : width,
@@ -707,9 +718,15 @@ cls.WebGL.RPCs.injection = function () {
           flipped : true
         };
 
-        var program_state = this.get_program_state();
+        // Figure out buffer binding, which buffer we are drawing
+        var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
+        var buffer = this.buffer_binding[target];
 
-        this.snapshot.add_drawcall(img, target, buffer.index, program_state);
+        var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
+        var program_index = this.lookup_program(program).index;
+
+
+        this.snapshot.add_drawcall(img, target, buffer.index, program_index);
 
         // Check whether an color attachment texture have been drawn to
         if (fbo)
@@ -1083,54 +1100,6 @@ cls.WebGL.RPCs.injection = function () {
         attributes : program_info.attributes.map(function (a) { return {index:a.index, loc:a.loc, name:a.name, size:a.size, type:a.type, pointers:[{call_index: -1, buffer_index: a.pointer.buffer_index, layout: a.pointer.layout}] }}),
         uniforms : program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type, values:[{call_index: -1, value:u.value}]}; })
       };
-    };
-
-    this.get_program_state = function(program)
-    {
-      var gl = this.gl;
-      program = program || this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
-
-      if (!program) return null;
-
-      var program_obj = this.lookup_program(program);
-
-      var state =
-      {
-        index : program_obj.index,
-        attributes : [],
-        uniforms : []
-      };
-
-      for (var a in program_obj.attributes)
-      {
-        var attribute = program_obj.attributes[a];
-        var binding = gl.getVertexAttrib(attribute.loc, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
-        var buffer_binding = binding ? this.lookup_buffer(binding) : null;
-        state.attributes.push({
-          name : attribute.name,
-          loc  : attribute.loc,
-          type : attribute.type,
-          size : attribute.size,
-          pointer : attribute.pointer
-        });
-      }
-
-      for (var index=0; index<program_obj.uniforms.length; index++)
-      {
-        var uniform = program_obj.uniforms[index];
-        state.uniforms.push({
-          name : uniform.name,
-          index  : index,
-          type : uniform.type,
-          size : uniform.size,
-          values : [{
-            call_index: -1,
-            value: uniform.value
-          }]
-        });
-      }
-
-      return state;
     };
 
     /**
@@ -1615,6 +1584,25 @@ cls.WebGL.RPCs.injection = function () {
     this.add_call = function (function_name, error, args, result, redundant, loc)
     {
       var call_args = [];
+      
+      // Very ugly hack to link first argument of a call to vertexAttribPointer :(
+      if (function_name === "vertexAttribPointer")
+      {
+        var gl = this.handler.gl;
+        var program = this.handler.lookup_program(this.handler.bound_program || gl.getParameter(gl.CURRENT_PROGRAM));
+
+        var trace_ref = { 
+          type: "WebGLVertexLocation", 
+          program_index: program.index,
+          loc_index: args[0]
+        }
+        var trace_ref_index = this.call_refs.push(trace_ref) - 1;
+        call_args.push("@" + String(trace_ref_index));
+
+        // Clone args, as it is used after this function, and remove first argument
+        args = Array.prototype.slice.call(args);
+        args.shift();
+      }
 
       for (var i = 0; i < args.length; i++)
       {
@@ -1655,12 +1643,12 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index = this.calls.push([function_name, error, res, Boolean(redundant)].concat(call_args).join("|")) - 1;
     };
 
-    this.add_drawcall = function (fbo, buffer_target, buffer_index, program_state)
+    this.add_drawcall = function (fbo, buffer_target, buffer_index, program_index)
     {
       this.drawcalls.push({
         call_index : this.call_index,
         fbo : fbo,
-        program : program_state,
+        program_index : program_index,
         element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });
     };
@@ -1884,12 +1872,11 @@ cls.WebGL.RPCs.injection = function () {
         var attrib = program.attributes[i];
         if (attrib.loc !== attribute) continue;
         
-
-        var pointers = this.programs[program.index].attributes[attrib.index].pointers;
+        var pointers = this.programs[program.index].attributes[i].pointers;
         pointers.push({
           call_index: this.call_index,
           buffer_index: attrib.pointer.buffer_index,
-          layout: attrib.pointer.layout // TODO Clone
+          layout: clone_object(attrib.pointer.layout)
         });
 
         break;

@@ -86,7 +86,7 @@ cls.WebGLTraceView = function(id, name, container_class)
     var call = snapshot.trace[call_index];
 
     var group = call.group;
-    if (group === "uniform") group = "program";
+    if (group === "uniform" || group === "attrib") group = "program";
     var tab = "webgl_" + group + "_call";
     var view = window.views["webgl_" + group + "_call"];
     if (view == null)
