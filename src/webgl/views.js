@@ -16,10 +16,10 @@ cls.WebGLHeaderViewBase = Object.create(ViewBase,
           else
           {
             var trace = snapshot.trace[call_index];
-            var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index);
+            var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
             var template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, template);
-          }      
-    
+          }
+
           this._container.clearAndRender(template);
         }
       }
