@@ -52,8 +52,8 @@ window.templates.webgl.buffer_base = function(buffer, coordinates)
     ];
   });
 
-  var coordinate_selector = ["div", 
-      ["select", 
+  var coordinate_selector = ["div",
+      ["select",
           ["option", "(x)", "value", "x"],
           ["option", "(x,y,z)", "value", "x,y,z"],
           ["option", "(u,v)", "value", "u,v"],
@@ -63,12 +63,12 @@ window.templates.webgl.buffer_base = function(buffer, coordinates)
       "id", "webgl-layout-selector"
       ],
     ];
-  
+
 var history = window.templates.webgl.history(buffer);
 
-  var inputbox = ["div", 
+  var inputbox = ["div",
       ["input", "type", "text", "handler",
-          "webgl-input-layout", "id", "webgl-layout-input", 
+          "webgl-input-layout", "id", "webgl-layout-input",
           "hidden", "true", "maxlength", "20",
           "value", "E.g. \"a,b,c,d\""
         ],
@@ -103,7 +103,7 @@ var history = window.templates.webgl.history(buffer);
 window.templates.webgl.buffer_data_table = function(buffer, coordinates)
 {
   var coordinate_list = coordinates || "x";
-      coordinate_list = coordinate_list.split(",");  
+      coordinate_list = coordinate_list.split(",");
   var columns = coordinate_list.length || 1;
   var data_table_rows = [];
   var number_of_rows = Math.ceil(buffer.data.length/columns);
@@ -138,8 +138,8 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
 
   var table_head = [["td", "Index"]];
   for (var k=0; k<columns; k++)
-  { 
-    table_head.push(["td", coordinate_list[k]]);  
+  {
+    table_head.push(["td", coordinate_list[k]]);
   }
 
   var data_table_head = [
@@ -201,28 +201,15 @@ window.templates.webgl.history = function(object)
       content.push(html);
     }
     content.push(["span", ")"]);
+    window.templates.webgl.goto_script(call.loc, content[0]);
 
-    var call_row = [
+    return [
       "tr",
       [
         ["td", String(call.frame)],
-        [
-          "td",
-          content
-        ]
+        ["td", content]
       ]
     ];
-    var goto_row = [
-      "tr",
-      [
-        ["td"],
-        [
-          "td",
-          window.templates.webgl.goto_script(call.loc)
-        ]
-      ]
-    ];
-    return [call_row, goto_row];
   };
 
   var his_list = [];
@@ -519,31 +506,20 @@ window.templates.webgl.texture = function(texture)
 };
 
 /**
- * Makes a link to the script tag to show where the call was made.
+ * Makes a link to the script tag to show where the call was made on, adds it to an existing tag.
  */
-window.templates.webgl.goto_script = function(loc)
+window.templates.webgl.goto_script = function(loc, content)
 {
   var script_url = loc.short_url || loc.url;
-  var script_ref;
-  if (loc.script_id == null)
-  {
-    script_ref = [
-      "span", "Called from " + loc.caller_name + " in " + script_url
-    ];
-  }
-  else
-  {
-    script_ref = [
-      "span", "Goto script",
-      "handler", "webgl-drawcall-goto-script",
-      "class", "link",
-      "data-line", String(loc.line),
-      "data-script-id", String(loc.script_id),
-      "title", "Called from " + loc.caller_name + " in " + script_url
-    ];
-  }
 
-  return script_ref;
+  if (loc.script_id != null)
+  {
+    content.push("class", "goto-script");
+    content.push("handler", "webgl-drawcall-goto-script");
+    content.push("data-line", String(loc.line));
+    content.push("data-script-id", String(loc.script_id));
+  }
+  content.push("title", "Called from " + loc.caller_name + " in " + script_url);
 };
 
 window.templates.webgl.state_parameters = function(state_parameters)
@@ -630,29 +606,29 @@ window.templates.webgl.info_with_header = function(template)
     if (template)
     {
       html.push(template);
-    } 
-    
-    return html;      
+    }
+
+    return html;
 };
 
 window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, template)
 {
-  var function_name = trace_call.function_name;
   var callnr = parseInt(call) + 1; // Start call count on 1.
 
   // Makes a link to the webgl specification of the actual function.
   var spec_link = [
-    "span", "Goto specification",
+    "span", "spec",
     "handler", "webgl-speclink-click",
-    "class", "link",
+    "class", "specification",
     "function_name",
-    window.webgl.api.function_to_speclink(function_name)
+    window.webgl.api.function_to_speclink(trace_call.function_name)
   ];
+
+  var function_name = ["span", trace_call.function_name];
 
   // Construct struture to display call arguments.
   var function_arguments = [];
-  function_arguments.push(["span", "("]);
-  var argobj = window.webgl.api.function_arguments_to_objects(function_name, trace_call.args);
+  var argobj = window.webgl.api.function_arguments_to_objects(trace_call.function_name, trace_call.args);
   for (var i = 0; i < argobj.length; i++)
   {
     var arg = argobj[i];
@@ -660,33 +636,42 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
     if (i > 0) function_arguments.push(["span", ", "]);
     function_arguments.push(html);
   }
-  function_arguments.push(["span", ")"]);
 
-  var script_ref = trace_call.loc ? window.templates.webgl.goto_script(trace_call.loc) : [];
+  window.templates.webgl.goto_script(trace_call.loc, function_name);
 
   var state = window.templates.webgl.state_parameters(state_parameters);
 
   var header = [
-    "div", [
+    "div",
+    [
       [
-        "h2", [
+        "h2",
+        [
           ["span", "Call " + callnr + ": "],
-          ["span", function_name],
-        ],
-        "class", "compact"
+          function_name,
+          ["span", "("]
+        ]
       ],
-      function_arguments,
-      ["p", spec_link],
-      ["p", script_ref],
-      state
+      [
+        "div", function_arguments,
+        "class", "arguments"
+      ],
+      ["h2", ")"],
+      spec_link
     ],
-    "class", "draw-call-info"
+    "class", "call-header"
   ];
 
   var res = [header];
+  var content = [state];
+  res.push([
+    "div",
+    content,
+    "class", "call-info"
+  ]);
 
   // If additional content have been provided add it after the header.
-  if (template) res.push(template);
+  if (template) content.push(template);
 
   return res;
 };
@@ -750,7 +735,7 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
           var option = [ "option",
             attribute.name + " (" + pointer.buffer + ")",
             "value", attribute,
-            "pointer", pointer 
+            "pointer", pointer
           ];
           if (!pointer.buffer)
           {
@@ -838,7 +823,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
         ],
         [
           "td",
-          String(pointer.layout.size) + "x" 
+          String(pointer.layout.size) + "x"
             + window.webgl.api.constant_value_to_string(pointer.layout.type) + ",  +"
             + String(pointer.layout.offset) + "/" + String(pointer.layout.stride),
           "class", changed_this_call ? "changed" : ""
