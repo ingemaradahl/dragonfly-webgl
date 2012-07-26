@@ -503,7 +503,13 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
         text = Array.prototype.slice.call(this.data, 0, 4).map(function(val){
           return String(Math.round(val * 100) / 100);
         }).join(", ");
-        if (this.data.length > 4) text += ", ...";
+        this.extra_tooltip = "[" + Array.prototype.slice.call(this.data, 0, 4).join(", ");
+        if (this.data.length > 4)
+        {
+          text += ", ...";
+          this.extra_tooltip += ", ... (" + (this.data.length - 4) + " more elements)";
+        }
+        this.extra_tooltip += "]";
       }
       this.text = "[" + text + "]";
     }
