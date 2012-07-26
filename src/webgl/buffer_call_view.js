@@ -24,7 +24,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   var clear = function()
   {
-    this._container = null:
+    this._container = null;
     this._call_index = null;
     this._snapshot = null;
     this._buffer = null;
@@ -53,8 +53,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   {
     this._container = null;
   };
-
-  this._cle
 
   this._on_buffer_data = function(msg)
   {
