@@ -89,13 +89,13 @@ top-tabs tab .block-content
   line-height: 1;
 }
 
-top-tabs .two-rows .inline-block 
+top-tabs .two-rows .inline-block
 {
   vertical-align: middle;
   line-height: 2;
 }
 
-top-tabs .two-rows .block-content 
+top-tabs .two-rows .block-content
 {
   display: block;
 }
@@ -202,13 +202,19 @@ top-tabs .badge:empty
 .network_mode
 {
   background-image: url("../ui-images/mode_network.png");
-  width: 23px; 
+  width: 23px;
 }
 
 .resource_panel
 {
   background-image: url("../ui-images/mode_resources.png");
-  width: 23px; 
+  width: 23px;
+}
+
+.webgl_mode
+{
+  background-image: url("../ui-images/mode_webgl.png");
+  width: 26px;
 }
 
 .storage {

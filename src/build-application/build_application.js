@@ -70,7 +70,7 @@ window.app.profiles[window.app.profiles.DEFAULT] = ["window-manager",
                                                     "exec",
                                                     "ecmascript-debugger",
                                                     "cookie-manager",
-                                                    "resource-manager",
+                                                    //"resource-manager",
                                                     "document-manager"];
 window.app.profiles[window.app.profiles.DEFAULT].is_enabled = false;
 window.app.profiles[window.app.profiles.PROFILER] = ["window-manager",

@@ -407,6 +407,11 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
         {
           this._stop_in_script(stopAt);
         }
+        else if (!webgl.injected)
+        {
+          var continue_callback = (function () { this.__continue('run'); }).bind(this);
+          webgl.inject(stopAt.runtime_id, continue_callback);
+        }
         else
         {
           this.__continue('run');

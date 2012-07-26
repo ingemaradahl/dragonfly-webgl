@@ -1,0 +1,281 @@
+﻿.js-dd-dir-path,
+.webgl_snapshot_menu cst-webgl-title
+{
+  font-style: italic;
+  padding: 2px 8px;
+  color: #8f8f8f;
+  background-color: transparent;
+}
+
+.webgl_state_view .sortable-table .col_pname
+{
+  width: 40%;
+}
+
+/* Flipped images */
+img.flipped
+{
+  -o-transform: scaleY(-1);
+}
+
+
+.webgl_view.buffer > div,
+.webgl_view.texture > div,
+.webgl_view.program > div,
+.webgl_view.call > div,
+.webgl_view.draw-call > div
+{
+  text-align: left;
+  padding: 10px;
+}
+
+.webgl_view .table-info table
+{
+  border-collapse: collapse;
+}
+
+.webgl_view .table-info td,
+.webgl_view .table-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.webgl_view .table-info th
+{
+  text-align: left;
+  padding-right: 30px;
+  width: 140px;
+}
+
+/* Call header */
+.state-table
+{
+  width: 0% !important;
+  border: 1px solid #ccc;
+}
+
+.state-table .old-value
+{
+  color: #686868;
+}
+
+.color-box
+{
+  border: 1px solid #ccc;
+  width: 12px;
+  height: 12px;
+  background-position: 0px 0px, 6px 6px !important;
+  background-size: 12px 12px !important;
+  float: left;
+  margin-right: 5px;
+}
+
+.color-box > div
+{
+  width: 12px;
+  height: 12px;
+}
+
+/* Texture */
+.webgl_view div.loading-image
+{
+  /* Should work, but doesn't */
+  /* background: url(./ui-images/loading.png) no-repeat center center; */
+
+  border: 1px;
+  border-style: solid;
+  border-color: gray;
+  position: relative;
+}
+
+.loading-image > img
+{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
+}
+
+/* Program */
+.program-call div.js-resource-content
+{
+  border: 1px solid #ccc;
+  overflow-y: hidden;
+  overflow-x: auto;
+  margin-top: 0px;
+  margin-bottom: 15px;
+}
+
+.program div.js-resource-content
+{
+  border: 1px solid #ccc;
+  overflow-y: hidden;
+  overflow-x: auto;
+  margin-top: 0px;
+  margin-bottom: 15px;
+}
+.webgl_view .uniform-table .changed
+{
+  color: red;
+}
+
+.webgl_view .uniforms
+{
+  margin-bottom: 10px;
+  border: 1px solid #999999;
+}
+
+/* Buffer */
+
+.buffer-data-table
+{
+  margin-top: 10px;
+  border: 1px solid #999999;
+  width: 100px;
+}
+
+/* Trace */
+
+.trace-table span.link
+{
+  color: blue;
+}
+
+.trace-table tr.trace-error
+{
+  background-color: rgba(255,0,0, 0.4);
+}
+
+.trace-table > tr.trace-redundant:nth-child(2n)
+{
+  background-color: rgba(215,215,0, 0.4);
+}
+
+.trace-table > tr.trace-redundant
+{
+  background-color: rgba(240,240,0, 0.4);
+}
+
+.trace-table tr.trace-drawcall
+{
+  background: rgba(0,255,0, 0.4);
+}
+
+
+/* Draw Call */
+.webgl_view .webgl-holder
+{
+  border: 1px;
+  border-style: solid;
+  border-color: gray;
+
+  width: 100%;
+  max-width: 450px;
+  height: 450px;
+  overflow: hidden;
+
+  position:relative;
+  text-align: center;
+}
+
+.webgl-holder canvas
+{
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+.webgl-holder > div
+{
+  position: absolute;
+  visibility: hidden;
+  width: 100%;
+  height: 100%;
+  padding-top: 150px;
+
+  background-color: rgba(0, 0, 0, 0.5);
+  text-color: #ffffff;
+
+  font-weight: bold;
+  vertical-align: middle;
+  z-index: 2;
+}
+
+.webgl_view .draw-call-info
+{
+  padding: 10px;
+}
+
+.draw-call-info td,
+.draw-call-info th
+{
+  vertical-align: top;
+  word-wrap: break-word;
+}
+
+.draw-call-info th
+{
+  text-align: left;
+  padding-right: 30px;
+}
+
+.draw-call-info table
+{
+  border-collapse: collapse;
+}
+
+.draw-call-info span.link
+{
+  color: blue;
+}
+
+.draw-call-info h2.compact
+{
+  display: inline;
+}
+
+/* Texture */
+
+div.mipmap-table
+{
+  margin-top: 10px;
+}
+
+.mipmap-table > div
+{
+  font-weight: bold;
+}
+
+.mipmap-table > .sortable-table
+{
+  border: 1px solid #ccc;
+}
+
+.checkerboard
+{
+  background-color: #fefefe;
+  background-image: -o-linear-gradient(45deg, #cbcbcb 26%, transparent 25%, transparent 75%, #cbcbcb 75%, #cbcbcb), -o-linear-gradient(45deg, #cbcbcb 25%, transparent 26%, transparent 75%, #cbcbcb 75%, #cbcbcb);
+  background-size: 4px 4px;
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+.texture-container
+{
+  border: 1px solid #888888;
+  overflow: auto;
+  font-size: 0px;
+}
+
+.texture-container.fit
+{
+  display: inline-block;
+}
+
+.texture-container.fit img
+{
+  max-height: 100%;
+  max-width: 100%;
+}

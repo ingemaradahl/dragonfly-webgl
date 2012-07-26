@@ -365,6 +365,30 @@ cst-select-option-list,
   background-image: url("../ui-images/icons/icon_table.png");
 }
 
+.reload-webgl-test::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-texture::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-state::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-trace::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
+
+.reload-webgl-buffer::before
+{
+  background-image: url("../ui-images/icons/icon_reload.png");
+}
 
 .request_list\.clear-log-on-runtime-switch::before
 {
@@ -901,7 +925,7 @@ ui-menu > h2
   font-size: 11px;
   background: #fff;
   width: 170px;
-	height: 18px;
+  height: 18px;
   line-height: 14px;
   border: 1px solid #000;
   border-top-width: 0;
@@ -1456,6 +1480,16 @@ cst-select-option-list-container.color .ok-cancel
 cst-select-option-list-container.color .ok-cancel input + input
 {
   float: right;
+}
+
+.texture-box
+{
+  margin: 30px 50px 0 50px;
+  text-align: left;
+  padding: 1em;
+  border: 1px dashed #b3b3b3;
+  border-radius: 4px;
+  background: #f3f3f3;
 }
 
 .info-box

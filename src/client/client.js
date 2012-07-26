@@ -341,7 +341,12 @@ window.cls.Client = function()
                       layouts.profiler_rough_layout,
                       null,
                       services);
-  }
+    new CompositeView('webgl_mode',
+                      "WebGL", // TODO
+                      layouts.webgl_rough_layout,
+                      'webgl',
+                      services);
+  };
 
   this.create_window_controls = function()
   {
@@ -637,6 +642,38 @@ ui_framework.layouts.utils_rough_layout =
   ]
 };
 
+ui_framework.layouts.webgl_rough_layout =
+{
+  dir: 'h', width: 700, height: 700,
+  children:
+  [
+    {
+      name: 'webgl_panel',
+      children:
+      [
+        {
+          height: 350,
+          tabbar: { tabs: ['webgl_draw_call', 'webgl_texture_call', 'webgl_call' ,
+                           'webgl_buffer_call', 'webgl_program_call', 'webgl_program', 'webgl_texture']} // TODO add: , is_hidden: true }
+        }
+      ]
+    },
+    {
+      name: 'webgl_side_panel',
+      width: 350,
+      children:
+      [
+        {
+          tabs: function(services)
+          {
+            return ['trace-side-panel', 'buffer-side-panel', 'texture-side-panel' /* TODO: , 'program-side-panel' */];
+          }
+        }
+      ]
+    }
+  ]
+};
+
 ui_framework.layouts.storage_rough_layout =
 {
     dir: 'v',
@@ -681,6 +718,7 @@ ui_framework.layouts.main_layout =
       {view: 'js_mode', tab_class: JavaScriptTab},
       'network_mode',
       'resource_panel',
+      'webgl_mode',
       'storage',
       'profiler_mode',
       {view: 'console_mode', tab_class: ErrorConsoleTab},
