@@ -8,7 +8,7 @@ cls.WebGLTexture = function ()
 };
 
 // Retrieves the image data
-cls.WebGLTexture.prototype.get_texture_data = function()
+cls.WebGLTexture.prototype.request_data = function()
 {
   var finalize = function (level_imgs)
   {
@@ -32,11 +32,10 @@ cls.WebGLTexture.prototype.get_texture_data = function()
 cls.WebGLTexture.prototype.show = function()
 {
   window.views.webgl_texture.show_texture(this);
-
   if (this.img && !this.img.data)
   {
-    this.get_texture_data();
-  }
+    this.request_data();
+   }
 };
 
 cls.WebGLTexture.prototype.toString = function()

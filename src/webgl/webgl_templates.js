@@ -116,11 +116,11 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
   {
     var next_row = [];
     next_row.push(["td", String(row_number)]);
-    // iterating over columns.
+    // Iterating over columns.
     for (var j=0; j<columns; j++)
     {
       var value = buffer.data[row_number*columns+j];
-      if (value)
+      if (value !== undefined)
       {
         next_row.push(["td", String(value)]);
       }

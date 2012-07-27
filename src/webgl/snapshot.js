@@ -517,7 +517,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.buffer_index == null) return;
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
-      // TODO Define an action
+      // TODO Define an action.
       //this.action = this.buffer.show.bind(this.buffer);
       break;
     case "WebGLTexture":
@@ -525,7 +525,8 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       this.texture = snapshot.textures.lookup(this.texture_index, call_index);
       if (this.texture == null) return;
       this.text = String(this.texture);
-      this.action = this.texture.show.bind(this.texture);
+      // TODO Define an action.
+      //this.action = this.texture.show.bind(this.texture);
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;

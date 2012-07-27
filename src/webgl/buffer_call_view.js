@@ -34,7 +34,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   this.display_by_call = function(snapshot, call_index, buffer)
   { 
-    if (call_index !== -1)
+    if (call_index !== -1 && !buffer)
     {
       buffer = snapshot.trace[call_index].linked_object.buffer;
     }
