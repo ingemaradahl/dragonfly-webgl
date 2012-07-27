@@ -111,17 +111,21 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
   var max_elements = max_rows * columns;
 
   var row_number = 0;
+  // Iterating over rows.
   for (var i = 0; i < Math.min(number_of_rows, max_rows); i++)
   {
     var next_row = [];
     next_row.push(["td", String(row_number)]);
+    // iterating over columns.
     for (var j=0; j<columns; j++)
     {
-      next_row.push(
-        ["td", String(buffer.data[row_number*columns+j])]);
+      var value = buffer.data[row_number*columns+j];
+      if (value)
+      {
+        next_row.push(["td", String(value)]);
+      }
     }
     row_number++;
-
     data_table_rows.push(["tr", [next_row]]);
   }
 
