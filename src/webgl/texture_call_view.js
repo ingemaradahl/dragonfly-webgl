@@ -30,7 +30,6 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     this._texture = texture;
 
     var template = window.templates.webgl.texture(texture);
-
     this.render_with_header(snapshot, call_index, template);
   };
 

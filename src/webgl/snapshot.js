@@ -75,6 +75,8 @@ cls.WebGLSnapshotArray = function(context_id)
         _array_elements: {
           _class: cls.WebGLTexture,
           levels: {
+            // TODO this doesnt work becuase levels is an array and img
+            // is inside these entries. 
             img: {
               _action: cls.Scoper.ACTIONS.NOTHING
             }
