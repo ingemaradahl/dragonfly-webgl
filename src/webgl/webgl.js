@@ -75,6 +75,17 @@ cls.WebGL.WebGLDebugger = function ()
     this.snapshots[context_id].send_snapshot_request();
   };
 
+  /**
+   * Sends the current relevant settings to the host
+   */
+  this.send_settings = function(context_id)
+  {
+    context_id = context_id || this.contexts[0];
+    var scoper = new cls.Scoper();
+    var settings = window.settings.snapshot.map;
+    scoper.execute_remote_function(this.interfaces[context_id].set_settings, true, settings);
+  };
+
   this._send_injection = function (rt_id, cont_callback)
   {
     var finalize = function (events)
@@ -85,12 +96,26 @@ cls.WebGL.WebGLDebugger = function ()
       cont_callback();
     };
 
-    var scoper = new cls.Scoper(finalize, this);
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+    var settings_complete = function (settings_object)
+    {
+      var scoper = new cls.Scoper(finalize, this);
+      var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+      scoper.set_reviver_tree({
+        _depth: 1
+      });
+      scoper.eval_script(rt_id, script, [["_scope_settings", settings_object.object_id]], false, true);
+      //scoper.eval_script(rt_id, script, [], false, true);
+    };
+
+    var script = "(function(){return " + JSON.stringify(window.settings.snapshot.map) + ";})()";
+    var scoper = new cls.Scoper(settings_complete, this)
     scoper.set_reviver_tree({
-      _depth: 1
+      _depth: 0,
+      _action: cls.Scoper.ACTIONS.NOTHING
     });
-    scoper.eval_script(rt_id, script, [], false, true);
+    scoper.eval_script(rt_id, script, [], false);
+
+
   };
 
   this._on_new_context = function (message)

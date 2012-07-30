@@ -15,26 +15,7 @@ cls.WebGL.RPCs.prepare = function(fun)
   return "(" + String(fun) + ").call()";
 };
 
-
 /* The following functions will never be called by the dragonfly instance */
-
-
-/**
- * Retrieves the handler interface from a canvas after a WebGL context have been
- * created. canvas and canvas_map should be defined by Dragonfly.
- */
-cls.WebGL.RPCs.get_handler = function()
-{
-  for (var c in canvas_map)
-  {
-    if (canvas_map[c].canvas === canvas)
-    {
-      return canvas_map[c].handler.get_interface();
-    }
-  }
-
-  return null;
-};
 
 /**
  * Calls a function bound by scope to the variable name f
@@ -46,6 +27,9 @@ cls.WebGL.RPCs.call_function = function()
 
 
 cls.WebGL.RPCs.injection = function () {
+  // Settings are set by Scope
+  var settings = _scope_settings || {};
+
   // Global events, is populated below the definition of the MessageQueue.
   var events = {};
 
@@ -102,7 +86,7 @@ cls.WebGL.RPCs.injection = function () {
     // We will keep all native functions and enumerators in this object
     var gl = {};
 
-    var handler = new Handler(this, gl, canvas);
+    var handler = new Handler(this, gl, canvas, settings);
 
     // Stores the oldest error that have occured since last call to getError
     // When there have been no error it should have the value NO_ERROR
@@ -842,7 +826,6 @@ cls.WebGL.RPCs.injection = function () {
           call.args.push(args[i]);
         }
       }
-      var HISTORY_LENGTH = 4; // TODO make setting?
       if (object.history == null)
       {
         object.history = [];
@@ -855,7 +838,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       else
       {
-        object.history[object.history.number++ % HISTORY_LENGTH] = call;
+        object.history[object.history.number++ % this.settings['history_length']] = call;
       }
     }
 
@@ -977,10 +960,11 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Handles communication between the wrapped context and Dragonfly.
    */
-  function Handler(context, gl, canvas)
+  function Handler(context, gl, canvas, settings)
   {
     this.gl = gl;
     this.context = context;
+    this.settings = settings;
 
     this.current_frame = 0;
 
@@ -1033,6 +1017,12 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
+
+    this.set_settings = function(settings)
+    {
+      this.settings = settings;
+    };
+    this._interface.set_settings = this.set_settings.bind(this);
 
     var generic_lookup_index = function(list, subkey)
     {

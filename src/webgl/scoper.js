@@ -77,10 +77,13 @@ cls.Scoper.prototype.set_reviver_tree = function(reviver_tree)
  *   remote function and also a runtime id.
  * @param {Boolean} release optional, if the root object should be released or not.
  *   Defaults to true.
+ * @param {Object} args optional, an object that will be parsed to JSON and
+ *   given to the remote function as an argument
  */
-cls.Scoper.prototype.execute_remote_function = function(remote_function, release)
+cls.Scoper.prototype.execute_remote_function = function(remote_function, release, args)
 {
-  var script = "(function(){return f();}).call();";
+  args = args ? JSON.stringify(args) : "";
+  var script = "(function(){return f(" + args + ");}).call();";
   this.runtime_id = remote_function.runtime_id;
   var object_id = remote_function.object_id;
   this.eval_script(this.runtime_id, script, [["f", object_id]], release);
@@ -155,13 +158,13 @@ cls.Scoper.prototype._eval_callback = function(status, message, release)
         var object = message[OBJECT][OBJECT_TYPE].indexOf("Array") !== -1 ? [] : {};
         object.object_id = object_id;
         object.runtime_id = this.runtime_id;
-        this.callback.apply(this, [object].concat(this.callback_arguments));
+        this.callback.apply(this.callback_that, [object].concat(this.callback_arguments));
       }
     }
     else
     {
       var value = this.value_reviver(message[TYPE], message[VALUE]);
-      this.callback.apply(this, [value].concat(this.callback_arguments));
+      this.callback.apply(this.callback_that, [value].concat(this.callback_arguments));
     }
   }
   else if (message[STATUS] === "unhandled-exception" &&
