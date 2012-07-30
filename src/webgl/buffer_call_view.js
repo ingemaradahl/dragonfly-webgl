@@ -105,8 +105,9 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     }
   };
 
-  this._on_layout_input = function()
+  this._on_layout_input = function(e)
   {
+    if (e.keyCode !== 13) return;
     if (!this._buffer) return;
     if (this._buffer.data_is_loaded())
     {
@@ -125,7 +126,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   var eh = window.eventHandlers;
   eh.click["webgl-select-layout"] = this._on_layout_select.bind(this);
-  eh.change["webgl-input-layout"] = this._on_layout_input.bind(this);
+  eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
 
   this.init(id, name, container_class);
 };

@@ -93,7 +93,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
       ["select",
       buffer_options,
       "handler", "webgl-select-layout",
-      "id", "webgl-layout-selector"
+      "id", "webgl-layout-selector" 
       ],
     ];
 
@@ -104,7 +104,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
           "webgl-input-layout", "id", "webgl-layout-input",
           "hidden", "true", "maxlength", "20",
           "value", "E.g. \"a,b,c,d\""
-        ],
+      ],
     ];
 
   return [
@@ -128,7 +128,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
       history,
       coordinate_selector,
       inputbox,
-      data_table
+      data_table 
     ]
   ];
 };
@@ -538,7 +538,7 @@ window.templates.webgl.texture = function(texture)
     base_image,
     info_table,
     mipmap_table,
-	history
+	  history
   ];
 };
 
