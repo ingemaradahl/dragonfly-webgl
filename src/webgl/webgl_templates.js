@@ -357,7 +357,7 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.texture_image = function(level)
+window.templates.webgl.image = function(level)
 {
   var image;
   if (level.img == null)
@@ -425,14 +425,14 @@ window.templates.webgl.texture = function(texture)
   }
   else
   {
-    base_image = window.templates.webgl.texture_image(level0);
+    base_image = window.templates.webgl.image(level0);
   }
 
   var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
-      var image = window.templates.webgl.texture_image(level);
+      var image = window.templates.webgl.image(level);
       var image_source = null;
       if (level.url)
         image_source = { name: "Image source", value: level.url };
@@ -715,13 +715,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
-  var fbo = draw_call.fbo;
-  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.data];
-
-  if (fbo.flipped)
-  {
-    img.push("class", "flipped");
-  }
+  var img = window.templates.webgl.image(draw_call.fbo);
 
   var table_rows = [];
 
