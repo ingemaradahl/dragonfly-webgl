@@ -19,9 +19,9 @@ img.flipped
 }
 
 
-.webgl_view.buffer > div,
-.webgl_view.texture > div,
-.webgl_view.program > div,
+.webgl_view.buffer-call > div,
+.webgl_view.texture-call > div,
+.webgl_view.program-call > div,
 .webgl_view.call > div,
 .webgl_view.draw-call > div
 {
@@ -49,6 +49,26 @@ img.flipped
 }
 
 /* Call header */
+.call-header
+{
+  padding: 5px !important;
+  background-color: rgba(0, 0, 0, 0.118);
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.149);
+  font-weight: 400;
+}
+
+.call-header h2
+{
+  display: inline;
+}
+
+.call-header .arguments
+{
+  display: inline;
+  vertical-align: 10%;
+}
+
 .state-table
 {
   width: 0% !important;
@@ -75,6 +95,23 @@ img.flipped
 {
   width: 12px;
   height: 12px;
+}
+
+.goto-script
+{
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.specification
+{
+  cursor: pointer;
+  margin: 6px;
+  padding: 2px;
+  font-size: 9px;
+  color: #000;
+  background-color: #ccc;
+  border: 1px solid #666;
 }
 
 /* Texture */
@@ -203,11 +240,6 @@ img.flipped
   z-index: 2;
 }
 
-.webgl_view .draw-call-info
-{
-  padding: 10px;
-}
-
 .draw-call-info td,
 .draw-call-info th
 {
@@ -229,11 +261,6 @@ img.flipped
 .draw-call-info span.link
 {
   color: blue;
-}
-
-.draw-call-info h2.compact
-{
-  display: inline;
 }
 
 /* Texture */

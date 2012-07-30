@@ -19,16 +19,19 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     this._container = container;
   };
 
-  this.display_by_call = function(snapshot, call_index)
+  this.display_by_call = function(snapshot, call_index, texture)
   {
+    if (call_index !== -1 && !texture)
+    {
+      texture = snapshot.trace[call_index].linked_object.texture;
+    }
     this._snapshot = snapshot;
     this._call_index = call_index;
+    this._texture = texture;
 
-    var call = snapshot.trace[call_index];
+    texture.request_data();
 
-    var template = window.templates.webgl.texture(call.linked_object.texture);
-    call.linked_object.texture.show();
-
+    var template = window.templates.webgl.texture(texture);
     this.render_with_header(snapshot, call_index, template);
   };
 
@@ -39,7 +42,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
   this._on_texture_data = function(msg)
   {
-    if (this._container)
+    var texture = msg.texture;
+    if (this._container && this._texture === texture)
     {
       var template = window.templates.webgl.texture(msg.texture);
       this.render_with_header(this._snapshot, this._call_index, template);
@@ -160,11 +164,13 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
-
     var texture = table_data[item_id].texture;
+    var snapshot =
+      window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture");
-    texture.show();
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
+    window.views["webgl_texture_call"].display_by_call(snapshot, texture.call_index,
+      texture);
   };
 
   this._on_refresh = function()

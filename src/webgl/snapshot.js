@@ -75,10 +75,12 @@ cls.WebGLSnapshotArray = function(context_id)
         _array_elements: {
           _class: cls.WebGLTexture,
           levels: {
-            img: {
-              _action: cls.Scoper.ACTIONS.NOTHING
+            _array_elements: {
+              img: {
+                _action: cls.Scoper.ACTIONS.NOTHING
+              }
             }
-          },
+          }
         }
       },
       _depth: 9,
@@ -337,7 +339,7 @@ cls.WebGLSnapshotArray = function(context_id)
       for (var i=0; i<drawcall.program.attributes.length; i++)
       {
         var attribute = drawcall.program.attributes[i];
-        
+
         // Add lookup function
         attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 
@@ -517,7 +519,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.buffer_index == null) return;
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
-      // TODO Define an action
+      // TODO Define an action.
       //this.action = this.buffer.show.bind(this.buffer);
       break;
     case "WebGLTexture":
@@ -525,7 +527,8 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       this.texture = snapshot.textures.lookup(this.texture_index, call_index);
       if (this.texture == null) return;
       this.text = String(this.texture);
-      this.action = this.texture.show.bind(this.texture);
+      // TODO Define an action.
+      //this.action = this.texture.show.bind(this.texture);
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
