@@ -75,12 +75,12 @@ cls.WebGLSnapshotArray = function(context_id)
         _array_elements: {
           _class: cls.WebGLTexture,
           levels: {
-            // TODO this doesnt work becuase levels is an array and img
-            // is inside these entries. 
-            img: {
-              _action: cls.Scoper.ACTIONS.NOTHING
+            _array_elements: {
+              img: {
+                _action: cls.Scoper.ACTIONS.NOTHING
+              }
             }
-          },
+          }
         }
       },
       _depth: 9,
@@ -339,7 +339,7 @@ cls.WebGLSnapshotArray = function(context_id)
       for (var i=0; i<drawcall.program.attributes.length; i++)
       {
         var attribute = drawcall.program.attributes[i];
-        
+
         // Add lookup function
         attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 

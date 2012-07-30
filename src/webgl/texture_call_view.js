@@ -24,10 +24,12 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     if (call_index !== -1 && !texture)
     {
       texture = snapshot.trace[call_index].linked_object.texture;
-    }  
+    }
     this._snapshot = snapshot;
     this._call_index = call_index;
     this._texture = texture;
+
+    texture.request_data();
 
     var template = window.templates.webgl.texture(texture);
     this.render_with_header(snapshot, call_index, template);
@@ -163,7 +165,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
     var texture = table_data[item_id].texture;
-    var snapshot = 
+    var snapshot =
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
