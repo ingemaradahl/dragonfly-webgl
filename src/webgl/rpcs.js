@@ -33,19 +33,6 @@ cls.WebGL.RPCs.injection = function () {
   // Global events, is populated below the definition of the MessageQueue.
   var events = {};
 
-  // TODO Temporary, see HTMLCanvas.prototype.getContext why
-  var contexts = [];
-
-  // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
-  window.requestAnimationFrame = function (fun)
-  {
-    window.setTimeout(fun, 1000 / 60);
-    for (var c = 0; c < contexts.length; c++)
-    {
-      if (contexts[c].new_frame) contexts[c].new_frame();
-    }
-  };
-
   /**
    * Clone regular and typed arrays.
    */
@@ -649,21 +636,9 @@ cls.WebGL.RPCs.injection = function () {
       return function(result, args)
       {
         var gl = this.gl;
-        var fbo = null;
-        var width, height, fbo;
-        if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
-        {
-          width = fbo.width;
-          height = fbo.height;
-        }
-        else
-        {
-          // The default FBO is being used, assume it has the same dimensions as
-          // the viewport.. TODO: Consider better heuristic for finding dimension.
-          var viewport = gl.getParameter(gl.VIEWPORT);
-          width = viewport[2];
-          height = viewport[3];
-        }
+        var viewport = gl.getParameter(gl.VIEWPORT);
+        var width = viewport[2];
+        var height = viewport[3];
 
         var img = {
           width : width,
@@ -674,17 +649,6 @@ cls.WebGL.RPCs.injection = function () {
 
         if (this.settings['fbo-readpixels'])
         {
-          // TODO temporary until improved dimension finding is in place.
-          // http://glge.org/demos/cardemo/
-          if (!width || !height) return;
-
-          // Image data will be stored as RGBA - 4 bytes per pixel
-          var size = width * height * 4;
-          var arr = new ArrayBuffer(size);
-          var pixels = new Uint8Array(arr);
-
-          gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
           // Encode to PNG
           var canvas = document.createElement("canvas");
           canvas.width = width;
@@ -692,16 +656,8 @@ cls.WebGL.RPCs.injection = function () {
           var ctx = canvas.getContext("2d");
 
           var img_data = ctx.createImageData(width, height);
-
-          // TODO this is so slooooow.
-          for (var i=0; i<size; i+=4)
-          {
-            img_data.data[i] = pixels[i];
-            img_data.data[i+1] = pixels[i+1];
-            img_data.data[i+2] = pixels[i+2];
-            img_data.data[i+3] = pixels[i+3];
-          }
-
+          var pixels = img_data.data;
+          gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
           ctx.putImageData(img_data, 0, 0);
 
           img.data = canvas.toDataURL("image/png");
@@ -718,6 +674,7 @@ cls.WebGL.RPCs.injection = function () {
         this.snapshot.add_drawcall(img, target, buffer.index, program_index);
 
         // Check whether an color attachment texture have been drawn to
+        var fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING);
         if (fbo)
         {
           var tex = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
@@ -925,7 +882,7 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
 
-    //canvas.onframeend = this.new_frame.bind(this);
+    canvas.onframeend = this.new_frame.bind(this);
 
     var orig_getError = this.getError;
     this.getError = function()
@@ -951,9 +908,6 @@ cls.WebGL.RPCs.injection = function () {
     {
       return gl;
     }
-
-    // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
-    contexts.push(gl);
 
     var handler = wrap_context.call(gl, this);
 
