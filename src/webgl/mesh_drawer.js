@@ -103,6 +103,18 @@ cls.WebGLMeshDrawer = function(gl)
     var MAX_SIZE = 5;
     var cache_arr = [];
 
+    var equals = function (obj_a, obj_b)
+    {
+      for (var key in obj_a)
+      {
+        if (obj_a.hasOwnProperty(key) && obj_a[key] !== obj_b[key])
+        {
+          return false;
+        }
+      }
+      return true;
+    };
+
     this.post = function(gl_buffer, attribute, state, element_buffer)
     {
       cache_arr.push({
@@ -120,8 +132,8 @@ cls.WebGLMeshDrawer = function(gl)
       for (var i=0; i<cache_arr.length; i++)
       {
         var c = cache_arr[i];
-        if (c.attrib === attribute
-            && c.state === state
+        if (equals(c.attrib, attribute)
+            && equals(c.state, state)
             && c.element_buffer === element_buffer)
         {
           if (i !== MAX_SIZE)
@@ -138,11 +150,6 @@ cls.WebGLMeshDrawer = function(gl)
     };
   })();
 
-};
-
-cls.WebGLMeshDrawer.prototype.set_program = function(program)
-{
-  this.program = program;
 };
 
 /* Checks whether the buffer data for the vertex buffer and, if it exists, the
@@ -236,7 +243,7 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function()
   }
 };
 
-cls.WebGLMeshDrawer.prototype.get_triangles = function()
+cls.WebGLMeshDrawer.prototype.build_triangles = function()
 {
   var state = this.state;
   var element_buffer = this.element_buffer;
@@ -338,7 +345,98 @@ cls.WebGLMeshDrawer.prototype.get_triangles = function()
   return triangles;
 };
 
-// TODO: Add callbacks for when data is downloading
+cls.WebGLMeshDrawer.prototype.build_lines = function()
+{
+  var state = this.state;
+  var element_buffer = this.element_buffer;
+  var indices;
+  var start, end;
+  var gl = this.gl;
+
+  if (state.indexed)
+  {
+    indices = element_buffer.data;
+    start = state.offset / (element_buffer.type === gl.UNSIGNED_SHORT
+      ? 2
+      : 1);
+  }
+  else
+  {
+    start = state.first;
+  }
+
+  end = start + state.count;
+
+  var lines = [];
+  switch (state.mode)
+  {
+    case gl.LINES:
+      if (state.indexed)
+      {
+        for (var i=start; i<end; i+=2)
+        {
+          lines.push([indices[i], indices[i+1]]);
+        }
+      }
+      else
+      {
+        for(var i=start; i<end; i+=2)
+        {
+          lines.push([i, i+1]);
+        }
+      }
+      break;
+    case gl.LINE_STRIP:
+      if (state.indexed)
+      {
+        for (var i=start; i<end-1; i++)
+        {
+          lines.push([indices[i], indices[i+1]]);
+        }
+      }
+      else
+      {
+        for (var i=start; i<end-1; i++)
+        {
+          lines.push([i, i+1]);
+        }
+      }
+      break;
+    case gl.LINE_LOOP:
+      if (state.indexed)
+      {
+        for (var i=start; i<end; i++)
+        {
+          if (i === end-1)
+          {
+            lines.push([indices[i], indices[start]]);
+            break;
+          }
+
+          lines.push([indices[i], indices[i+1]]);
+        }
+      }
+      else
+      {
+        for (var i=start; i<end; i++)
+        {
+          if (i === end-1)
+          {
+            lines.push([i, start]);
+            break;
+          }
+
+          lines.push([i, i+1]);
+        }
+      }
+      break;
+    default:
+      break;
+  }
+
+  return lines;
+};
+
 cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
 {
   var gl = this.gl;
@@ -414,20 +512,15 @@ cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
   return result;
 };
 
-// TODO: add callback for when data mangling starts
 cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 {
-  var preview = this.cache.lookup(this.layout, this.state, this.element_buffer)
+  var preview = this.cache.lookup(this.layout, this.state, this.element_buffer);
   if (!preview)
   {
+    // Notify that data mangling starts
     this.on_buffer_prepare();
-    var gl = this.gl;
-    var triangles = this.get_triangles();
-    var buffer_data = this.get_buffer_data();
 
-    // Storing position, normal and wireframe data interleaved
-    var vertex_data = new Float32Array(triangles.length * 3 * 13*4);
-    var i=0;
+    var gl = this.gl;
 
     // Find the max extents of the model, defining an AABB
     var extent = {
@@ -439,63 +532,168 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
       max_z:-Infinity
     };
 
-    for (var t=0; t<triangles.length; t++)
+    var mode = this.state.mode;
+    if (mode === gl.TRIANGLES || mode === gl.TRIANGLE_STRIP || mode === gl.TRIANGLE_FAN)
     {
-      // Vertex positions
-      var p0 = buffer_data[triangles[t][0]];
-      var p1 = buffer_data[triangles[t][1]];
-      var p2 = buffer_data[triangles[t][2]];
+      var triangles = this.build_triangles();
+      var buffer_data = this.get_buffer_data();
 
-      // Edges
-      //var v0 = [p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]];
-      var v1 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
-      var v2 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
+      // Storing position, normal and wireframe data interleaved
+      var vertex_data = new Float32Array(triangles.length * 3 * 13*4);
+      var i=0;
 
-      // Find vector normal
-      var normal = vec3.create();
-      vec3.cross(v2, v1, normal);
-      vec3.normalize(normal);
+      /* A bit of explanation: Even though the draw call on the host succeeded
+       * without errors, there's still the possibility that the buffer has
+       * insufficient data w.r.t. to the 'count' argument used with drawArrays.
+       * This can happen when two attributes are set, one with sufficient data
+       * and one without. If we want to draw the attribute without all the data,
+       * the number of triangles produced by build_triangles will be to great.
+       * This is an unusual case, wich should explain the use of the try-catch
+       * pattern
+       */
+      try {
+        for (var t=0; t<triangles.length; t++)
+        {
+          // Vertex positions
+          var p0 = buffer_data[triangles[t][0]];
+          var p1 = buffer_data[triangles[t][1]];
+          var p2 = buffer_data[triangles[t][2]];
 
-      // Find bounding box
-      extent.min_x = Math.min(extent.min_x, p0[0]);
-      extent.max_x = Math.max(extent.max_x, p0[0]);
-      extent.min_y = Math.min(extent.min_y, p0[1]);
-      extent.max_y = Math.max(extent.max_y, p0[1]);
-      extent.min_z = Math.min(extent.min_z, p0[2]);
-      extent.max_z = Math.max(extent.max_z, p0[2]);
+          // Edges
+          //var v0 = [p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]];
+          var v1 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
+          var v2 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
 
-      // Supply each vertex with it's normal and the two other vertices
-      // Also, append the index which to use on the distance vector in the shader
-      vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
-      vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
-      vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
-      vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+          // Find vector normal
+          var normal = vec3.create();
+          vec3.cross(v2, v1, normal);
+          vec3.normalize(normal);
 
-      vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
-      vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
-      vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
-      vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+          // Find bounding box
+          extent.min_x = Math.min(extent.min_x, p0[0]);
+          extent.max_x = Math.max(extent.max_x, p0[0]);
+          extent.min_y = Math.min(extent.min_y, p0[1]);
+          extent.max_y = Math.max(extent.max_y, p0[1]);
+          extent.min_z = Math.min(extent.min_z, p0[2]);
+          extent.max_z = Math.max(extent.max_z, p0[2]);
 
-      vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
-      vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
-      vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
-      vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+          // Supply each vertex with it's normal and the two other vertices
+          // Also, append the index which to use on the distance vector in the shader
+          vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2]; vertex_data[i++] = 0.0;
+          vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+          vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
+          vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+
+          vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2]; vertex_data[i++] = 1.0;
+          vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2];
+          vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+          vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+
+          vertex_data[i++] = p2[0]; vertex_data[i++] = p2[1]; vertex_data[i++] = p2[2]; vertex_data[i++] = 2.0;
+          vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+          vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+          vertex_data[i++] = normal[0]; vertex_data[i++] = normal[1]; vertex_data[i++] = normal[2];
+        }
+      }
+      catch (e)
+      {
+        // Make sure we don't issue incomplete triangles by truncating the
+        // vertex_data array. Each vertex contains 13 indices in vertex_data,
+        // and each triangle contains 3 vertices -> 3 * 13 == 39
+        i--;
+        if (i % 39) {
+          i = i - i%39;
+          vertex_data = vertex_data.subarray(0, i);
+        }
+      }
+
+      var vertex_buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertex_data, gl.STATIC_DRAW);
+
+      preview = {
+        buffer : vertex_buffer,
+        count : i / 13,
+        mode : gl.TRIANGLES
+      };
     }
+    else // LINES || LINE_STRIP || LINE_LOOP
+    {
+      var lines = this.build_lines();
+      var buffer_data = this.get_buffer_data();
 
-    var vertex_buffer = gl.createBuffer();
-    vertex_buffer.count = triangles.length * 3;
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertex_data, gl.STATIC_DRAW);
+      // Storing position in three dimensions with two vertices for each line
+      var vertex_data = new Float32Array(lines.length * 3 * 2);
+      var i=0;
+
+      /* See corresponding notes for triangles above explaining the use of
+       * try-catch here.
+       */
+      try
+      {
+        for (var t=0; t<lines.length; t++)
+        {
+          // Vertex positions
+          var p0 = buffer_data[lines[t][0]];
+          var p1 = buffer_data[lines[t][1]];
+
+          // Find bounding box
+          extent.min_x = Math.min(extent.min_x, p0[0]);
+          extent.max_x = Math.max(extent.max_x, p0[0]);
+          extent.min_y = Math.min(extent.min_y, p0[1]);
+          extent.max_y = Math.max(extent.max_y, p0[1]);
+          extent.min_z = Math.min(extent.min_z, p0[2]);
+          extent.max_z = Math.max(extent.max_z, p0[2]);
+
+          vertex_data[i++] = p0[0]; vertex_data[i++] = p0[1]; vertex_data[i++] = p0[2];
+          vertex_data[i++] = p1[0]; vertex_data[i++] = p1[1]; vertex_data[i++] = p1[2];
+        }
+      }
+      catch (e)
+      {
+        i--;
+        if (i % 6) {
+          i = i - i%6;
+          vertex_data = vertex_data.subarray(0, i);
+        }
+      }
+
+      var vertex_buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertex_data, gl.STATIC_DRAW);
+
+      preview = {
+        buffer : vertex_buffer,
+        count : i/3,
+        mode: gl.LINES
+      };
+    }
 
     // Figure out max distance from origo to bounding box corners
     var exts = [extent.min_x, extent.max_x, extent.min_y, extent.max_y, extent.min_z, extent.max_z];
     var max_extent = exts.reduce(function(p, c) { return Math.max(p, Math.abs(c)) }, 0);
 
-    preview = {
-      buffer : vertex_buffer,
-      count : triangles.length * 3,
-      max_extent : max_extent
-    };
+    var center;
+    if (((extent.min_x <= 0 && extent.max_x >= 0) || (extent.min_x === extent.max_x)) &&
+        ((extent.min_y <= 0 && extent.max_y >= 0) || (extent.min_y === extent.max_y)) &&
+        ((extent.min_z <= 0 && extent.max_z >= 0) || (extent.min_z === extent.min_z)))
+    {
+      // If origo is inside the bounding box, assume that the model is arranged
+      // around it
+      center = [0.0, 0.0, 0.0];
+    }
+    else
+    {
+      // Otherwise center the model around the middle of the binding box
+      center = [
+        extent.min_x + (extent.max_x-extent.min_x)/2,
+        extent.min_y + (extent.max_y-extent.min_y)/2,
+        extent.min_z + (extent.max_z-extent.min_z)/2,
+      ];
+    }
+
+    preview.max_extent = max_extent;
+    preview.center = center;
 
     this.cache.post(preview, this.layout, this.state, this.element_buffer);
   }
@@ -503,7 +701,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   this.preview = preview;
 
   this.distance = preview.max_extent * 2;
-  this.zfar = this.distance * 8;
+  this.zfar = Math.max(this.distance * 8, 500.0);
 
   this.disable_info_box();
 
@@ -528,10 +726,12 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_b
 cls.WebGLMeshDrawer.prototype.model_view_matrix = function()
 {
   var mvMatrix = mat4.create();
+  var c = this.preview.center;
   mat4.identity(mvMatrix);
   mat4.translate(mvMatrix, [0.0, 0.0, -this.distance]);
   mat4.rotate(mvMatrix, this.deg_to_rad(this.rot.y), [1, 0, 0]);
   mat4.rotate(mvMatrix, this.deg_to_rad(this.rot.x), [0, 1, 0]);
+  mat4.translate(mvMatrix, [-c[0], -c[1], -c[2]]);
 
   return mvMatrix;
 };
@@ -549,8 +749,6 @@ cls.WebGLMeshDrawer.prototype.deg_to_rad = function(degrees)
 
 cls.WebGLMeshDrawer.prototype.render = function(program)
 {
-  program = program || this.program;
-
   var gl = this.gl;
 
   var width = gl.canvas.width;
@@ -558,7 +756,7 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  if (!(this.preview && program))
+  if (!this.preview)
     return;
 
   this.set_rotation();
@@ -567,19 +765,73 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   mat4.perspective(45, width / height, 0.01, this.zfar, pMatrix);
   var mvMatrix = this.model_view_matrix();
 
-  gl.useProgram(program);
+  var program;
+  switch(this.preview.mode)
+  {
+    case gl.TRIANGLES:
+      program = gl.programs.buffer;
+      break;
+    case gl.LINES:
+      program = gl.programs.lines;
+      break;
+  }
+  if (this.program !== program)
+  {
+    gl.useProgram(program);
+    this.program = program;
+  }
 
   gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
-  gl.uniform2f(program.windowScaleUniform, width, height);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, this.preview.buffer);
-  var stride = 52; // 4 Byte * (3*3 Float + 4 Float)
-  gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
-  gl.vertexAttribPointer(program.position1Attrib, 3, gl.FLOAT, false, stride, 16);
-  gl.vertexAttribPointer(program.position2Attrib, 3, gl.FLOAT, false, stride, 28);
-  gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 40);
 
-  gl.drawArrays(gl.TRIANGLES, 0, this.preview.count);
+  if (this.preview.mode === gl.TRIANGLES)
+  {
+    gl.uniform2f(program.windowScaleUniform, width, height);
+
+    var stride = 52; // 4 Byte * (3*3 Float + 4 Float)
+    gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribPointer(program.position1Attrib, 3, gl.FLOAT, false, stride, 16);
+    gl.vertexAttribPointer(program.position2Attrib, 3, gl.FLOAT, false, stride, 28);
+    gl.vertexAttribPointer(program.normalAttrib, 3, gl.FLOAT, false, stride, 40);
+  }
+  else
+  {
+    gl.vertexAttribPointer(program.positionAttrib, 3, gl.FLOAT, false, 0, 0);
+  }
+
+  gl.drawArrays(this.preview.mode, 0, this.preview.count);
+
+  /* TODO: Somehow, drawing lines with the lines program doesn't seem to
+   * work. The code below is taken from a working example, where the
+   * shader program is identical to the one used for drawing lines here.
+   *
+   * Try to get some help when Erik get's back..
+   */
+  //var shaderProgram = gl.programs.lines;
+  //gl.useProgram(shaderProgram);
+  //this.program = shaderProgram;
+
+  //var lineVertexPositionBuffer = gl.createBuffer();
+  //gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexPositionBuffer);
+  //var vertices = [
+  //  -1.0, 0.0, 0.0,
+  //  1.0, 0.0, 0.0
+  //];
+  //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+  //lineVertexPositionBuffer.itemSize = 3;
+  //lineVertexPositionBuffer.numItems = 2;
+
+
+  //mat4.identity(mvMatrix);
+
+  //mat4.translate(mvMatrix, [0.0, 0.0, 7.0]);
+  //gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexPositionBuffer);
+  //gl.vertexAttribPointer(shaderProgram.positionAttrib, lineVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  //gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+  //gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+  //gl.drawArrays(gl.LINES, 0, lineVertexPositionBuffer.numItems);
+
 };
 

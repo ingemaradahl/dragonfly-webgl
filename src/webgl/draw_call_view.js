@@ -35,7 +35,6 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
-    preview.set_program(window.webgl.gl.programs.buffer);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
   }.bind(this);
