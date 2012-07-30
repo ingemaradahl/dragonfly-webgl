@@ -18,7 +18,7 @@ window.templates.webgl.reload_info = function(buffer)
   ];
 };
 
-window.templates.webgl.buffer_base = function(buffer, coordinates)
+window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item)
 {
   var data_table;
   if (buffer.data_is_loaded())
@@ -52,19 +52,28 @@ window.templates.webgl.buffer_base = function(buffer, coordinates)
     ];
   });
 
-  var coordinate_selector = ["div",
-      ["select",
+  var buffer_options = [
           ["option", "(x)", "value", "x"],
           ["option", "(x,y,z)", "value", "x,y,z"],
           ["option", "(u,v)", "value", "u,v"],
           ["option", "(x,y,z,u,v)", "value", "x,y,z,u,v"],
           ["option", "Custom", "value", "custom"],
+      ];
+  
+  if (typeof(selected_item) === "number")
+  {
+    buffer_options[selected_item].push("selected", "selected");
+  };
+
+  var coordinate_selector = ["div",
+      ["select",
+      buffer_options,
       "handler", "webgl-select-layout",
       "id", "webgl-layout-selector"
       ],
     ];
 
-var history = window.templates.webgl.history(buffer);
+  var history = window.templates.webgl.history(buffer);
 
   var inputbox = ["div",
       ["input", "type", "text", "handler",
