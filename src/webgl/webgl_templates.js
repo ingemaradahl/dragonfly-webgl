@@ -991,3 +991,34 @@ window.templates.webgl.program = function(call_index, program)
 
   return html;
 };
+
+window.templates.webgl.settings = function(settings)
+{
+    var port = 9000;
+    var error = null;
+    var PORT_MIN = 1024;
+    var PORT_MAX = 65535;
+    return [
+      ['label',
+        ui_strings.S_LABEL_PORT + ': ',
+        ['input',
+          'type', 'number',
+          'min', PORT_MIN,
+          'max', PORT_MAX,
+          'value', Math.min(PORT_MAX, Math.max(port, PORT_MIN))
+        ],
+        ['span',
+          ui_strings.S_BUTTON_TEXT_APPLY,
+          'handler', 'apply-remote-debugging',
+          'class', 'ui-button',
+          'tabindex', '1'
+        ]
+      ],
+      ['p',
+        error || "",
+        'id', 'remote-debug-info'
+      ],
+      'id', 'remote-debug-settings'
+    ];
+  
+};
