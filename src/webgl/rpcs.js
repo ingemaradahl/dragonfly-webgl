@@ -1005,8 +1005,9 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     /* Requests a snapshot of all WebGL data for the next frame */
-    this.request_snapshot = function()
+    this.request_snapshot = function(settings)
     {
+      this.settings = settings;
       this.capture_next_frame = true;
     };
     this._interface.request_snapshot = this.request_snapshot.bind(this);
@@ -1022,12 +1023,6 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
-
-    this.set_settings = function(settings)
-    {
-      this.settings = settings;
-    };
-    this._interface.set_settings = this.set_settings.bind(this);
 
     var generic_lookup_index = function(list, subkey)
     {
