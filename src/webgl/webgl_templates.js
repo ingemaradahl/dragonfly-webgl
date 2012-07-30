@@ -124,7 +124,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
             "table-info"
           ],
         ]
-      ]on,
+      ],
       history,
       coordinate_selector,
       inputbox,
@@ -538,7 +538,7 @@ window.templates.webgl.texture = function(texture)
     base_image,
     info_table,
     mipmap_table,
-	history
+	  history
   ];
 };
 
