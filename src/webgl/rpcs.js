@@ -649,7 +649,7 @@ cls.WebGL.RPCs.injection = function () {
       return function(result, args)
       {
         var gl = this.gl;
-
+        var fbo = null;
         var width, height, fbo;
         if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
         {
@@ -665,42 +665,48 @@ cls.WebGL.RPCs.injection = function () {
           height = viewport[3];
         }
 
-        // TODO temporary until improved dimension finding is in place.
-        // http://glge.org/demos/cardemo/
-        if (!width || !height) return;
-
-        // Image data will be stored as RGBA - 4 bytes per pixel
-        var size = width * height * 4;
-        var arr = new ArrayBuffer(size);
-        var pixels = new Uint8Array(arr);
-
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-        // Encode to PNG
-        var canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        var ctx = canvas.getContext("2d");
-
-        var img_data = ctx.createImageData(width, height);
-
-        // TODO this is so slooooow.
-        for (var i=0; i<size; i+=4)
-        {
-          img_data.data[i] = pixels[i];
-          img_data.data[i+1] = pixels[i+1];
-          img_data.data[i+2] = pixels[i+2];
-          img_data.data[i+3] = pixels[i+3];
-        }
-
-        ctx.putImageData(img_data, 0, 0);
-
         var img = {
-          data : canvas.toDataURL("image/png"),
           width : width,
           height : height,
-          flipped : true
+          data : null,
+          flipped : false
         };
+
+        if (this.settings['fbo-readpixels'])
+        {
+          // TODO temporary until improved dimension finding is in place.
+          // http://glge.org/demos/cardemo/
+          if (!width || !height) return;
+
+          // Image data will be stored as RGBA - 4 bytes per pixel
+          var size = width * height * 4;
+          var arr = new ArrayBuffer(size);
+          var pixels = new Uint8Array(arr);
+
+          gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+          // Encode to PNG
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+
+          var img_data = ctx.createImageData(width, height);
+
+          // TODO this is so slooooow.
+          for (var i=0; i<size; i+=4)
+          {
+            img_data.data[i] = pixels[i];
+            img_data.data[i+1] = pixels[i+1];
+            img_data.data[i+2] = pixels[i+2];
+            img_data.data[i+3] = pixels[i+3];
+          }
+
+          ctx.putImageData(img_data, 0, 0);
+
+          img.data = canvas.toDataURL("image/png");
+          img.flipped = true;
+        }
 
         // Figure out buffer binding, which buffer we are drawing
         var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
@@ -708,7 +714,6 @@ cls.WebGL.RPCs.injection = function () {
 
         var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
         var program_index = this.lookup_program(program).index;
-
 
         this.snapshot.add_drawcall(img, target, buffer.index, program_index);
 
