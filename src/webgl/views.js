@@ -303,3 +303,107 @@ cls.WebGLSnapshotSelect = function(id)
 };
 
 cls.WebGLSnapshotSelect.prototype = new CstSelect();
+
+// -----------------------------------------------------------------------------
+
+cls.WebGLSideView = Object.create(ViewBase, {
+  _container: {
+    writable: true,
+    value: null
+  },
+  createView: {
+    writable: true, configurable: true,
+    value: function(container)
+    {
+      this._container = container;
+      this.render();
+    }
+  },
+  ondestroy: {
+    writable: true, configurable: true,
+    value: function()
+    {
+      this._container = null;
+    }
+  },
+  render: {
+    value: function()
+    {
+      if (!this._container) return;
+
+      if (window.webgl.taking_snapshot)
+      {
+        this._container.clearAndRender(window.templates.webgl.taking_snapshot());
+      }
+      else if (window.webgl.runtime_id === -1)
+      {
+        this._container.clearAndRender(window.templates.webgl.reload_info());
+      }
+      else if (window.webgl.contexts.length === 0)
+      {
+        this._container.clearAndRender(window.templates.webgl.no_contexts());
+      }
+      else
+      {
+        this._render();
+      }
+    }
+  },
+  init_events: {
+    value: function()
+    {
+      var eh = window.eventHandlers;
+      eh.click["webgl-" + this.id + "-take-snapshot"] = this.on_take_snapshot.bind(this);
+
+      messages.addListener('webgl-changed-snapshot', this.on_snapshot_change.bind(this));
+      messages.addListener('webgl-taking-snapshot', this.render.bind(this));
+    }
+  },
+  on_take_snapshot: {
+    value: function()
+    {
+      if (!this._container) return;
+
+      var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+      if (ctx_id != null)
+      {
+        window.webgl.request_snapshot(ctx_id);
+      }
+
+      if (this._on_take_snapshot) this._on_take_snapshot(ctx_id);
+      this.render();
+    }
+  },
+  on_snapshot_change: {
+    value: function(snapshot)
+    {
+      if (this._on_snapshot_change) this._on_snapshot_change(snapshot);
+      this.render();
+    }
+  }
+});
+
+cls.WebGLSideView.create_ui_widgets = function(id)
+{
+  new ToolbarConfig(
+    id,
+    [
+      {
+        handler: 'webgl-' + id + '-take-snapshot',
+        title: "Take snapshot",
+        icon: 'webgl-take-snapshot'
+      }
+    ],
+    null,
+    null,
+    [
+      {
+        handler: 'select-webgl-snapshot',
+        title: "Select WebGL snapshot", // TODO
+        type: 'dropdown',
+        class: 'context-select-dropdown',
+        template: window['cst-selects']['snapshot-select'].getTemplate()
+      }
+    ]
+  );
+};

@@ -419,6 +419,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./ecma-debugger/watches/propertyeditor.js"/>
 <script src="./ecma-debugger/jssourcetooltip.js"/>
 
+
 <script src="./webgl/webgl_templates.js"/>
 <script src="./webgl/webgl.js"/>
 <script src="./webgl/scoper.js"/>
@@ -431,16 +432,15 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/state.js"/>
 <script src="./webgl/texture.js"/>
 <script src="./webgl/rpcs.js"/>
+
 <script src="./webgl/views.js"/>
 <script src="./webgl/draw_call_view.js"/>
-<script src="./webgl/texture_call_view.js"/>
-<script src="./webgl/buffer_call_view.js"/>
-<script src="./webgl/program_call_view.js"/>
 <script src="./webgl/call_view.js"/>
 <script src="./webgl/program_view.js"/>
 <script src="./webgl/texture_view.js"/>
 <script src="./webgl/trace_view.js"/>
 <script src="./webgl/buffer_view.js"/>
+
 <script src="./webgl/sh_main.js"/>
 <script src="./webgl/sh_glsl.js"/>
 <script src="./webgl/gl-matrix/gl-matrix-min.js"/>
@@ -449,6 +449,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/shaders/buffer.fs" id="buffer-fs" type="x-shader/x-fragment"/>
 <script src="./webgl/shaders/lines.vs" id="lines-vs" type="x-shader/x-vertex"/>
 <script src="./webgl/shaders/lines.fs" id="lines-fs" type="x-shader/x-fragment"/>
+
 
 <script src="./searches/jssearchview.js"/>
 

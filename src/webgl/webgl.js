@@ -21,6 +21,9 @@ cls.WebGL.WebGLDebugger = function ()
   /* Each context have its own snapshot data object, the context id is used as a key. */
   this.snapshots = {};
 
+  /* True while taking and transfering a snapshot */
+  this.taking_snapshot = false;
+
   this.api = new cls.WebGLAPI();
   this.state = new cls.WebGLState();
 
@@ -61,6 +64,7 @@ cls.WebGL.WebGLDebugger = function ()
     this.runtime_id = -1;
     this.contexts = [];
     this.snapshots = [];
+    this.taking_snapshot = false;
 
     messages.post('webgl-clear');
   };
@@ -72,6 +76,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.request_snapshot = function(context_id)
   {
     context_id = context_id || this.contexts[0];
+    this.taking_snapshot = true;
     this.snapshots[context_id].send_snapshot_request();
   };
 

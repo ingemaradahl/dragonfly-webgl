@@ -1,47 +1,18 @@
-﻿"use strict";
+"use strict";
 
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
-cls.WebGLProgramView = function(id, name, container_class)
+/**
+ * @constructor
+ * @extends cls.WebGLHeaderViewBase
+ */
+
+cls.WebGLProgramCallView = function(id, name, container_class)
 {
-  this._context = null;
   this._container = null;
-  this._content = null;
 
-  this.createView = function(container)
-  {
-    this._container = container;
-
-    this._render();
-  };
-
-  this.ondestroy = function()
-  {
-    this._container = null;
-  };
-
-  this._clear = function ()
-  {
-    this._context = null;
-  };
-
-  this._render = function()
-  {
-    if (this._container == null || this._content == null) return;
-    this._container.clearAndRender(this._content);
-    sh_highlightDocument();
-  };
-
-  this._on_context_change = function(ctx)
-  {
-    this._context = ctx;
-  };
-
-  this._on_error = function(error)
-  {
-  };
-
+  // Can be used to hilight attributes as well
   var hilight_uniform = function(uniform)
   {
     var regex = new RegExp("(\\s|^)(" + uniform.name + ")(\\s|$)");
@@ -55,88 +26,59 @@ cls.WebGLProgramView = function(id, name, container_class)
         var child_node = program.childNodes[j];
         if (regex.test(child_node.data))
         {
-          // TODO: Only wrap non-white space characters
-          var new_span = document.createElement("span");
-          new_span.className = "webgl-hilight-uniform";
-          new_span.appendChild(document.createTextNode(child_node.data));
+          // Some processing is needed to not wrap whitespace characters in the
+          // hilight
+          var span = document.createElement("span");
+          var em = document.createElement("em");
+          em.className = "search-highlight-selected";
+          var non_ws = child_node.data.replace(/^\s+|\s+$/g, '');
+          em.appendChild(document.createTextNode(non_ws));
+
+          // Add whitespace before the uniform symbol
+          var start_ws = child_node.data.match(/^\s+/);
+          if (start_ws)
+            span.appendChild(document.createTextNode(start_ws[0]));
+
+          span.appendChild(em);
+
+          // ..and add whitespace after the uniform symbol
+          var end_ws = child_node.data.match(/\s+$/);
+          if (end_ws)
+            span.appendChild(document.createTextNode(end_ws));
 
           var par = child_node.parentNode;
-          par.replaceChild(new_span, child_node);
+          par.replaceChild(span, child_node);
         }
       }
 
     }
   };
 
-  this.show_program = function(call_index, program)
+  this.createView = function(container)
   {
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_program");
-
-    var content = [];
-    this._content= window.templates.webgl.program(call_index, program);
-    this._render();
-  }.bind(this);
-
-  this.show_uniform = function(call_index, program, uniform)
-  {
-    this.show_program(call_index, program);
-    hilight_uniform(uniform);
+    this._container = container;
   };
 
-  messages.addListener('webgl-clear', this._clear.bind(this));
-  messages.addListener('webgl-context-selected', this._on_context_change.bind(this));
-  messages.addListener('webgl-error', this._on_error.bind(this));
+  this.display_by_call = function(snapshot, call_index)
+  {
+    var call = snapshot.trace[call_index];
+    var template = window.templates.webgl.program(call_index, call.linked_object.program);
+    this.render_with_header(snapshot, call_index, template);
+    sh_highlightDocument();
+
+    // Hilight eventual uniform/attribute
+    var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
+    if (uniattrib) hilight_uniform(uniattrib);
+  };
+
+  this._ondestroy = function()
+  {
+    this._container = null;
+  };
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLProgramView.prototype = ViewBase;
+cls.WebGLProgramCallView.prototype = cls.WebGLHeaderViewBase;
 
-cls.WebGLProgramView.create_ui_widgets = function()
-{
-  return;
-  new ToolbarConfig(
-    'webgl_program',
-
-  //new CstSelectToolbarSettings
-  //(
-  //  'webgl_program',
-  //  [
-  //    'link',
-  //    'visited',
-  //    'hover',
-  //    'active',
-  //    'focus',
-  //    'selection'
-  //  ],
-  //  'webgl_items'
-  //);
-
-    [
-      {
-        handler: 'refresh-webgl-buffer',
-        title: "Refresh buffers",
-        icon: 'reload-webgl-buffer'
-      }
-    ],
-    null,
-    null,
-    [
-      {
-        handler: 'select-webgl-context',
-        title: "Select WebGL context", // TODO
-        type: 'dropdown',
-        class: 'context-select-dropdown',
-        template: window['cst-selects']['context-select'].getTemplate()
-      },
-      {
-        handler: 'select-webgl-context',
-        title: "Select trace", // TODO
-        type: 'dropdown',
-        class: 'context-select-dropdown',
-        template: window['cst-selects']['trace-select'].getTemplate()
-      }
-    ]
-  );
-};
 

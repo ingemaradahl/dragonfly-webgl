@@ -263,20 +263,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                                  "Program call",
                                  "scroll webgl_view program-call");
 
-
-    new cls.WebGLBufferView("webgl_buffer",
-                            "Buffer", // TODO
-                            "scroll webgl_view buffer");
-
-    new cls.WebGLProgramView("webgl_program",
-                             "Program", // TODO
-                             "scroll webgl_view program");
-    cls.WebGLProgramView.create_ui_widgets();
-
-    new cls.WebGLTextureView("webgl_texture",
-                             "Texture",
-                             "scroll webgl_view texture");
-
     // Tabs to the right
 
     new cls.WebGLTraceView("trace-side-panel",
