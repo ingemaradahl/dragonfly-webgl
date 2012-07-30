@@ -136,7 +136,7 @@ cls.WebGLBufferCallView.prototype = cls.WebGLHeaderViewBase;
 
 /**
  * @constructor
- * @extends ViewBase
+ * @extends cls.WebGLSideView
  */
 cls.WebGLBufferSideView = function(id, name, container_class)
 {

@@ -5,7 +5,7 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends ViewBase
+ * @extends cls.WebGLSideView
  */
 cls.WebGLTraceView = function(id, name, container_class)
 {

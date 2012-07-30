@@ -93,6 +93,10 @@ cls.WebGLTextureCallView.prototype = cls.WebGLHeaderViewBase;
 
 // ----------------------------------------------------------------------------
 
+/**
+ * @constructor
+ * @extends cls.WebGLSideView
+ */
 cls.WebGLTextureSideView = function(id, name, container_class)
 {
   this._content = null;
