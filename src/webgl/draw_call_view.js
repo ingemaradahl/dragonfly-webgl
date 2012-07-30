@@ -13,10 +13,12 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this._element_buffer = null;
   this._state = null;
 
+  this._snapshot = null;
+  this._call_index = 0;
+
   this.createView = function(container)
   {
     this._container = container;
-    this._render();
   };
 
   var add_canvas = function()
@@ -39,24 +41,22 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     preview.render();
   }.bind(this);
 
-  this._render = function()
+  var render = function()
   {
-    this._container.clearAndRender(["div", "No draw call"]);
-  };
+    if (!this._container || !this._snapshot)
+      return;
 
-  this.ondestroy = function()
-  {
-    this._container = null;
-  };
+    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+    var trace_call = this._snapshot.trace[this._call_index];
 
-  this.display_by_call = function(snapshot, call_index)
-  {
-    var draw_call = snapshot.drawcalls.get_by_call(call_index);
-    var trace_call = snapshot.trace[call_index];
+    // Make sure the fbo image is downloading if isn't but exists
+    if (draw_call.fbo.img && !draw_call.fbo.img.data && !draw_call.fbo.img.downloading)
+    {
+      draw_call.fbo.request_data();
+    }
 
     var draw_template = window.templates.webgl.drawcall(draw_call, trace_call);
-
-    this.render_with_header(snapshot, call_index, draw_template);
+    this.render_with_header(this._snapshot, this._call_index, draw_template);
 
     if (window.webgl.gl)
     {
@@ -81,8 +81,18 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
       render_preview();
     }
+  }.bind(this);
 
-    return;
+  this.ondestroy = function()
+  {
+    this._container = null;
+  };
+
+  this.display_by_call = function(snapshot, call_index)
+  {
+    this._snapshot = snapshot;
+    this._call_index = call_index;
+    render();
   };
 
   var on_attribute_select = function(evt, target)
@@ -106,6 +116,8 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   eh.click["webgl-select-attribute"] = on_attribute_select.bind(this);
   eh.click["webgl-drawcall-buffer"] = on_buffer_click.bind(this);
   eh.click["webgl-draw-argument"] = this._on_argument_click.bind(this);
+
+  messages.addListener('webgl-fbo-data', render.bind(this));
 
   this.init(id, name, container_class);
 };

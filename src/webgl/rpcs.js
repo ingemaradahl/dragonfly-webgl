@@ -1589,9 +1589,21 @@ cls.WebGL.RPCs.injection = function () {
 
     this.add_drawcall = function (fbo, buffer_target, buffer_index, program_index)
     {
+      // Wrap up the image data in another object to make sure that scoper
+      // doesn't examine it.
+      var img = {
+        width : fbo.width,
+        height : fbo.height,
+      };
+
+      if (fbo.data)
+      {
+        img.img = { data: fbo.data, flipped: fbo.flipped }
+      }
+
       this.drawcalls.push({
         call_index : this.call_index,
-        fbo : fbo,
+        fbo : img,
         program_index : program_index,
         element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });
