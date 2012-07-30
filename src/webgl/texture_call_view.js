@@ -7,7 +7,6 @@ cls.WebGL || (cls.WebGL = {});
  * @constructor
  * @extends cls.WebGLHeaderViewBase
  */
-
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
   this._container = null;
@@ -94,10 +93,18 @@ cls.WebGLTextureCallView.prototype = cls.WebGLHeaderViewBase;
 
 // ----------------------------------------------------------------------------
 
+/**
+ * @constructor
+ * @extends cls.WebGLSideView
+ */
 cls.WebGLTextureSideView = function(id, name, container_class)
 {
-  this._container = null;
   this._content = null;
+
+  var clear = function()
+  {
+    this._content = null;
+  };
 
   this.createView = function(container)
   {
@@ -111,12 +118,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       );
     }
 
-    this._render();
-  };
-
-  this.ondestroy = function()
-  {
-    this._container = null;
+    this.render();
   };
 
   this._render = function()
@@ -126,7 +128,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
     if (this._content)
     {
-      this._table.set_data(this._content)
+      this._table.set_data(this._content);
       this._container.clearAndRender(this._table.render());
     }
     else
@@ -153,12 +155,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
         call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
         id : i++
       };
-
     });
-
-    this._render();
   };
-
 
   this._on_table_click = function(evt, target)
   {
@@ -169,17 +167,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
-    window.views["webgl_texture_call"].display_by_call(snapshot, texture.call_index,
-      texture);
-  };
-
-  this._on_refresh = function()
-  {
-    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
-    if (ctx_id != null)
-    {
-      window.webgl.request_snapshot(ctx_id);
-    }
+    window.views.webgl_texture_call.display_by_call(snapshot, texture.call_index, texture);
   };
 
   this.tabledef = {
@@ -212,42 +200,20 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   };
 
   this.groupby = {
-
   };
 
   var eh = window.eventHandlers;
-
   eh.click["webgl-texture-table"] = this._on_table_click.bind(this);
-  eh.click["webgl-texture-refresh"] = this._on_refresh.bind(this);
 
-  messages.addListener('webgl-changed-snapshot', this._on_snapshot_change.bind(this));
+  messages.addListener('webgl-clear', clear.bind(this));
 
   this.init(id, name, container_class);
+  this.init_events();
 };
 
-cls.WebGLTextureSideView.prototype = ViewBase;
+cls.WebGLTextureSideView.prototype = cls.WebGLSideView;
 
 cls.WebGLTextureSideView.create_ui_widgets = function()
 {
-  new ToolbarConfig(
-    'texture-side-panel',
-    [
-      {
-        handler: 'webgl-texture-refresh',
-        title: "Refresh textures", // TODO
-        icon: 'reload-webgl-texture'
-      }
-    ],
-    null,
-    null,
-    [
-      {
-        handler: 'select-webgl-snapshot',
-        title: "Select WebGL snapshot", // TODO
-        type: 'dropdown',
-        class: 'context-select-dropdown',
-        template: window['cst-selects']['snapshot-select'].getTemplate()
-      }
-    ]
-  );
+  cls.WebGLSideView.create_ui_widgets("texture-side-panel");
 };

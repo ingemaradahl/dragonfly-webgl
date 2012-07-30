@@ -447,8 +447,8 @@ window.load_screen_timeout = window.setTimeout(function()
 
 <script src="./webgl/shaders/buffer.vs" id="buffer-vs" type="x-shader/x-vertex"/>
 <script src="./webgl/shaders/buffer.fs" id="buffer-fs" type="x-shader/x-fragment"/>
-<script src="./webgl/shaders/texture.vs" id="texture-vs" type="x-shader/x-vertex"/>
-<script src="./webgl/shaders/texture.fs" id="texture-fs" type="x-shader/x-fragment"/>
+<script src="./webgl/shaders/lines.vs" id="lines-vs" type="x-shader/x-vertex"/>
+<script src="./webgl/shaders/lines.fs" id="lines-fs" type="x-shader/x-fragment"/>
 
 <script src="./searches/jssearchview.js"/>
 

@@ -4,7 +4,7 @@ window.templates = window.templates || {};
 window.templates.webgl = window.templates.webgl || {};
 
 
-window.templates.webgl.reload_info = function(buffer)
+window.templates.webgl.reload_info = function()
 {
   return [
     "div",
@@ -13,6 +13,30 @@ window.templates.webgl.reload_info = function(buffer)
       "class", "ui-button reload-window",
       "handler", "reload-window",
       "tabindex", "1"
+    ],
+    "class", "info-box"
+  ];
+};
+
+window.templates.webgl.no_contexts = function()
+{
+  return [
+    "div",
+    [
+      "span", "No WebGL contexts have been found.",
+    ],
+    "class", "info-box"
+  ];
+};
+
+window.templates.webgl.no_snapshots = function()
+{
+  return [
+    "div",
+    [
+      [
+        "span", "Go ahead take a snapshot.",
+      ]
     ],
     "class", "info-box"
   ];
@@ -59,7 +83,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
           ["option", "(x,y,z,u,v)", "value", "x,y,z,u,v"],
           ["option", "Custom", "value", "custom"],
       ];
-  
+
   if (typeof(selected_item) === "number")
   {
     buffer_options[selected_item].push("selected", "selected");

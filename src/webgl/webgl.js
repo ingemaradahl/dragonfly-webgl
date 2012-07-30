@@ -21,6 +21,9 @@ cls.WebGL.WebGLDebugger = function ()
   /* Each context have its own snapshot data object, the context id is used as a key. */
   this.snapshots = {};
 
+  /* True while taking and transfering a snapshot */
+  this.taking_snapshot = false;
+
   this.api = new cls.WebGLAPI();
   this.state = new cls.WebGLState();
 
@@ -61,6 +64,7 @@ cls.WebGL.WebGLDebugger = function ()
     this.runtime_id = -1;
     this.contexts = [];
     this.snapshots = [];
+    this.taking_snapshot = false;
 
     messages.post('webgl-clear');
   };
@@ -72,6 +76,7 @@ cls.WebGL.WebGLDebugger = function ()
   this.request_snapshot = function(context_id)
   {
     context_id = context_id || this.contexts[0];
+    this.taking_snapshot = true;
     this.snapshots[context_id].send_snapshot_request();
   };
 
@@ -208,27 +213,39 @@ cls.WebGL.WebGLDebugger = function ()
         shaders["buffer-fs"]
       );
 
-      gl.useProgram(program);
-
       program.position0Attrib = gl.getAttribLocation(program, "aVertex0Position");
-      gl.enableVertexAttribArray(program.position0Attrib);
       program.position1Attrib = gl.getAttribLocation(program, "aVertex1Position");
-      gl.enableVertexAttribArray(program.position1Attrib);
       program.position2Attrib = gl.getAttribLocation(program, "aVertex2Position");
-      gl.enableVertexAttribArray(program.position2Attrib);
       program.normalAttrib = gl.getAttribLocation(program, "aVertexNormal");
-      gl.enableVertexAttribArray(program.normalAttrib);
 
       program.pMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
       program.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
       program.windowScaleUniform = gl.getUniformLocation(program, "uWindowScale");
 
-      gl.useProgram(null);
+      gl.enableVertexAttribArray(program.position0Attrib);
+      gl.enableVertexAttribArray(program.position1Attrib);
+      gl.enableVertexAttribArray(program.position2Attrib);
+      gl.enableVertexAttribArray(program.normalAttrib);
+
+      return program;
+    };
+
+    var compile_lines_program = function ()
+    {
+      var program = WebGLUtils.compile_program(
+        shaders["lines-vs"],
+        shaders["lines-fs"]
+      );
+
+      program.positionAttrib = gl.getAttribLocation(program, "aVertexPosition");
+
+      gl.enableVertexAttribArray(program.positionAttrib);
 
       return program;
     };
 
     gl.programs.buffer = compile_buffer_program();
+    gl.programs.lines = compile_lines_program();
   };
 
   var load_shaders = function(callback)
