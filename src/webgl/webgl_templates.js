@@ -42,12 +42,12 @@ window.templates.webgl.no_snapshots = function()
   ];
 };
 
-window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item)
+window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item, start_row)
 {
   var data_table;
   if (buffer.data_is_loaded())
   {
-    data_table = window.templates.webgl.buffer_data_table(buffer, coordinates);
+    data_table = window.templates.webgl.buffer_data_table(buffer, coordinates, start_row);
   }
   else
   {
@@ -99,10 +99,17 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
 
   var history = window.templates.webgl.history(buffer);
 
-  var inputbox = ["div",
+  var row_inputbox = ["div",
+    ["input", "type", "text", "handler",
+      "webgl-input-row", "id", "webgl-row-input",
+      "maxlength", "30",
+      "value", "Start at row.."]
+  ];
+
+  var layout_inputbox = ["div",
       ["input", "type", "text", "handler",
           "webgl-input-layout", "id", "webgl-layout-input",
-          "hidden", "true", "maxlength", "20",
+          "hidden", "true", "maxlength", "30",
           "value", "E.g. \"a,b,c,d\""
       ],
     ];
@@ -126,14 +133,15 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
         ]
       ],
       history,
+      row_inputbox,
       coordinate_selector,
-      inputbox,
+      layout_inputbox,
       data_table
     ]
   ];
 };
 
-window.templates.webgl.buffer_data_table = function(buffer, coordinates)
+window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_row)
 {
   var coordinate_list = coordinates || "x";
       coordinate_list = coordinate_list.split(",");
@@ -142,10 +150,21 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
   var number_of_rows = Math.ceil(buffer.data.length/columns);
   var max_rows = 100;
   var max_elements = max_rows * columns;
-
   var row_number = 0;
+
+  if (!start_row)
+  {
+    start_row = 0;
+  }
+  start_row = parseInt(start_row);
+  row_number = start_row;
+  if (isNaN(start_row))
+  {
+    start_row = 0;
+    row_number = 0;
+  }
   // Iterating over rows.
-  for (var i = 0; i < Math.min(number_of_rows, max_rows); i++)
+  for (var i = start_row; i < Math.min(number_of_rows, (start_row + max_rows)); i++)
   {
     var next_row = [];
     next_row.push(["td", String(row_number)]);
@@ -164,9 +183,9 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
 
   // TODO temporary solution since Dragonfly will freeze when to many elements
   var more_data = [];
-  if (buffer.data.length > max_elements)
+  if (buffer.data.length > row_number*columns)
   {
-    var diff = buffer.data.length - max_elements;
+    var diff = buffer.data.length - row_number*columns;
     more_data = [
       "div",
       "There are " + String(diff) + " more elements."
@@ -197,6 +216,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
     "class",
     "sortable-table buffer-data-table"
   ];
+
   return [data_table, more_data];
 };
 
@@ -357,7 +377,7 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.texture_image = function(level)
+window.templates.webgl.image = function(level)
 {
   var image;
   if (level.img == null)
@@ -425,14 +445,14 @@ window.templates.webgl.texture = function(texture)
   }
   else
   {
-    base_image = window.templates.webgl.texture_image(level0);
+    base_image = window.templates.webgl.image(level0);
   }
 
   var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
-      var image = window.templates.webgl.texture_image(level);
+      var image = window.templates.webgl.image(level);
       var image_source = null;
       if (level.url)
         image_source = { name: "Image source", value: level.url };
@@ -766,13 +786,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
-  var fbo = draw_call.fbo;
-  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.data];
-
-  if (fbo.flipped)
-  {
-    img.push("class", "flipped");
-  }
+  var img = window.templates.webgl.image(draw_call.fbo);
 
   var table_rows = [];
 
@@ -1065,4 +1079,35 @@ window.templates.webgl.program = function(call_index, program)
 
 
   return html;
+};
+
+window.templates.webgl.settings = function(settings)
+{
+    var port = 9000;
+    var error = null;
+    var PORT_MIN = 1024;
+    var PORT_MAX = 65535;
+    return [
+      ['label',
+        ui_strings.S_LABEL_PORT + ': ',
+        ['input',
+          'type', 'number',
+          'min', PORT_MIN,
+          'max', PORT_MAX,
+          'value', Math.min(PORT_MAX, Math.max(port, PORT_MIN))
+        ],
+        ['span',
+          ui_strings.S_BUTTON_TEXT_APPLY,
+          'handler', 'apply-remote-debugging',
+          'class', 'ui-button',
+          'tabindex', '1'
+        ]
+      ],
+      ['p',
+        error || "",
+        'id', 'remote-debug-info'
+      ],
+      'id', 'remote-debug-settings'
+    ];
+
 };

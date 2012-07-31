@@ -329,6 +329,25 @@ cls.WebGLSnapshotArray = function(context_id)
       var call_index = drawcall.call_index;
       this.trace[call_index].drawcall = true;
 
+      // Add fbo image data downloader function
+      if (drawcall.fbo.img) {
+        drawcall.fbo.request_data = function()
+        {
+          if (this.img.downloading)
+            return;
+
+          var finalize = function (data)
+          {
+            this.img = data;
+            messages.post('webgl-fbo-data', this);
+          };
+
+          var scoper = new cls.Scoper(finalize, this);
+          scoper.examine_object(this.img, true);
+          this.img.downloading = true;
+        }.bind(drawcall.fbo);
+      }
+
       // Link up eventual element array buffer if it was used
       if (drawcall.element_buffer)
       {
@@ -346,7 +365,7 @@ cls.WebGLSnapshotArray = function(context_id)
         // Add lookup function
         attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 
-        // Connect buffers to vetrex attribute bindings
+        // Connect buffers to vertex attribute bindings
         for (var j=0; j<attribute.pointers.length; j++)
         {
           var pointer = attribute.pointers[j];

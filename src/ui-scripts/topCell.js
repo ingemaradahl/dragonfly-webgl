@@ -185,6 +185,7 @@ var TopCell = function(layout, setDimensions, onresize, TopToolbar, services)
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_GENERAL, "general"),
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_DOCUMENT, "document"),
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_SCRIPT, "script"),
+      new SettingsGroup("WebGL", "webgl"), // TODO
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_CONSOLE, "console"),
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_KEYBOARD_SHORTCUTS, "keyboard-shortcuts"),
       new SettingsGroup(ui_strings.S_SETTINGS_HEADER_ABOUT, "about")
