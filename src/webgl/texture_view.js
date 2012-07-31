@@ -18,6 +18,11 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     this._container = container;
   };
 
+  this._ondestroy = function()
+  {
+    this._container = null;
+  };
+
   this.display_by_call = function(snapshot, call_index, texture)
   {
     if (call_index !== -1 && !texture)
@@ -32,11 +37,6 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
     var template = window.templates.webgl.texture(texture);
     this.render_with_header(snapshot, call_index, template);
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
   };
 
   this._on_texture_data = function(msg)
@@ -83,6 +83,9 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     window.onmouseup = on_texture_end_drag;
   };
 
+  var eh = window.eventHandlers;
+  eh.mousedown["webgl-texture-image"] = on_texture_start_drag.bind(this);
+  eh.mouseup["webgl-texture-image"] = on_texture_end_drag.bind(this);
 
   messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
 

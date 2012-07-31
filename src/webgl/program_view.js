@@ -59,6 +59,11 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     this._container = container;
   };
 
+  this._ondestroy = function()
+  {
+    this._container = null;
+  };
+
   this.display_by_call = function(snapshot, call_index)
   {
     var call = snapshot.trace[call_index];
@@ -69,11 +74,6 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     // Hilight eventual uniform/attribute
     var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
     if (uniattrib) hilight_uniform(uniattrib);
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
   };
 
   this.init(id, name, container_class);

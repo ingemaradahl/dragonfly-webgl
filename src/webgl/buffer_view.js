@@ -10,11 +10,15 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
-  this._call_index = null;
-  this._snapshot = null;
-  this._buffer = null;
-  this._buffer_layouts = {};
-  this._inputbox_hidden = true;
+  var clear = function()
+  {
+    this._call_index = null;
+    this._snapshot = null;
+    this._buffer = null;
+    this._buffer_layouts = {};
+    this._inputbox_hidden = true;
+  };
+  clear();
 
   this.createView = function(container)
   {
@@ -24,15 +28,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this._ondestroy = function()
   {
     this._container = null;
-  };
-
-  var clear = function()
-  {
-    this._call_index = null;
-    this._snapshot = null;
-    this._buffer = null;
-    this._buffer_layouts = {};
-    this._inputbox_hidden = true;
   };
 
   this.display_by_call = function(snapshot, call_index, buffer)
@@ -51,7 +46,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
     if (this._buffer_layouts[this._buffer.index_snapshot])
     {
-      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot]; 
+      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
       coordinates = layout_obj.coordinates || "x";
       selected_index = layout_obj.selected_index || 0;
       start_row = layout_obj.start_row || 0;
@@ -76,7 +71,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       {
         coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
         selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
-      };
+      }
 
       var template = window.templates.webgl.buffer_base(buffer, coordinates,
         selected_index);
@@ -93,7 +88,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       var select = document.getElementById("webgl-layout-selector");
       var coordinates = select.options[select.selectedIndex].value;
       if(!this._buffer_layouts[this._buffer.index_snapshot])
-      { 
+      {
         this._buffer_layouts[this._buffer.index_snapshot] = {};
       }
       if (coordinates === "custom")
@@ -271,7 +266,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
       call: {
         label: "call", // TODO
         grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0; }
       },
       texture: {
         label: "buffer", // TODO
