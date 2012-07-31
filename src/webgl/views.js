@@ -3,6 +3,75 @@
 window.cls || (window.cls = {});
 cls.WebGL || (cls.WebGL = {});
 
+/* Settings view for snapshots */
+cls.WebGLSnapshotView = function(id, name, container_class)
+{
+  this.init(id, name, container_class);
+}
+
+cls.WebGLSnapshotView.create_ui_widgets = function()
+{
+  var checkboxes =
+  [
+    'fbo-readpixels'
+  ];
+
+  new Settings
+  (
+    // id
+    'snapshot',
+    // key-value map
+    {
+      'fbo-readpixels' : true,
+      'history_length' : 4
+    },
+    // key-label map
+    {
+      'history-length': "Object history length",
+      'fbo-readpixels': "Read pixels from FBO after draw calls"
+
+    },
+    // settings map
+    {
+      checkboxes: checkboxes,
+      customSettings:
+      [
+        'history_length'
+      ]
+    },
+    // template
+    {
+      'history_length':
+      function(setting)
+      {
+        return (
+        [
+          'setting-composite',
+          ['label',
+            setting.label_map['history-length'] + ': ',
+            ['input',
+              'type', 'number',
+              'handler', 'set-history-size',
+              'max', '128',
+              'min', '0',
+              'value', setting.get('history_length')
+            ]
+          ]
+        ] );
+      }
+    },
+    "webgl"
+  );
+
+  eventHandlers.change['set-history-size'] = function(event, target)
+  {
+    var history_size = Number(event.target.value);
+    settings.snapshot.set('history_length', history_size);
+  }
+}
+
+
+
 // Makes it possible to render a view with an attached header.
 cls.WebGLHeaderViewBase = Object.create(ViewBase,
     {render_with_header:

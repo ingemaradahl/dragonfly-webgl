@@ -15,26 +15,7 @@ cls.WebGL.RPCs.prepare = function(fun)
   return "(" + String(fun) + ").call()";
 };
 
-
 /* The following functions will never be called by the dragonfly instance */
-
-
-/**
- * Retrieves the handler interface from a canvas after a WebGL context have been
- * created. canvas and canvas_map should be defined by Dragonfly.
- */
-cls.WebGL.RPCs.get_handler = function()
-{
-  for (var c in canvas_map)
-  {
-    if (canvas_map[c].canvas === canvas)
-    {
-      return canvas_map[c].handler.get_interface();
-    }
-  }
-
-  return null;
-};
 
 /**
  * Calls a function bound by scope to the variable name f
@@ -46,6 +27,9 @@ cls.WebGL.RPCs.call_function = function()
 
 
 cls.WebGL.RPCs.injection = function () {
+  // Settings are set by Scope
+  var settings = _scope_settings || {};
+
   // Global events, is populated below the definition of the MessageQueue.
   var events = {};
 
@@ -102,7 +86,7 @@ cls.WebGL.RPCs.injection = function () {
     // We will keep all native functions and enumerators in this object
     var gl = {};
 
-    var handler = new Handler(this, gl, canvas);
+    var handler = new Handler(this, gl, canvas, settings);
 
     // Stores the oldest error that have occured since last call to getError
     // When there have been no error it should have the value NO_ERROR
@@ -665,7 +649,7 @@ cls.WebGL.RPCs.injection = function () {
       return function(result, args)
       {
         var gl = this.gl;
-
+        var fbo = null;
         var width, height, fbo;
         if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
         {
@@ -681,42 +665,48 @@ cls.WebGL.RPCs.injection = function () {
           height = viewport[3];
         }
 
-        // TODO temporary until improved dimension finding is in place.
-        // http://glge.org/demos/cardemo/
-        if (!width || !height) return;
-
-        // Image data will be stored as RGBA - 4 bytes per pixel
-        var size = width * height * 4;
-        var arr = new ArrayBuffer(size);
-        var pixels = new Uint8Array(arr);
-
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-        // Encode to PNG
-        var canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        var ctx = canvas.getContext("2d");
-
-        var img_data = ctx.createImageData(width, height);
-
-        // TODO this is so slooooow.
-        for (var i=0; i<size; i+=4)
-        {
-          img_data.data[i] = pixels[i];
-          img_data.data[i+1] = pixels[i+1];
-          img_data.data[i+2] = pixels[i+2];
-          img_data.data[i+3] = pixels[i+3];
-        }
-
-        ctx.putImageData(img_data, 0, 0);
-
         var img = {
-          data : canvas.toDataURL("image/png"),
           width : width,
           height : height,
-          flipped : true
+          data : null,
+          flipped : false
         };
+
+        if (this.settings['fbo-readpixels'])
+        {
+          // TODO temporary until improved dimension finding is in place.
+          // http://glge.org/demos/cardemo/
+          if (!width || !height) return;
+
+          // Image data will be stored as RGBA - 4 bytes per pixel
+          var size = width * height * 4;
+          var arr = new ArrayBuffer(size);
+          var pixels = new Uint8Array(arr);
+
+          gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+          // Encode to PNG
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+
+          var img_data = ctx.createImageData(width, height);
+
+          // TODO this is so slooooow.
+          for (var i=0; i<size; i+=4)
+          {
+            img_data.data[i] = pixels[i];
+            img_data.data[i+1] = pixels[i+1];
+            img_data.data[i+2] = pixels[i+2];
+            img_data.data[i+3] = pixels[i+3];
+          }
+
+          ctx.putImageData(img_data, 0, 0);
+
+          img.data = canvas.toDataURL("image/png");
+          img.flipped = true;
+        }
 
         // Figure out buffer binding, which buffer we are drawing
         var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
@@ -724,7 +714,6 @@ cls.WebGL.RPCs.injection = function () {
 
         var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
         var program_index = this.lookup_program(program).index;
-
 
         this.snapshot.add_drawcall(img, target, buffer.index, program_index);
 
@@ -842,7 +831,6 @@ cls.WebGL.RPCs.injection = function () {
           call.args.push(args[i]);
         }
       }
-      var HISTORY_LENGTH = 4; // TODO make setting?
       if (object.history == null)
       {
         object.history = [];
@@ -855,7 +843,7 @@ cls.WebGL.RPCs.injection = function () {
       }
       else
       {
-        object.history[object.history.number++ % HISTORY_LENGTH] = call;
+        object.history[object.history.number++ % this.settings['history_length']] = call;
       }
     }
 
@@ -977,10 +965,11 @@ cls.WebGL.RPCs.injection = function () {
   /**
    * Handles communication between the wrapped context and Dragonfly.
    */
-  function Handler(context, gl, canvas)
+  function Handler(context, gl, canvas, settings)
   {
     this.gl = gl;
     this.context = context;
+    this.settings = settings;
 
     this.current_frame = 0;
 
@@ -1016,8 +1005,9 @@ cls.WebGL.RPCs.injection = function () {
     };
 
     /* Requests a snapshot of all WebGL data for the next frame */
-    this.request_snapshot = function()
+    this.request_snapshot = function(settings)
     {
+      this.settings = settings;
       this.capture_next_frame = true;
     };
     this._interface.request_snapshot = this.request_snapshot.bind(this);
@@ -1645,9 +1635,21 @@ cls.WebGL.RPCs.injection = function () {
 
     this.add_drawcall = function (fbo, buffer_target, buffer_index, program_index)
     {
+      // Wrap up the image data in another object to make sure that scoper
+      // doesn't examine it.
+      var img = {
+        width : fbo.width,
+        height : fbo.height,
+      };
+
+      if (fbo.data)
+      {
+        img.img = { data: fbo.data, flipped: fbo.flipped }
+      }
+
       this.drawcalls.push({
         call_index : this.call_index,
-        fbo : fbo,
+        fbo : img,
         program_index : program_index,
         element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });

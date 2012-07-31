@@ -80,6 +80,19 @@ cls.WebGL.WebGLDebugger = function ()
     this.snapshots[context_id].send_snapshot_request();
   };
 
+  /**
+   * Sends the current relevant settings to the host
+   */
+  this.send_settings = function(context_id)
+  {
+    context_id = context_id || this.contexts[0];
+    var scoper = new cls.Scoper();
+    var settings = window.settings.snapshot.map;
+    scoper.execute_remote_function(this.interfaces[context_id].set_settings, true, settings);
+  };
+
+  /* Injects the host we want to debug with the wrapper script.
+   */
   this._send_injection = function (rt_id, cont_callback)
   {
     var finalize = function (events)
@@ -90,12 +103,30 @@ cls.WebGL.WebGLDebugger = function ()
       cont_callback();
     };
 
-    var scoper = new cls.Scoper(finalize, this);
-    var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+    var settings_complete = function (settings_object)
+    {
+      // ..when we have a reference set up to the settings object, remotely call
+      // the wrapping function with a variable name bound to the settings
+      // object.
+      var scoper = new cls.Scoper(finalize, this);
+      var script = cls.WebGL.RPCs.prepare(cls.WebGL.RPCs.injection);
+      scoper.set_reviver_tree({
+        _depth: 1
+      });
+      scoper.eval_script(rt_id, script, [["_scope_settings", settings_object.object_id]], false, true);
+    };
+
+    // First, create a reference to an object containing the initial settings to
+    // be used..
+    var script = "(function(){return " + JSON.stringify(window.settings.snapshot.map) + ";})()";
+    var scoper = new cls.Scoper(settings_complete, this)
     scoper.set_reviver_tree({
-      _depth: 1
+      _depth: 0,
+      _action: cls.Scoper.ACTIONS.NOTHING
     });
-    scoper.eval_script(rt_id, script, [], false, true);
+    scoper.eval_script(rt_id, script, [], false);
+
+
   };
 
   this._on_new_context = function (message)
@@ -126,6 +157,17 @@ cls.WebGL.WebGLDebugger = function ()
         };
     };
 
+    var revive_request_snapshot = function(runtime_id, function_id)
+    {
+      return function ()
+      {
+        var settings = window.settings.snapshot.map;
+        var func = {object_id:function_id, runtime_id:runtime_id};
+        var scoper = new cls.Scoper();
+        scoper.execute_remote_function(func, true, settings);
+      };
+    }
+
     var revive_interfaces = function (list, runtime_id)
     {
       for (var i = 0; i < list.length; i++)
@@ -142,11 +184,14 @@ cls.WebGL.WebGLDebugger = function ()
           switch (fun_name)
           {
             case "debugger_ready":
-            case "request_snapshot":
               handler_interface[fun_name] = revive_function(runtime_id, handler_interface.object_id, fun.object_id);
+              break;
+            case "request_snapshot":
+              handler_interface[fun_name] = revive_request_snapshot(runtime_id, fun.object_id);
               break;
             default:
               handler_interface[fun_name] = { object_id : fun.object_id, runtime_id: runtime_id };
+              break;
           }
         }
 

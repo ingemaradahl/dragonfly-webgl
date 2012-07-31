@@ -377,7 +377,7 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.texture_image = function(level)
+window.templates.webgl.image = function(level)
 {
   var image;
   if (level.img == null)
@@ -445,14 +445,14 @@ window.templates.webgl.texture = function(texture)
   }
   else
   {
-    base_image = window.templates.webgl.texture_image(level0);
+    base_image = window.templates.webgl.image(level0);
   }
 
   var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
-      var image = window.templates.webgl.texture_image(level);
+      var image = window.templates.webgl.image(level);
       var image_source = null;
       if (level.url)
         image_source = { name: "Image source", value: level.url };
@@ -735,13 +735,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
-  var fbo = draw_call.fbo;
-  var img = ["img", "width", fbo.width, "height", fbo.height, "src", fbo.data];
-
-  if (fbo.flipped)
-  {
-    img.push("class", "flipped");
-  }
+  var img = window.templates.webgl.image(draw_call.fbo);
 
   var table_rows = [];
 
@@ -1034,4 +1028,35 @@ window.templates.webgl.program = function(call_index, program)
 
 
   return html;
+};
+
+window.templates.webgl.settings = function(settings)
+{
+    var port = 9000;
+    var error = null;
+    var PORT_MIN = 1024;
+    var PORT_MAX = 65535;
+    return [
+      ['label',
+        ui_strings.S_LABEL_PORT + ': ',
+        ['input',
+          'type', 'number',
+          'min', PORT_MIN,
+          'max', PORT_MAX,
+          'value', Math.min(PORT_MAX, Math.max(port, PORT_MIN))
+        ],
+        ['span',
+          ui_strings.S_BUTTON_TEXT_APPLY,
+          'handler', 'apply-remote-debugging',
+          'class', 'ui-button',
+          'tabindex', '1'
+        ]
+      ],
+      ['p',
+        error || "",
+        'id', 'remote-debug-info'
+      ],
+      'id', 'remote-debug-settings'
+    ];
+  
 };

@@ -282,6 +282,13 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* the following views must be created to get entry in the Settings tab */
 
+    /* WebGL */
+    cls.WebGLSnapshotView.prototype = ViewBase;
+    new cls.WebGLSnapshotView('snapshot', 
+                              "Snapshot", // TODO
+                              'scroll');
+    cls.WebGLSnapshotView.create_ui_widgets();
+
     /* Environment */
     cls.EnvironmentView.prototype = ViewBase;
     new cls.EnvironmentView('environment',
