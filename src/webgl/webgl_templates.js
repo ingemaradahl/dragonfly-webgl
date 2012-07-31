@@ -93,7 +93,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
       ["select",
       buffer_options,
       "handler", "webgl-select-layout",
-      "id", "webgl-layout-selector" 
+      "id", "webgl-layout-selector"
       ],
     ];
 
@@ -136,7 +136,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
-      data_table 
+      data_table
     ]
   ];
 };
@@ -338,7 +338,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   if (call.have_error)
   {
     var error = window.webgl.api.constant_value_to_string(call.error_code);
-    content.push(" » ", ["span", "error: " + String(error)]);
+    content.push(" » ", ["span", String(error)]);
     row_class = "trace-error";
   }
   else if (call.redundant)
@@ -641,11 +641,56 @@ window.templates.webgl.state_parameters = function(state_parameters)
   ];
 };
 
+window.templates.webgl.error_message = function(call)
+{
+  var error_code = window.webgl.api.constant_value_to_string(call.error_code);
+  var header = [
+    "h2", [
+      ["span", "Error: " + error_code],
+    ]
+  ];
+
+  var content = [header];
+
+  var result = [
+    "div", content,
+    "class", "error-message"
+  ];
+
+  var fun_errors = window.webgl.api.functions[call.function_name].errors;
+  if (!fun_errors || !(error_code in fun_errors)) return result;
+
+  var errors = fun_errors[error_code];
+  errors = errors.map(function(error){return [
+    "div",
+    [
+      [
+        "span", error.txt
+      ],
+      !error.ref ? [] : [
+        "a", "Read more here.",
+        "href", error.ref
+      ]
+    ]
+  ];});
+
+  content.push([
+    "div", "",
+    "class", "divider"
+  ]);
+  content.push([
+    "div", "Possible cause" + (errors.length === 1 ? "" : "s") + ":",
+    "class", "cause"
+  ]);
+  content.push(errors);
+
+  return result;
+};
+
 /**
  * @param {Array} template optional, should contain a html structure of other
  *   content that should be shown below the header.
  */
-
 window.templates.webgl.info_with_header = function(template)
 {
   var header = [
@@ -653,19 +698,19 @@ window.templates.webgl.info_with_header = function(template)
       [
         "h2", [
           ["span", "Start of frame"],
-        ],
+        ]
       ]
     ],
     "class", "draw-call-info"
   ];
 
-    var html = [header];
-    if (template)
-    {
-      html.push(template);
-    }
+  var html = [header];
+  if (template)
+  {
+    html.push(template);
+  }
 
-    return html;
+  return html;
 };
 
 window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, template)
@@ -720,7 +765,13 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   ];
 
   var res = [header];
-  var content = [state];
+
+  var content = [];
+  if (trace_call.error_code !== cls.WebGLAPI.CONSTANTS.NO_ERROR)
+  {
+    content.push(window.templates.webgl.error_message(trace_call));
+  }
+  content.push(state);
   res.push([
     "div",
     content,
@@ -1058,5 +1109,5 @@ window.templates.webgl.settings = function(settings)
       ],
       'id', 'remote-debug-settings'
     ];
-  
+
 };
