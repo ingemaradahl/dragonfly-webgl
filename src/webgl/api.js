@@ -1149,6 +1149,24 @@ cls.WebGLAPI = function ()
     new GLParam("width", this.TYPES.LONG),
     new GLParam("height", this.TYPES.LONG)
   ]);
+
+  this.set_error_messages = function(errors)
+  {
+    for (var key in errors)
+    {
+      if (!errors.hasOwnProperty(key)) continue;
+
+      var func_regexp = new RegExp("^" + key + "$");
+      for (var fun in this.functions)
+      {
+        if (!func_regexp.test(fun)) continue;
+
+        this.functions[fun].errors = errors[key];
+      }
+    }
+  };
+
+  this.set_error_messages(cls.WebGLAPI.ERROR_MESSAGES);
 };
 
 // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
@@ -1482,7 +1500,7 @@ cls.WebGLAPI.ERROR_MESSAGES = {
         "ref": "http://www.khronos.org/registry/webgl/specs/latest/#6.4"
     }]
   },
-  "uniform1*": {
+  "uniform1[fi]v?": {
 
   }
 };

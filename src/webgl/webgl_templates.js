@@ -657,7 +657,7 @@ window.templates.webgl.error_message = function(call)
     "class", "error-message"
   ];
 
-  var fun_errors = cls.WebGLAPI.ERROR_MESSAGES[call.function_name];
+  var fun_errors = window.webgl.api.functions[call.function_name].errors;
   if (!fun_errors || !(error_code in fun_errors)) return result;
 
   var errors = fun_errors[error_code];
