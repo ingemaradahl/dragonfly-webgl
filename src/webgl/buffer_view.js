@@ -95,7 +95,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       if(!this._buffer_layouts[this._buffer.index_snapshot])
       { 
         this._buffer_layouts[this._buffer.index_snapshot] = {};
-        this._buffer_layouts[this._buffer.index_snapshot] = layout_object; 
       }
       if (coordinates === "custom")
       {
