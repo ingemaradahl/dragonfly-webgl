@@ -781,10 +781,21 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
     ],
     [
       "div",
-      [ "div", "id", "webgl-canvas-info-box" ],
       "handler", "webgl-canvas",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"
+    ]
+  ];
+};
+
+window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
+{
+  return ["div",
+    ['div', "Buffer size (" + buffer_size + "kB) is larger than maximum preview size (" + setting_size + "kB), automatic download disabled."],
+    ['span',
+      ['span', "Load buffer"],
+      'handler', 'webgl-force-buffer',
+      'class', 'ui-button',
     ]
   ];
 };

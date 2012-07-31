@@ -224,7 +224,7 @@ img.flipped
   position: absolute;
 }
 
-.webgl-holder > div
+.webgl-holder > container
 {
   position: absolute;
   visibility: hidden;

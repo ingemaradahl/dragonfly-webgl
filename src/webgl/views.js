@@ -68,8 +68,74 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     var history_size = Number(event.target.value);
     settings.snapshot.set('history_length', history_size);
   }
+};
+
+/* General settings view */
+cls.WebGLGeneralView = function(id, name, container_class)
+{
+  this.init(id, name, container_class);
 }
 
+cls.WebGLGeneralView.create_ui_widgets = function()
+{
+  var checkboxes =
+  [
+    'enable-debugger'
+  ];
+
+  new Settings
+  (
+    // id
+    'webgl-general',
+    // key-value map
+    {
+      'enable-debugger' : true,
+      'max_preview_size' : 128 // In KB
+    },
+    // key-label map
+    {
+      'enable-debugger': "Enable the WebGL Debugger",
+      'max_preview_size': "Max size of automatic buffer preview"
+    },
+    // settings map
+    {
+      checkboxes: checkboxes,
+      customSettings:
+      [
+        'max_preview_size'
+      ]
+    },
+    // template
+    {
+      'max_preview_size':
+      function(setting)
+      {
+        return (
+        [
+          'setting-composite',
+          ['label',
+            setting.label_map['max_preview_size'] + ': ',
+            ['input',
+              'type', 'number',
+              'handler', 'set_max_preview_size',
+              'max', '10240', // Roughly 10 Megabyte
+              'min', '0',
+              'value', setting.get('max_preview_size')
+            ],
+            'kB'
+          ]
+        ] );
+      }
+    },
+    "webgl"
+  );
+
+  eventHandlers.change['set_max_preview_size'] = function(event, target)
+  {
+    var preview_size = Number(event.target.value);
+    settings['webgl-general'].set('max_preview_size', preview_size);
+  }
+};
 
 
 // Makes it possible to render a view with an attached header.

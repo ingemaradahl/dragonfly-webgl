@@ -233,6 +233,15 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.StorageViewActions("widget_preferences");
 
     /* WebGL inspection */
+
+    // Add the General Settings first, telling whether the WebGL inspection
+    // should be enabled
+    cls.WebGLGeneralView.prototype = ViewBase;
+    new cls.WebGLGeneralView('webgl-general',
+                              "General", // TODO
+                              'scroll');
+    cls.WebGLGeneralView.create_ui_widgets();
+
     window.webgl = new cls.WebGL.WebGLDebugger();
 
     // Add some listeners and corresponding methods for call views.

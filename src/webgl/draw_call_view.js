@@ -19,12 +19,17 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this.createView = function(container)
   {
     this._container = container;
+    var preview_container = new Container(document.createElement("container"));
+    preview_container.setup("webgl_buffer_preview");
+
+    this._preview_container = preview_container.cell;
   };
 
   var add_canvas = function()
   {
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
+    canvas_holder.appendChild(this._preview_container)
 
     this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
   }.bind(this);
@@ -37,6 +42,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
+    preview.set_info_container(this._preview_container);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
   }.bind(this);
