@@ -95,6 +95,8 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       if(!this._buffer_layouts[this._buffer.index_snapshot])
       { 
         this._buffer_layouts[this._buffer.index_snapshot] = {};
+        this._buffer_layouts[this._buffer.index_snapshot].selected_index =
+          select.selectedIndex;
       }
       if (coordinates === "custom")
       {
