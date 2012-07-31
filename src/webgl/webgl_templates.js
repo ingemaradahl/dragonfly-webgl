@@ -338,7 +338,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   if (call.have_error)
   {
     var error = window.webgl.api.constant_value_to_string(call.error_code);
-    content.push(" » ", ["span", "error: " + String(error)]);
+    content.push(" » ", ["span", String(error)]);
     row_class = "trace-error";
   }
   else if (call.redundant)
