@@ -47,15 +47,18 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
     var coordinates;
     var selected_index;
+    var start_row;
 
     if (this._buffer_layouts[this._buffer.index_snapshot])
     {
-      coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
-      selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
+      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot]; 
+      coordinates = layout_obj.coordinates || "x";
+      selected_index = layout_obj.selected_index || 0;
+      start_row = layout_obj.start_row || 0;
     }
 
     var template = window.templates.webgl.buffer_base(buffer, coordinates,
-      selected_index);
+      selected_index, start_row);
 
     buffer.request_data();
     this.render_with_header(snapshot, call_index, template);
@@ -66,6 +69,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     var buffer = msg;
     var coordinates;
     var selected_index;
+
     if (this._container && this._buffer === buffer)
     {
       if (this._buffer_layouts[this._buffer.index_snapshot])
@@ -88,8 +92,10 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     {
       var select = document.getElementById("webgl-layout-selector");
       var coordinates = select.options[select.selectedIndex].value;
-      this._buffer_layouts[this._buffer.index_snapshot] = {};
-      this._buffer_layouts[this._buffer.index_snapshot].selected_index = select.selectedIndex;
+      if(!this._buffer_layouts[this._buffer.index_snapshot])
+      { 
+        this._buffer_layouts[this._buffer.index_snapshot] = {};
+      }
       if (coordinates === "custom")
       {
         var inputbox = document.getElementById("webgl-layout-input");
@@ -102,6 +108,22 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         this._buffer_layouts[this._buffer.index_snapshot].coordinates = coordinates;
         this.display_by_call(this._snapshot, this._call_index, this._buffer);
       }
+    }
+  };
+
+  this._on_row_input = function(e)
+  {
+    if (e.keyCode !== 13) return;
+    if (!this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var inputbox = document.getElementById("webgl-row-input");
+      if (!this._buffer_layouts[this._buffer.index_snapshot])
+      {
+        this._buffer_layouts[this._buffer.index_snapshot] = {};
+      }
+      this._buffer_layouts[this._buffer.index_snapshot].start_row = inputbox.value;
+      this.display_by_call(this._snapshot, this._call_index, this._buffer);
     }
   };
 
@@ -127,6 +149,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   var eh = window.eventHandlers;
   eh.click["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
+  eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 
   this.init(id, name, container_class);
 };

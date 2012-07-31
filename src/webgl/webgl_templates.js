@@ -42,12 +42,12 @@ window.templates.webgl.no_snapshots = function()
   ];
 };
 
-window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item)
+window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item, start_row)
 {
   var data_table;
   if (buffer.data_is_loaded())
   {
-    data_table = window.templates.webgl.buffer_data_table(buffer, coordinates);
+    data_table = window.templates.webgl.buffer_data_table(buffer, coordinates, start_row);
   }
   else
   {
@@ -99,10 +99,17 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
 
   var history = window.templates.webgl.history(buffer);
 
-  var inputbox = ["div",
+  var row_inputbox = ["div",
+    ["input", "type", "text", "handler",
+      "webgl-input-row", "id", "webgl-row-input",
+      "maxlength", "30",
+      "value", "Start at row.."]
+  ];
+
+  var layout_inputbox = ["div",
       ["input", "type", "text", "handler",
           "webgl-input-layout", "id", "webgl-layout-input",
-          "hidden", "true", "maxlength", "20",
+          "hidden", "true", "maxlength", "30",
           "value", "E.g. \"a,b,c,d\""
       ],
     ];
@@ -126,14 +133,15 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
         ]
       ],
       history,
+      row_inputbox,
       coordinate_selector,
-      inputbox,
+      layout_inputbox,
       data_table 
     ]
   ];
 };
 
-window.templates.webgl.buffer_data_table = function(buffer, coordinates)
+window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_row)
 {
   var coordinate_list = coordinates || "x";
       coordinate_list = coordinate_list.split(",");
@@ -142,10 +150,21 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
   var number_of_rows = Math.ceil(buffer.data.length/columns);
   var max_rows = 100;
   var max_elements = max_rows * columns;
-
   var row_number = 0;
+
+  if (!start_row)
+  {
+    start_row = 0;
+  }
+  start_row = parseInt(start_row);
+  row_number = start_row;
+  if (isNaN(start_row))
+  {
+    start_row = 0;
+    row_number = 0;
+  }
   // Iterating over rows.
-  for (var i = 0; i < Math.min(number_of_rows, max_rows); i++)
+  for (var i = start_row; i < Math.min(number_of_rows, (start_row + max_rows)); i++)
   {
     var next_row = [];
     next_row.push(["td", String(row_number)]);
@@ -164,9 +183,9 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
 
   // TODO temporary solution since Dragonfly will freeze when to many elements
   var more_data = [];
-  if (buffer.data.length > max_elements)
+  if (buffer.data.length > row_number*columns)
   {
-    var diff = buffer.data.length - max_elements;
+    var diff = buffer.data.length - row_number*columns;
     more_data = [
       "div",
       "There are " + String(diff) + " more elements."
@@ -197,6 +216,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates)
     "class",
     "sortable-table buffer-data-table"
   ];
+
   return [data_table, more_data];
 };
 
