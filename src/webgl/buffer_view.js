@@ -17,7 +17,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._buffer = null;
     this._buffer_layouts = {};
     this._inputbox_hidden = true;
-  };
+  }.bind(this);
   clear();
 
   this.createView = function(container)
@@ -141,10 +141,10 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   };
 
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
-  messages.addListener('webgl-clear', clear.bind(this));
+  messages.addListener('webgl-clear', clear);
 
   var eh = window.eventHandlers;
-  eh.click["webgl-select-layout"] = this._on_layout_select.bind(this);
+  eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 
