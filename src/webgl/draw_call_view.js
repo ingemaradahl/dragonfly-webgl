@@ -5,21 +5,15 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends ViewBase
+ * @extends cls.WebGLCallView
  */
 cls.WebGLDrawCallView = function(id, name, container_class)
 {
-  this._container = null;
   this._element_buffer = null;
   this._state = null;
 
   this._snapshot = null;
   this._call_index = 0;
-
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
 
   var add_canvas = function()
   {
@@ -43,8 +37,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
 
   var render = function()
   {
-    if (!this._container || !this._snapshot)
-      return;
+    if (!this._container || !this._snapshot) return;
 
     var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
     var trace_call = this._snapshot.trace[this._call_index];
@@ -83,12 +76,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     }
   }.bind(this);
 
-  this.ondestroy = function()
-  {
-    this._container = null;
-  };
-
-  this.display_by_call = function(snapshot, call_index)
+  this._render = function(snapshot, call_index)
   {
     this._snapshot = snapshot;
     this._call_index = call_index;
@@ -105,12 +93,10 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     target.buffer.show();
   };
 
-
   this._on_argument_click = function(evt, target)
   {
     target.argument.action();
   };
-
 
   var eh = window.eventHandlers;
   eh.click["webgl-select-attribute"] = on_attribute_select.bind(this);
@@ -122,5 +108,5 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLDrawCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLDrawCallView.prototype = cls.WebGLCallView;
 

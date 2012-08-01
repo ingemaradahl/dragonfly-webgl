@@ -5,25 +5,14 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLHeaderViewBase
+ * @extends cls.WebGLCallView
  */
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
-  this._container = null;
   this._snapshot = null;
   this._call_index = null;
 
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
-  };
-
-  this.display_by_call = function(snapshot, call_index, texture)
+  this._render = function(snapshot, call_index, texture)
   {
     if (call_index !== -1 && !texture)
     {
@@ -92,7 +81,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLTextureCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLTextureCallView.prototype = cls.WebGLCallView;
 
 // ----------------------------------------------------------------------------
 
@@ -166,11 +155,9 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
     var texture = table_data[item_id].texture;
-    var snapshot =
-      window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
-    window.views.webgl_texture_call.display_by_call(snapshot, texture.call_index, texture);
+    window.views.webgl_texture_call.display_call(snapshot, texture.call_index, texture);
   };
 
   this.tabledef = {

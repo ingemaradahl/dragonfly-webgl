@@ -5,7 +5,7 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLHeaderViewBase
+ * @extends cls.WebGLCallView
  */
 
 cls.WebGLBufferCallView = function(id, name, container_class)
@@ -20,17 +20,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   }.bind(this);
   clear();
 
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
-  };
-
-  this.display_by_call = function(snapshot, call_index, buffer)
+  this._render = function(snapshot, call_index, buffer)
   {
     if (call_index !== -1 && !buffer)
     {
@@ -151,7 +141,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLBufferCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 
 // -----------------------------------------------------------------------------
 
@@ -232,12 +222,9 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     var buffer_index = Number(target.getAttribute("data-object-id"));
     var table_data = this._table.get_data();
     var buffer = table_data[buffer_index].buffer;
-    var snapshot =
-      window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer_call");
-    window.views.webgl_buffer_call.display_by_call(snapshot,
-      buffer.call_index, buffer);
+    window.views.webgl_buffer_call.display_call(snapshot, buffer.call_index, buffer);
   };
 
   this.tabledef = {
