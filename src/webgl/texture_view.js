@@ -144,16 +144,17 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   this._on_snapshot_change = function(snapshot)
   {
-    var i = 0;
+    var i=0;
     this._content = snapshot.textures.map(function(texture) {
       var lvl0 = texture.levels[0];
       return {
         name: String(texture),
         dimension: lvl0 && lvl0.width ? String(lvl0.width) + "x" + String(lvl0.height) : "?",
+        size: lvl0 && lvl0.width && lvl0.height ? lvl0.width*lvl0.height: 0,
         texture: texture,
-        call_index_val : texture.call_index,
-        call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
-        id : i++
+        call_index_val: texture.call_index,
+        call_index: String(texture.call_index === -1 ? " " : texture.call_index+1),
+        id: i++
       };
     });
   };
@@ -162,9 +163,9 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
     var table_data = this._table.get_data();
-    var texture = table_data[item_id].texture;
     var snapshot =
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var texture = snapshot.textures[item_id];
 
     window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
     window.views.webgl_texture_call.display_by_call(snapshot, texture.call_index, texture);
@@ -177,29 +178,32 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     columns: {
       call_index : {
         label: "Call",
+        sorter: function(a,b) { return a.call_index_val < b.call_index_val ? -1 :
+          a.call_index_val > b.call_index_val ? 1 : 0; }
       },
       name: {
         label: "Texture",
+        sorter: "unsortable"
       },
       dimension: {
         label: "Dimension",
-        sorter: "unsortable"
+        sorter: function(a,b) { return a.size < b.size ? -1 : a.size > b.size ? 1 : 0; } 
       }
     },
     groups: {
       call: {
         label: "call", // TODO
-        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        grouper : function (res) 
+          { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
+        sorter : function (a, b) 
+          { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
       texture: {
         label: "texture", // TODO
-        grouper : function (res) { return res.name; }
+        grouper : function (res) { return res.name; },
+        sorter: "unsortable"
       }
     }
-  };
-
-  this.groupby = {
   };
 
   var eh = window.eventHandlers;
