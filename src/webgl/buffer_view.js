@@ -93,7 +93,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       else
       {
         this._buffer_layouts[this._buffer.index_snapshot].coordinates = coordinates;
-        this.display_by_call(this._snapshot, this._call_index, this._buffer);
+        this.display_call(this._snapshot, this._call_index, this._buffer);
       }
     }
   };
@@ -110,7 +110,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         this._buffer_layouts[this._buffer.index_snapshot] = {};
       }
       this._buffer_layouts[this._buffer.index_snapshot].start_row = inputbox.value;
-      this.display_by_call(this._snapshot, this._call_index, this._buffer);
+      this.display_call(this._snapshot, this._call_index, this._buffer);
     }
   };
 
@@ -126,7 +126,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       {
         inputbox.hidden = false;
       }
-      this.display_by_call(this._snapshot, this._call_index, this._buffer);
+      this.display_call(this._snapshot, this._call_index, this._buffer);
     }
   };
 
@@ -237,8 +237,8 @@ cls.WebGLBufferSideView = function(id, name, container_class)
       },
       name: {
         label: "Buffer",
-        sorter : function (a, b) { 
-          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; 
+        sorter : function (a, b) {
+          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
         }
       },
       target: {
@@ -251,24 +251,26 @@ cls.WebGLBufferSideView = function(id, name, container_class)
         label: "Size",
         sorter: function (a,b) {
           return a.size_val < b.size_val ? -1 : a.size_val > b.size_val ? 1 : 0;
-        } 
+        }
       }
     },
     groups: {
       call: {
         label: "call",
-        grouper: function (res) { 
-          return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter: function (a, b) { 
-          return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        grouper: function (res) {
+          return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index;
+        },
+        sorter: function (a, b) {
+          return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0;
+        }
       },
       buffer: {
         label: "buffer",
         grouper: function (res) { return res.name; },
-        sorter: function (a, b) { 
+        sorter: function (a, b) {
           a = Number(a.substr(7));
           b = Number(b.substr(7));
-          return a < b ? -1 : a > b ? 1 : 0; 
+          return a < b ? -1 : a > b ? 1 : 0;
         }
       }
     }

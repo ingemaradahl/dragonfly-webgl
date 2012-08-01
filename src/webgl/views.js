@@ -210,6 +210,7 @@ cls.WebGLCallView.initialize = function()
     groups: {
       type: {
         label: "Parameter type", // TODO
+        // TODO use the parameter groups
         grouper : function (res) { return Math.round(Math.random() * 5); },
       }
     }
