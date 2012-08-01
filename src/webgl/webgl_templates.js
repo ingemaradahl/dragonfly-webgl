@@ -589,11 +589,14 @@ window.templates.webgl.state_parameters = function(state_parameters)
       if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
       {
         var color = value.data;
-        var colors = (color[0] * 255) + ", " + (color[1] * 255) + ", " + (color[2] * 255) + ", " + color[3];
+        var colors = Math.round(color[0] * 255) + ", " +
+                     Math.round(color[1] * 255) + ", " +
+                     Math.round(color[2] * 255) + ", " +
+                     color[3];
         param_content = [
           "div",
           [
-            ["div", ["div", "style", "background-color: rgba(" + colors + ")"], "class", "color-box checkerboard"],
+            ["div", ["div", "style", "background-color: rgba(" + colors + ");"], "class", "color-box checkerboard"],
             ["span", value.text]
           ]
         ];

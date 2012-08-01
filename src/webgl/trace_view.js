@@ -38,26 +38,15 @@ cls.WebGLTraceView = function(id, name, container_class)
 
     var group = call.group;
     if (group === "uniform" || group === "attrib") group = "program";
-    var tab = "webgl_" + group + "_call";
-    var view = window.views["webgl_" + group + "_call"];
-    if (view == null)
-    {
-      tab = "webgl_call";
-      view = window.views.webgl_call;
-    }
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(tab);
-    view.display_by_call(snapshot, call_index);
-  };
 
-  this._on_argument_click = function(evt, target)
-  {
-    var arg = target["data-linked-object"];
-    arg.action();
+    var view = window.views["webgl_" + group + "_call"];
+    if (view == null) view = window.views.webgl_generic_call;
+
+    view.display_call(snapshot, call_index);
   };
 
   var eh = window.eventHandlers;
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
-  eh.click["webgl-trace-argument"] = this._on_argument_click.bind(this);
 
   this.init(id, name, container_class);
   this.init_events();

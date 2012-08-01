@@ -5,13 +5,11 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLHeaderViewBase
+ * @extends cls.WebGLCallView
  */
 
 cls.WebGLProgramCallView = function(id, name, container_class)
 {
-  this._container = null;
-
   // Can be used to hilight attributes as well
   var hilight_uniform = function(uniform)
   {
@@ -54,16 +52,12 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     }
   };
 
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
-
-  this.display_by_call = function(snapshot, call_index)
+  this._render = function(snapshot, call_index)
   {
     var call = snapshot.trace[call_index];
     var template = window.templates.webgl.program(call_index, call.linked_object.program);
     this.render_with_header(snapshot, call_index, template);
+
     sh_highlightDocument();
 
     // Hilight eventual uniform/attribute
@@ -71,14 +65,9 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     if (uniattrib) hilight_uniform(uniattrib);
   };
 
-  this._ondestroy = function()
-  {
-    this._container = null;
-  };
-
   this.init(id, name, container_class);
 };
 
-cls.WebGLProgramCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLProgramCallView.prototype = cls.WebGLCallView;
 
 

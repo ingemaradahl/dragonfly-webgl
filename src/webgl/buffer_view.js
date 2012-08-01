@@ -5,27 +5,11 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLHeaderViewBase
+ * @extends cls.WebGLCallView
  */
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
-  this._call_index = null;
-  this._snapshot = null;
-  this._buffer = null;
-  this._buffer_layouts = {};
-  this._inputbox_hidden = true;
-
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
-  };
-
   var clear = function()
   {
     this._call_index = null;
@@ -33,9 +17,10 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._buffer = null;
     this._buffer_layouts = {};
     this._inputbox_hidden = true;
-  };
+  }.bind(this);
+  clear();
 
-  this.display_by_call = function(snapshot, call_index, buffer)
+  this._render = function(snapshot, call_index, buffer)
   {
     if (call_index !== -1 && !buffer)
     {
@@ -51,7 +36,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
     if (this._buffer_layouts[this._buffer.index_snapshot])
     {
-      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot]; 
+      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
       coordinates = layout_obj.coordinates || "x";
       selected_index = layout_obj.selected_index || 0;
       start_row = layout_obj.start_row || 0;
@@ -76,7 +61,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       {
         coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
         selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
-      };
+      }
 
       var template = window.templates.webgl.buffer_base(buffer, coordinates,
         selected_index);
@@ -93,7 +78,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       var select = document.getElementById("webgl-layout-selector");
       var coordinates = select.options[select.selectedIndex].value;
       if(!this._buffer_layouts[this._buffer.index_snapshot])
-      { 
+      {
         this._buffer_layouts[this._buffer.index_snapshot] = {};
         this._buffer_layouts[this._buffer.index_snapshot].selected_index =
           select.selectedIndex;
@@ -146,17 +131,17 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   };
 
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
-  messages.addListener('webgl-clear', clear.bind(this));
+  messages.addListener('webgl-clear', clear);
 
   var eh = window.eventHandlers;
-  eh.click["webgl-select-layout"] = this._on_layout_select.bind(this);
+  eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLBufferCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 
 // -----------------------------------------------------------------------------
 
@@ -239,9 +224,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var buffer = snapshot.buffers[buffer_index];
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_buffer_call");
-    window.views.webgl_buffer_call.display_by_call(snapshot,
-      buffer.call_index, buffer);
+    window.views.webgl_buffer_call.display_call(snapshot, buffer.call_index, buffer);
   };
 
   this.tabledef = {

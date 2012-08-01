@@ -7,7 +7,7 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLSnapshotView = function(id, name, container_class)
 {
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLSnapshotView.create_ui_widgets = function()
 {
@@ -68,35 +68,87 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     var history_size = Number(event.target.value);
     settings.snapshot.set('history_length', history_size);
   }
-}
+};
 
 
-
-// Makes it possible to render a view with an attached header.
-cls.WebGLHeaderViewBase = Object.create(ViewBase,
-    {render_with_header:
-      {value:
-        function(snapshot, call_index, template)
-        {
-          if (call_index === -1)
-          {
-            var template = window.templates.webgl.info_with_header(template);
-          }
-          else
-          {
-            var trace = snapshot.trace[call_index];
-            var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
-            var template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, template);
-          }
-
-          this._container.clearAndRender(template);
-        }
+/**
+ * Base class for all call views.
+ * @constructor
+ * @extends ViewBase
+ */
+cls.WebGLCallView = Object.create(ViewBase, {
+  _render_enabled: {
+    writable: true,
+    value: true
+  },
+  _container: {
+    writable: true,
+    value: null
+  },
+  createView: {
+    writable: true, configurable: true,
+    value: function(container)
+    {
+      this._container = container;
+      if (this._render_enabled) this.render();
+    }
+  },
+  ondestroy: {
+    writable: true, configurable: true,
+    value: function()
+    {
+      this._container = null;
+    }
+  },
+  render: {
+    value: function()
+    {
+      if (this._template)
+      {
+        this._container.clearAndRender(this._template);
       }
-    });
+      else
+      {
+        this._container.clearAndRender(["div", "Take a snapshot and then select a call, buffer or texture."]);
+      }
+    }
+  },
+  display_call: {
+    value: function(snapshot, call_index)
+    {
+      if (!this._container)
+      {
+        this._render_enabled = false;
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+        this._render_enabled = true;
+      }
+
+      this._render.apply(this, arguments);
+    }
+  },
+  render_with_header: {
+    value: function(snapshot, call_index, template)
+    {
+      if (call_index === -1)
+      {
+        template = window.templates.webgl.info_with_header(template);
+      }
+      else
+      {
+        var trace = snapshot.trace[call_index];
+        var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
+        template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, template);
+      }
+      this._template = template;
+
+      this._container.clearAndRender(template);
+    }
+  }
+});
 
 
 // Add listeners and methods for call view events.
-cls.WebGLHeaderViewBase.initialize = function()
+cls.WebGLCallView.initialize = function()
 {
   var on_goto_script_click = function(evt, target)
   {

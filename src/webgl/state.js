@@ -63,7 +63,7 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "getUniformLocation": "uniform",
   "getVertexAttrib": "attrib",
   "getVertexAttribOffset": "attrib",
-  "uniform": "uniform",
+  "uniform1f": "uniform",
   "uniform1fv": "uniform",
   "uniform1i": "uniform",
   "uniform1iv": "uniform",

@@ -235,8 +235,8 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     /* WebGL inspection */
     window.webgl = new cls.WebGL.WebGLDebugger();
 
-    // Add some listeners and corresponding methods for call views.
-    cls.WebGLHeaderViewBase.initialize();
+    // Initialize some listeners and corresponding methods for call views.
+    cls.WebGLCallView.initialize();
 
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
@@ -247,7 +247,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
 
-    new cls.WebGLCallView("webgl_call",
+    new cls.WebGLGenericCallView("webgl_generic_call",
                           "Call",
                           "scroll webgl_view call");
 
@@ -284,7 +284,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* WebGL */
     cls.WebGLSnapshotView.prototype = ViewBase;
-    new cls.WebGLSnapshotView('snapshot', 
+    new cls.WebGLSnapshotView('snapshot',
                               "Snapshot", // TODO
                               'scroll');
     cls.WebGLSnapshotView.create_ui_widgets();
