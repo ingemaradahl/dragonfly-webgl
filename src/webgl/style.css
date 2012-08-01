@@ -153,6 +153,11 @@ img.flipped
   color: #000;
 }
 
+#webgl-state-table-container .sortable-table
+{
+  border: 1px solid #ccc;
+}
+
 /* Texture */
 .webgl_view div.loading-image
 {

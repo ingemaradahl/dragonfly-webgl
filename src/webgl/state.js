@@ -36,6 +36,25 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index, includ
   return result;
 };
 
+cls.WebGLState.prototype.get_all_parameters = function(call_index, include_old_value)
+{
+  include_old_value = Boolean(include_old_value);
+
+  var result = {};
+
+  for (var group in cls.WebGLState.PARAMETER_GROUPS)
+  {
+    var params = cls.WebGLState.PARAMETER_GROUPS[group];
+    for (var i = 0; i < params.length; i++)
+    {
+      var param = params[i];
+      result[param] = this.get_parameter(param, call_index, include_old_value);
+    }
+  }
+
+  return result;
+};
+
 cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index, include_old_value)
 {
   include_old_value = Boolean(include_old_value);
