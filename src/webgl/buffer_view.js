@@ -201,18 +201,18 @@ cls.WebGLBufferSideView = function(id, name, container_class)
 
   this._format_buffer_table = function(buffers)
   {
-    var tbl_data = [];
-    var i = 0;
+    var i=0;
     return buffers.map(function(buffer) {
       return {
-        buffer : buffer,
+        buffer: buffer,
         name: String(buffer),
-        target : buffer.target_string(),
-        usage : buffer.usage_string(),
-        size : String(buffer.size),
-        call_index_val : buffer.call_index,
-        call_index : String(buffer.call_index === -1 ? " " : buffer.call_index+1),
-        id : i++
+        target: buffer.target_string(),
+        usage: buffer.usage_string(),
+        size: String(buffer.size),
+        size_val: buffer.size,
+        call_index_val: buffer.call_index,
+        call_index: String(buffer.call_index === -1 ? " " : buffer.call_index+1),
+        id: i++
       };
     });
   };
@@ -220,9 +220,9 @@ cls.WebGLBufferSideView = function(id, name, container_class)
   this._on_table_click = function(evt, target)
   {
     var buffer_index = Number(target.getAttribute("data-object-id"));
-    var table_data = this._table.get_data();
-    var buffer = table_data[buffer_index].buffer;
-    var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var snapshot =
+      window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var buffer = snapshot.buffers[buffer_index];
 
     window.views.webgl_buffer_call.display_call(snapshot, buffer.call_index, buffer);
   };
@@ -237,29 +237,39 @@ cls.WebGLBufferSideView = function(id, name, container_class)
       },
       name: {
         label: "Buffer",
+        sorter : function (a, b) { 
+          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; 
+        }
       },
       target: {
         label: "Target",
-        sorter: "unsortable"
       },
       usage: {
         label: "Usage",
-        sorter: "unsortable"
       },
       size: {
         label: "Size",
-        sorter: "unsortable"
+        sorter: function (a,b) {
+          return a.size_val < b.size_val ? -1 : a.size_val > b.size_val ? 1 : 0;
+        } 
       }
     },
     groups: {
       call: {
-        label: "call", // TODO
-        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0; }
+        label: "call",
+        grouper: function (res) { 
+          return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
+        sorter: function (a, b) { 
+          return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
-      texture: {
-        label: "buffer", // TODO
-        grouper : function (res) { return res.name; }
+      buffer: {
+        label: "buffer",
+        grouper: function (res) { return res.name; },
+        sorter: function (a, b) { 
+          a = Number(a.substr(7));
+          b = Number(b.substr(7));
+          return a < b ? -1 : a > b ? 1 : 0; 
+        }
       }
     }
   };
