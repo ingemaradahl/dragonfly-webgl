@@ -508,6 +508,7 @@ cls.WebGLSnapshotArray = function(context_id)
       var types = [textures, buffers];
       types.forEach(function(type){
         type.forEach(function(unit){
+          if (unit.history == null) return null;
           if (unit.history.create) init_loc(unit.history.create.loc);
 
           unit.history.forEach(function(call){
