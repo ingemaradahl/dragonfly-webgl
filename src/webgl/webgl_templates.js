@@ -248,7 +248,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
             'type', 'number',
             'handler', 'webgl-buffer-settings',
             'setting', 'size',
-            'min', '0',
+            'min', '1',
             'max', '4',
             'value', String(buffer_settings.size)
           ]

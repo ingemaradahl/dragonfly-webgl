@@ -103,7 +103,20 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     if (calls.length === 0)
     {
       // Buffer was never used as an VAP, so just load the default settings
-      return null; // TODO;
+      return {
+        offset : 0,
+        stride : 0,
+        size : 3,
+        type : gl.FLOAT,
+        mode : gl.TRIANGLES,
+        'element-array' : null,
+        'element-type'  : null,
+        start : 0,
+        count : this._buffer.data.length
+          ? Math.round(this._buffer.data.length / 3) // Default size is 3
+          : Math.round(this._buffer.size / 12), // Default type is FLOAT (4 bytes), times size (3)
+        options : buffer_options(gl)
+      };
     }
 
     // Load the next drawcall after the current call index
