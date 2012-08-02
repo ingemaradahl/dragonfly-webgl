@@ -346,10 +346,29 @@ cls.WebGLSnapshotArray = function(context_id)
         }.bind(drawcall.fbo);
       }
 
+      // Copy the parameters from the function call to the drawcall object
+      var state = {
+        mode : this.trace[call_index].args[0],
+        indexed : false
+      };
+
+      if (drawcall.element_buffer)
+      {
+        state.count = this.trace[call_index].args[1];
+        state.offset = this.trace[call_index].args[3];
+      }
+      else
+      {
+        state.first = this.trace[call_index].args[1];
+        state.count = this.trace[call_index].args[2];
+      }
+      drawcall.parameters = state;
+
       // Link up eventual element array buffer if it was used
       if (drawcall.element_buffer)
       {
         drawcall.element_buffer = this.buffers.lookup(drawcall.element_buffer, call_index);
+        drawcall.parameters.indexed = true;
       }
 
       // Link up program
@@ -367,12 +386,20 @@ cls.WebGLSnapshotArray = function(context_id)
         for (var j=0; j<attribute.pointers.length; j++)
         {
           var pointer = attribute.pointers[j];
-          var buffer = this.buffers.lookup(pointer.buffer_index, call_index);
+          var buffer;
 
-          if (buffer == null) continue;
+          if (pointer.buffer)
+          {
+            buffer = pointer.buffer
+          }
+          else
+          {
+            buffer = this.buffers.lookup(pointer.buffer_index, call_index);
+            if (buffer == null) continue;
 
-          pointer.buffer = buffer;
-          delete pointer.buffer_index;
+            pointer.buffer = buffer;
+            delete pointer.buffer_index;
+          }
 
           if (buffer.vertex_attribs[call_index])
           {

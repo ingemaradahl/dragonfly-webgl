@@ -124,26 +124,28 @@ cls.WebGLMeshDrawer = function(gl)
       return true;
     };
 
-    this.post = function(gl_buffer, attribute, state, element_buffer)
+    this.post = function(gl_buffer, buffer, attribute, state, element_buffer)
     {
       cache_arr.push({
-        attrib:attribute, 
-        state:state, 
-        element_buffer:element_buffer, 
-        gl_buffer: gl_buffer
+        buffer : buffer,
+        attrib : attribute,
+        state  : state,
+        element_buffer : element_buffer,
+        gl_buffer : gl_buffer
       });
       
       cache_arr.splice(0, cache_arr.length-MAX_SIZE)
     };
 
-    this.lookup = function(attribute, state, element_buffer)
+    this.lookup = function(buffer, attribute, state, element_buffer)
     {
       for (var i=0; i<cache_arr.length; i++)
       {
         var c = cache_arr[i];
         if (equals(c.attrib, attribute)
             && equals(c.state, state)
-            && c.element_buffer === element_buffer)
+            && c.element_buffer === element_buffer
+            && c.buffer === buffer)
         {
           if (i !== MAX_SIZE)
           {
@@ -538,7 +540,7 @@ cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
 
 cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 {
-  var preview = this.cache.lookup(this.layout, this.state, this.element_buffer);
+  var preview = this.cache.lookup(this.buffer, this.layout, this.state, this.element_buffer);
   if (!preview)
   {
     // Notify that data mangling starts
@@ -719,7 +721,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     preview.max_extent = max_extent;
     preview.center = center;
 
-    this.cache.post(preview, this.layout, this.state, this.element_buffer);
+    this.cache.post(preview, this.buffer, this.layout, this.state, this.element_buffer);
   }
 
   this.preview = preview;
@@ -732,8 +734,9 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   this.render();
 };
 
-cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_buffer)
+cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_buffer, clear_rot)
 {
+  clear_rot = clear_rot === undefined ? true : clear_rot;
   this.element_buffer = element_buffer;
   this.buffer = pointer.buffer;
   this.layout = pointer.layout;
@@ -741,7 +744,8 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_b
 
   this.init_buffer();
 
-  this.rot = {x:0, y:0};
+  if (clear_rot)
+    this.rot = {x:0, y:0};
 
   // Refit the viewport to the canvas
   this.onresize();

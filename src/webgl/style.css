@@ -173,6 +173,46 @@ img.flipped
   width: 100px;
 }
 
+.buffer-settings
+{
+  margin: 0;
+  padding: 0;
+}
+
+.buffer-settings tr
+{
+  height: 2em;
+}
+
+.buffer-settings td
+{
+  min-width: 6em;
+}
+
+.buffer-settings input
+{
+  width: 6em;
+}
+
+.buffer-settings fieldset
+{
+  border: 1px solid #ccc;
+}
+
+.buffer-settings > div:nth-child(2n)
+{
+  float: right;
+  position: relative;
+  width: 50%;
+}
+
+.buffer-settings > div:nth-child(2n+1)
+{
+  position: relative;
+  width: 50%;
+  float: left;
+}
+
 /* Trace */
 
 .trace-table span.link

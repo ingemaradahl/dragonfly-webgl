@@ -7,7 +7,7 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLSnapshotView = function(id, name, container_class)
 {
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLSnapshotView.create_ui_widgets = function()
 {

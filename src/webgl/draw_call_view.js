@@ -67,23 +67,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     if (window.webgl.gl)
     {
       this._element_buffer = draw_call.element_buffer;
-      var state = {
-        indexed : trace_call.function_name === "drawElements",
-        mode : trace_call.args[0],
-      };
-
-      if (state.indexed)
-      {
-        state.count = trace_call.args[1];
-        state.offset = trace_call.args[3];
-      }
-      else
-      {
-        state.first = trace_call.args[1];
-        state.count = trace_call.args[2];
-      }
-
-      this._state = state;
+      this._state = draw_call.parameters;
 
       render_preview();
     }
