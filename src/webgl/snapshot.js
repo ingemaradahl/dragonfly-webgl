@@ -302,6 +302,8 @@ cls.WebGLSnapshotArray = function(context_id)
                 linked_object = this.state.get_parameter(param, j);
                 break;
             }
+            // TODO temporary, since texture cant be null in the texture template
+            if (!linked_object || !linked_object.texture) group = "generic";
             break;
           case "uniform":
             linked_object = args[0];

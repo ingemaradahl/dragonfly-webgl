@@ -1149,6 +1149,24 @@ cls.WebGLAPI = function ()
     new GLParam("width", this.TYPES.LONG),
     new GLParam("height", this.TYPES.LONG)
   ]);
+
+  this.set_error_messages = function(errors)
+  {
+    for (var key in errors)
+    {
+      if (!errors.hasOwnProperty(key)) continue;
+
+      var func_regexp = new RegExp("^" + key + "$");
+      for (var fun in this.functions)
+      {
+        if (!func_regexp.test(fun)) continue;
+
+        this.functions[fun].errors = errors[key];
+      }
+    }
+  };
+
+  this.set_error_messages(cls.WebGLAPI.ERROR_MESSAGES);
 };
 
 // TODO: temporary solution since the constants are not in the prototype of WebGLContext.
@@ -1449,4 +1467,40 @@ cls.WebGLAPI.CONSTANTS = {
   VERTEX_SHADER: 35633,
   VIEWPORT: 2978,
   ZERO: 0
+};
+
+// TODO temporary values.
+cls.WebGLAPI.ERROR_MESSAGES = {
+  "drawArrays": {
+    "INVALID_VALUE": [{
+        "txt": "Parameter 'first' or 'count' is negative.",
+        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
+    }, {
+        "txt": "Dup. Parameter 'first' or 'count' is negative.",
+        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
+    }, {
+        "txt": "Dup. Parameter 'first' or 'count' is negative."
+    }, {
+        "txt": "Dup. Parameter 'first' or 'count' is negative.",
+        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
+    }],
+    "INVALID_ENUM": [{
+        "txt": "Parameter 'mode' is not an accepted value.",
+        "ref": "http://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawArrays.xml"
+    }],
+    "INVALID_FRAMEBUFFER_OPERATION": [{
+        "txt": "The currently bound framebuffer is not framebuffer complete (i.e. the return value from checkFramebufferStatus is not FRAMEBUFFER_COMPLETE)."
+    }],
+    "INVALID_OPERATION": [{
+        "txt": "Addition of prameters 'firstVert' and 'numVerts' overflow a 32-bit integer"
+    }, {
+        "txt": "The bound vertex buffer does not contain enough data."
+    }, {
+        "txt": "A vertex attribute is enabled as an array via enableVertexAttribArray but no buffer is bound to that attribute via bindBuffer and vertexAttribPointer.",
+        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#6.4"
+    }]
+  },
+  "uniform1[fi]v?": {
+
+  }
 };

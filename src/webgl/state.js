@@ -36,6 +36,25 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index, includ
   return result;
 };
 
+cls.WebGLState.prototype.get_all_parameters = function(call_index, include_old_value)
+{
+  include_old_value = Boolean(include_old_value);
+
+  var result = {};
+
+  for (var group in cls.WebGLState.PARAMETER_GROUPS)
+  {
+    var params = cls.WebGLState.PARAMETER_GROUPS[group];
+    for (var i = 0; i < params.length; i++)
+    {
+      var param = params[i];
+      result[param] = this.get_parameter(param, call_index, include_old_value);
+    }
+  }
+
+  return result;
+};
+
 cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index, include_old_value)
 {
   include_old_value = Boolean(include_old_value);
@@ -63,7 +82,7 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "getUniformLocation": "uniform",
   "getVertexAttrib": "attrib",
   "getVertexAttribOffset": "attrib",
-  "uniform": "uniform",
+  "uniform1f": "uniform",
   "uniform1fv": "uniform",
   "uniform1i": "uniform",
   "uniform1iv": "uniform",
@@ -230,8 +249,6 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "SAMPLE_BUFFERS",
     "SAMPLE_COVERAGE_INVERT",
     "SAMPLE_COVERAGE_VALUE",
-    "SCISSOR_BOX",
-    "SCISSOR_TEST",
     "STENCIL_BACK_FAIL",
     "STENCIL_BACK_FUNC",
     "STENCIL_BACK_PASS_DEPTH_FAIL",
@@ -252,8 +269,12 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "UNPACK_ALIGNMENT",
     "UNPACK_COLORSPACE_CONVERSION_WEBGL",
     "UNPACK_FLIP_Y_WEBGL",
-    "UNPACK_PREMULTIPLY_ALPHA_WEBGL",
-    "VIEWPORT"
+    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
+  ],
+  viewport: [
+    "VIEWPORT",
+    "SCISSOR_BOX",
+    "SCISSOR_TEST"
   ],
   buffer: [
     "ARRAY_BUFFER_BINDING",
@@ -289,5 +310,10 @@ cls.WebGLState.PARAMETER_GROUPS = {
   attrib: [
     "ARRAY_BUFFER_BINDING",
     "CURRENT_PROGRAM"
+  ],
+  draw: [
+    "ARRAY_BUFFER_BINDING",
+    "FRAMEBUFFER_BINDING",
+    "ELEMENT_ARRAY_BUFFER_BINDING"
   ]
 };

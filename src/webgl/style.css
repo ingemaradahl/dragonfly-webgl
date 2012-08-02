@@ -114,6 +114,50 @@ img.flipped
   border: 1px solid #666;
 }
 
+.call-info > .error-message
+{
+  background: #F2C9C9;
+  border: 1px solid rgba(153, 0, 0, 0.267);
+  color: #5C0909 !important;
+  display: inline-block;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.call-info > .error-message .cause
+{
+  font-style: italic;
+}
+
+.call-info > .error-message .divider
+{
+  height: 1px;
+  background-color: #5C0909;
+  margin-bottom: 4px;
+  margin-top: 2px;
+}
+
+.call-info > .error-message > div
+{
+  margin-bottom: 8px;
+}
+
+.call-info > .error-message > div:last-child
+{
+  margin-bottom: 0;
+}
+
+.call-info > .error-message a
+{
+  margin-left: 5px;
+  color: #000;
+}
+
+#webgl-state-table-container .sortable-table
+{
+  border: 1px solid #ccc;
+}
+
 /* Texture */
 .webgl_view div.loading-image
 {

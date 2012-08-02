@@ -29,19 +29,6 @@ window.templates.webgl.no_contexts = function()
   ];
 };
 
-window.templates.webgl.no_snapshots = function()
-{
-  return [
-    "div",
-    [
-      [
-        "span", "Go ahead take a snapshot.",
-      ]
-    ],
-    "class", "info-box"
-  ];
-};
-
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
   var data_table;
@@ -93,7 +80,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
       ["select",
       buffer_options,
       "handler", "webgl-select-layout",
-      "id", "webgl-layout-selector" 
+      "id", "webgl-layout-selector"
       ],
     ];
 
@@ -138,7 +125,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
-      data_table 
+      data_table
     ]
   ];
 };
@@ -512,7 +499,7 @@ window.templates.webgl.trace_row = function(call, call_number, view_id)
   if (call.have_error)
   {
     var error = window.webgl.api.constant_value_to_string(call.error_code);
-    content.push(" » ", ["span", "error: " + String(error)]);
+    content.push(" » ", ["span", String(error)]);
     row_class = "trace-error";
   }
   else if (call.redundant)
@@ -753,73 +740,129 @@ window.templates.webgl.goto_script = function(loc, content)
   content.push("title", "Called from " + loc.caller_name + " in " + script_url);
 };
 
+window.templates.webgl.state_parameter = function(param_name, param)
+{
+  var value = param.value;
+  var param_content = window.templates.webgl.state_parameter_value(param_name, value);
+  if (param.old_value)
+  {
+    var old_value = param.old_value;
+    var old_param_content = window.templates.webgl.state_parameter_value(param_name, old_value);
+    old_param_content.push("class", "old-value");
+    param_content = [
+      old_param_content,
+      ["span", " » "],
+      param_content
+    ];
+  }
+  return param_content;
+};
+
 window.templates.webgl.state_parameters = function(state_parameters)
 {
-  var value_to_html = function(value)
+  var content = [];
+  for (var param_name in state_parameters)
   {
-    var param_content;
-    if (value != null && value instanceof cls.WebGLLinkedObject)
+    if (!state_parameters.hasOwnProperty(param_name)) continue;
+    var param = state_parameters[param_name];
+    var param_content = window.templates.webgl.state_parameter(param_name, param);
+    content.push(["tr", [["td", param_name], ["td", param_content]]]);
+  }
+
+  return [
+    "table", content,
+    "class", "state-table sortable-table"
+  ];
+};
+
+window.templates.webgl.state_parameter_value = function(param, value)
+{
+  var param_content;
+  if (value != null && value instanceof cls.WebGLLinkedObject)
+  {
+    if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
     {
-      if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
-      {
-        var color = value.data;
-        var colors = (color[0] * 255) + ", " + (color[1] * 255) + ", " + (color[2] * 255) + ", " + color[3];
-        param_content = [
-          "div",
-          [
-            ["div", ["div", "style", "background-color: rgba(" + colors + ")"], "class", "color-box checkerboard"],
-            ["span", value.text]
-          ]
-        ];
-      }
-      else
-      {
-        param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
-      }
+      var color = value.data;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      param_content = [
+        "div",
+        [
+          ["div",
+            ["div", "style", "background-color: rgba(" + colors + ");"],
+            "class", "color-box checkerboard"
+          ],
+          ["span", value.text]
+        ]
+      ];
     }
     else
     {
-      param_content = ["span", window.webgl.api.state_parameter_to_string(param, value)];
+      param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
     }
-
-    return param_content;
-  };
-
-  var content = [];
-  for (var param in state_parameters)
-  {
-    if (!state_parameters.hasOwnProperty(param)) continue;
-    var value = state_parameters[param].value;
-    var param_content = value_to_html(value);
-    if (state_parameters[param].old_value)
-    {
-      var old_value = state_parameters[param].old_value;
-      var old_param_content = value_to_html(old_value);
-      old_param_content.push("class", "old-value");
-      param_content = [
-        old_param_content,
-        ["span", " » "],
-        param_content
-      ];
-    }
-    content.push(["tr", [["td", param], ["td", param_content]]]);
   }
-  return [
-    "div", [
-      ["h3", "State parameters"],
-      [
-        "table", content,
-        "class", "state-table sortable-table"
-      ]
+  else
+  {
+    param_content = [
+      "span", window.webgl.api.state_parameter_to_string(param, value)
+    ];
+  }
+
+  return param_content;
+};
+
+window.templates.webgl.error_message = function(call)
+{
+  var error_code = window.webgl.api.constant_value_to_string(call.error_code);
+  var header = [
+    "h2", [
+      ["span", "Error: " + error_code],
     ]
   ];
+
+  var content = [header];
+
+  var result = [
+    "div", content,
+    "class", "error-message"
+  ];
+
+  var fun_errors = window.webgl.api.functions[call.function_name].errors;
+  if (!fun_errors || !(error_code in fun_errors)) return result;
+
+  var errors = fun_errors[error_code];
+  errors = errors.map(function(error){return [
+    "div",
+    [
+      [
+        "span", error.txt
+      ],
+      !error.ref ? [] : [
+        "a", "Read more here.",
+        "href", error.ref
+      ]
+    ]
+  ];});
+
+  content.push([
+    "div", "",
+    "class", "divider"
+  ]);
+  content.push([
+    "div", "Possible cause" + (errors.length === 1 ? "" : "s") + ":",
+    "class", "cause"
+  ]);
+  content.push(errors);
+
+  return result;
 };
 
 /**
  * @param {Array} template optional, should contain a html structure of other
  *   content that should be shown below the header.
  */
-
 window.templates.webgl.info_with_header = function(template)
 {
   var header = [
@@ -827,19 +870,19 @@ window.templates.webgl.info_with_header = function(template)
       [
         "h2", [
           ["span", "Start of frame"],
-        ],
+        ]
       ]
     ],
     "class", "draw-call-info"
   ];
 
-    var html = [header];
-    if (template)
-    {
-      html.push(template);
-    }
+  var html = [header];
+  if (template)
+  {
+    html.push(template);
+  }
 
-    return html;
+  return html;
 };
 
 window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, template)
@@ -871,6 +914,22 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   window.templates.webgl.goto_script(trace_call.loc, function_name);
 
   var state = window.templates.webgl.state_parameters(state_parameters);
+  state = [
+    "div", [
+      [
+        "h3", "State parameters"
+      ],
+      [
+        "span", "Show all parameters",
+        "handler", "webgl-toggle-state-list",
+        "id", "webgl-state-table-text"
+      ],
+    ],
+    [
+      "div", state,
+      "id", "webgl-state-table-container"
+    ]
+  ];
 
   var header = [
     "div",
@@ -894,7 +953,13 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   ];
 
   var res = [header];
-  var content = [state];
+
+  var content = [];
+  if (trace_call.error_code !== cls.WebGLAPI.CONSTANTS.NO_ERROR)
+  {
+    content.push(window.templates.webgl.error_message(trace_call));
+  }
+  content.push(state);
   res.push([
     "div",
     content,
@@ -1247,5 +1312,5 @@ window.templates.webgl.settings = function(settings)
       ],
       'id', 'remote-debug-settings'
     ];
-  
+
 };

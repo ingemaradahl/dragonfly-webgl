@@ -655,7 +655,7 @@ ui_framework.layouts.webgl_rough_layout =
           height: 350,
           tabbar: {
             tabs: [
-              'webgl_draw_call', 'webgl_texture_call', 'webgl_call',
+              'webgl_draw_call', 'webgl_texture_call', 'webgl_generic_call',
               'webgl_buffer_call', 'webgl_program_call'
             ],
             is_hidden: true
