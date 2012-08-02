@@ -15,10 +15,20 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this._snapshot = null;
   this._call_index = 0;
 
+  this.createView = function(container)
+  {
+    cls.WebGLCallView.createView.apply(this, arguments);
+
+    var preview_container = new Container(document.createElement("container"));
+    preview_container.setup("webgl_buffer_preview");
+    this._preview_container = preview_container.cell;
+  };
+
   var add_canvas = function()
   {
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
+    canvas_holder.appendChild(this._preview_container)
 
     this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
   }.bind(this);
@@ -31,6 +41,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
+    preview.set_info_container(this._preview_container);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
   }.bind(this);
@@ -54,23 +65,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     if (window.webgl.gl)
     {
       this._element_buffer = draw_call.element_buffer;
-      var state = {
-        indexed : trace_call.function_name === "drawElements",
-        mode : trace_call.args[0],
-      };
-
-      if (state.indexed)
-      {
-        state.count = trace_call.args[1];
-        state.offset = trace_call.args[3];
-      }
-      else
-      {
-        state.first = trace_call.args[1];
-        state.count = trace_call.args[2];
-      }
-
-      this._state = state;
+      this._state = draw_call.parameters;
 
       render_preview();
     }

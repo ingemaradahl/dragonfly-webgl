@@ -17,8 +17,163 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._buffer = null;
     this._buffer_layouts = {};
     this._inputbox_hidden = true;
+
+    this._buffer_settings = null;
+    this._preview_container = null;
   }.bind(this);
+
   clear();
+
+  this.createView = function(container)
+  {
+    cls.WebGLCallView.createView.apply(this, arguments);
+
+    var preview_container = new Container(document.createElement("container"));
+    preview_container.setup("webgl_buffer_preview");
+
+    this._preview_container = preview_container.cell;
+  };
+
+  this.ondestroy = function()
+  {
+    cls.WebGLCallView.ondestroy.apply(this, arguments);
+    this._preview_container = null;
+  };
+
+  /**
+   * Adds the canvas used to display buffer previews
+   */
+  var add_canvas = function()
+  {
+    var canvas_holder = document.getElementById("webgl-canvas-holder");
+    canvas_holder.appendChild(window.webgl.gl.canvas);
+    canvas_holder.appendChild(this._preview_container)
+
+    this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
+    window.webgl.preview.set_info_container(this._preview_container);
+  }.bind(this);
+
+  /**
+   * Constructs a buffer setting object, describing the layout, mode and so on
+   * about a buffer based on the draw call it was used in, if it exists
+   */
+  var build_settings = function()
+  {
+    var gl = window.webgl.gl;
+
+    var buffer_options = function ()
+    {
+      var element_buffers = [];
+      for (var i=0; i<this._snapshot.buffers.length; i++)
+      {
+        var buffer = this._snapshot.buffers[i];
+        if (buffer.target == gl.ELEMENT_ARRAY_BUFFER)
+          element_buffers.push(buffer);
+      }
+      element_buffers.push(null);
+
+      return {
+        types: [gl.BYTE, gl.SHORT, gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT, gl.FLOAT],
+        modes: [gl.TRIANGLES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.LINES, gl.LINE_STRIP, gl.LINE_LOOP],
+        element_types: [gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT],
+        element_buffers: element_buffers
+      }
+    }.bind(this);
+
+    if (this._buffer.target === gl.ELEMENT_ARRAY_BUFFER)
+      return null;
+
+    var calls = [];
+    var vertex_attrib = null;
+    var layout = null;
+
+    // Find all the calls that used this buffer as a vertex attribute pointer
+    for (var call in this._buffer.vertex_attribs)
+    {
+      if (this._buffer.vertex_attribs.hasOwnProperty(call))
+      {
+        calls.push(Number(call));
+      }
+    }
+
+    if (calls.length === 0)
+    {
+      // Buffer was never used as an VAP, so just load the default settings
+      return null; // TODO;
+    }
+
+    // Load the next drawcall after the current call index
+    var call_index = this._call_index;
+    var call = calls.reduce(function(prev, curr) { return curr < prev && curr > call_index ? curr : prev; }, Infinity);
+    vertex_attrib = this._buffer.vertex_attribs[call];
+    var draw_call = this._snapshot.drawcalls.get_by_call(call);
+    var element_buffer = vertex_attrib.element_buffer;
+
+    for (var i=0; i<vertex_attrib.length; i++)
+    {
+      for (var j=0; j<vertex_attrib[i].pointers.length; j++)
+      {
+        var pointer = vertex_attrib[i].pointers[j];
+        if (pointer.buffer.index === this._buffer.index)
+        {
+          layout = pointer.layout;
+          break;
+        }
+      }
+
+      if (layout)
+        break;
+    }
+
+    return {
+      offset : layout.offset,
+      stride : layout.stride,
+      size : layout.size,
+      type : layout.type,
+      mode : draw_call.parameters.mode,
+      'element-array' : element_buffer ? element_buffer : null,
+      'element-type' : element_buffer
+        ? element_buffer.constructor === "Uint8Array"
+          ? gl.UNSIGNED_BYTE
+          : gl.UNSIGNED_SHORT
+        : null,
+      start : draw_call.parameters.first !== undefined ? draw_call.parameters.first : draw_call.parameters.offset,
+      count : draw_call.parameters.count,
+      options : buffer_options(gl)
+    };
+
+  }.bind(this);
+
+  this.set_preview = function()
+  {
+    var preview = window.webgl.preview;
+    var settings = this._buffer_settings;
+    var layout = {
+      offset : settings.offset,
+      stride : settings.stride,
+      size  : settings.size,
+      type : settings.type
+    };
+
+    var state = {
+      indexed : Boolean(settings['element-array']),
+      mode : settings.mode,
+      count : settings.count
+    };
+
+    if (state.indexed)
+    {
+      state.offset = settings.start;
+    }
+    else
+    {
+      state.first = settings.start
+    }
+
+    var pointer = { buffer: this._buffer, layout: layout };
+    preview.set_attribute(pointer, state, settings['element-array'], false);
+    preview.render();
+  };
 
   this._render = function(snapshot, call_index, buffer)
   {
@@ -42,11 +197,16 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       start_row = layout_obj.start_row || 0;
     }
 
-    var template = window.templates.webgl.buffer_base(buffer, coordinates,
+    this._buffer_settings = build_settings();
+
+    var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
       selected_index, start_row);
 
     buffer.request_data();
     this.render_with_header(snapshot, call_index, template);
+
+    add_canvas();
+    this.set_preview();
   };
 
   this._on_buffer_data = function(msg)
@@ -63,10 +223,11 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
       }
 
-      var template = window.templates.webgl.buffer_base(buffer, coordinates,
+      var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
         selected_index);
 
       this.render_with_header(this._snapshot, this._call_index, template);
+      add_canvas();
     }
   };
 
@@ -127,6 +288,34 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     }
   };
 
+  var on_settings_change = function(event, target)
+  {
+    var setting = target.getAttribute('setting');
+    switch (setting)
+    {
+      case "offset":
+      case "stride":
+      case "size":
+      case "start":
+      case "count":
+        var value = Number(target.value);
+        this._buffer_settings[setting] = value;
+        break;
+      case "type":
+      case "mode":
+      case "element-type":
+        var value = Number(target.options[target.selectedIndex].value);
+        this._buffer_settings[setting] = value;
+        break;
+      case "element-array":
+        var buffer = target.options[target.selectedIndex].buffer;
+        this._buffer_settings['element-array'] = buffer;
+        break;
+    }
+
+    this.set_preview();
+  };
+
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   messages.addListener('webgl-clear', clear);
 
@@ -134,6 +323,8 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
+
+  eh.change["webgl-buffer-settings"] = on_settings_change.bind(this);
 
   this.init(id, name, container_class);
 };

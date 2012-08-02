@@ -29,7 +29,7 @@ window.templates.webgl.no_contexts = function()
   ];
 };
 
-window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item, start_row)
+window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
   var data_table;
   if (buffer.data_is_loaded())
@@ -85,6 +85,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
     ];
 
   var history = window.templates.webgl.history(buffer);
+  var preview = buffer_settings ? window.templates.webgl.buffer_preview(buffer_settings) : ""; 
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -120,6 +121,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
         ]
       ],
       history,
+      preview,
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
@@ -205,6 +207,178 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
   ];
 
   return [data_table, more_data];
+};
+
+/**
+ * Returns a div containing a buffer preview with options for setting offset,
+ * stride, element buffer and such..
+ */
+window.templates.webgl.buffer_preview = function (buffer_settings)
+{
+  var position = ['fieldset',
+    ['legend', 'Position'],
+    ['table',
+      ['tr', ['td', 'Offset:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'offset',
+            'min', '0',
+            'max', '255',
+            'value', String(buffer_settings.offset)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Stride:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'stride',
+            'min', '0',
+            'max', '255',
+            'value', String(buffer_settings.stride)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Size:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'size',
+            'min', '0',
+            'max', '4',
+            'value', String(buffer_settings.size)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Type:'],
+        ['td',
+          ['select',
+            buffer_settings.options.types.map(function(type) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(type),
+                'value', String(type)
+              ];
+
+              if (type === buffer_settings.type)
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'type',
+          ]
+        ]
+      ],
+    ]
+  ];
+
+  var parameters = ['fieldset',
+    ['legend', 'Parameters'],
+    ['table',
+      ['tr', ['td', 'Mode:'],
+        ['td',
+          ['select',
+            buffer_settings.options.modes.map(function(mode) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(mode),
+                'value', String(mode)
+              ];
+
+              if (mode === buffer_settings.mode)
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'mode',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Element Array:'],
+        ['td',
+          ['select',
+            buffer_settings.options.element_buffers.map(function(buffer) {
+              var option = ['option',
+                buffer ? buffer.toString() : "unindexed",
+                'value', buffer,
+                'buffer', buffer,
+              ];
+
+              if (buffer === buffer_settings['element-array'])
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'element-array',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Element Type:'],
+        ['td',
+          ['select',
+            buffer_settings.options.element_types.map(function(type) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(type),
+                'value', String(type)
+              ];
+
+              if (type === buffer_settings['element-type'])
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'element-type',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Start/Count:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'start',
+            'min', '0',
+            'value', String(buffer_settings.start)
+          ],
+          "/",
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'count',
+            'min', '0',
+            'value', String(buffer_settings.count)
+          ],
+        ]
+      ]
+    ]
+  ];
+
+  return ["div",
+    ["div",
+      "handler", "webgl-canvas",
+      "id", "webgl-canvas-holder",
+      "class", "webgl-holder"
+    ],
+    ["div",
+      ["div", position],
+      ["div", parameters],
+      "class", "buffer-settings"
+    ]
+  ];
 };
 
 window.templates.webgl.linked_object = function(obj, handler, data_name)
@@ -838,6 +1012,10 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   return html;
 };
 
+/**
+ * Returns a div containing the buffer preview to be used together with draw
+ * calls, including select form for switching attribute
+ */
 window.templates.webgl.drawcall_buffer = function (draw_call)
 {
   var call_index = draw_call.call_index;
@@ -866,10 +1044,21 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
     ],
     [
       "div",
-      [ "div", "id", "webgl-canvas-info-box" ],
       "handler", "webgl-canvas",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"
+    ]
+  ];
+};
+
+window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
+{
+  return ["div",
+    ['div', "Buffer size (" + buffer_size + "kB) is larger than maximum preview size (" + setting_size + "kB), automatic download disabled."],
+    ['span',
+      ['span', "Load buffer"],
+      'handler', 'webgl-force-buffer',
+      'class', 'ui-button',
     ]
   ];
 };
