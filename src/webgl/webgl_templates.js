@@ -29,20 +29,7 @@ window.templates.webgl.no_contexts = function()
   ];
 };
 
-window.templates.webgl.no_snapshots = function()
-{
-  return [
-    "div",
-    [
-      [
-        "span", "Go ahead take a snapshot.",
-      ]
-    ],
-    "class", "info-box"
-  ];
-};
-
-window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item, start_row)
+window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
   var data_table;
   if (buffer.data_is_loaded())
@@ -98,6 +85,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
     ];
 
   var history = window.templates.webgl.history(buffer);
+  var preview = buffer_settings ? window.templates.webgl.buffer_preview(buffer_settings) : ""; 
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -133,6 +121,7 @@ window.templates.webgl.buffer_base = function(buffer, coordinates, selected_item
         ]
       ],
       history,
+      preview,
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
@@ -218,6 +207,178 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
   ];
 
   return [data_table, more_data];
+};
+
+/**
+ * Returns a div containing a buffer preview with options for setting offset,
+ * stride, element buffer and such..
+ */
+window.templates.webgl.buffer_preview = function (buffer_settings)
+{
+  var position = ['fieldset',
+    ['legend', 'Position'],
+    ['table',
+      ['tr', ['td', 'Offset:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'offset',
+            'min', '0',
+            'max', '255',
+            'value', String(buffer_settings.offset)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Stride:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'stride',
+            'min', '0',
+            'max', '255',
+            'value', String(buffer_settings.stride)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Size:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'size',
+            'min', '0',
+            'max', '4',
+            'value', String(buffer_settings.size)
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Type:'],
+        ['td',
+          ['select',
+            buffer_settings.options.types.map(function(type) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(type),
+                'value', String(type)
+              ];
+
+              if (type === buffer_settings.type)
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'type',
+          ]
+        ]
+      ],
+    ]
+  ];
+
+  var parameters = ['fieldset',
+    ['legend', 'Parameters'],
+    ['table',
+      ['tr', ['td', 'Mode:'],
+        ['td',
+          ['select',
+            buffer_settings.options.modes.map(function(mode) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(mode),
+                'value', String(mode)
+              ];
+
+              if (mode === buffer_settings.mode)
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'mode',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Element Array:'],
+        ['td',
+          ['select',
+            buffer_settings.options.element_buffers.map(function(buffer) {
+              var option = ['option',
+                buffer ? buffer.toString() : "unindexed",
+                'value', buffer,
+                'buffer', buffer,
+              ];
+
+              if (buffer === buffer_settings['element-array'])
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'element-array',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Element Type:'],
+        ['td',
+          ['select',
+            buffer_settings.options.element_types.map(function(type) {
+              var option = ['option',
+                window.webgl.api.constant_value_to_string(type),
+                'value', String(type)
+              ];
+
+              if (type === buffer_settings['element-type'])
+              {
+                option.push('selected', 'selected');
+              }
+
+              return option;
+            }),
+            'handler', 'webgl-buffer-settings',
+            'setting', 'element-type',
+          ]
+        ]
+      ],
+      ['tr', ['td', 'Start/Count:'],
+        ['td',
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'start',
+            'min', '0',
+            'value', String(buffer_settings.start)
+          ],
+          "/",
+          ['input',
+            'type', 'number',
+            'handler', 'webgl-buffer-settings',
+            'setting', 'count',
+            'min', '0',
+            'value', String(buffer_settings.count)
+          ],
+        ]
+      ]
+    ]
+  ];
+
+  return ["div",
+    ["div",
+      "handler", "webgl-canvas",
+      "id", "webgl-canvas-holder",
+      "class", "webgl-holder"
+    ],
+    ["div",
+      ["div", position],
+      ["div", parameters],
+      "class", "buffer-settings"
+    ]
+  ];
 };
 
 window.templates.webgl.linked_object = function(obj, handler, data_name)
@@ -579,69 +740,77 @@ window.templates.webgl.goto_script = function(loc, content)
   content.push("title", "Called from " + loc.caller_name + " in " + script_url);
 };
 
+window.templates.webgl.state_parameter = function(param_name, param)
+{
+  var value = param.value;
+  var param_content = window.templates.webgl.state_parameter_value(param_name, value);
+  if (param.old_value)
+  {
+    var old_value = param.old_value;
+    var old_param_content = window.templates.webgl.state_parameter_value(param_name, old_value);
+    old_param_content.push("class", "old-value");
+    param_content = [
+      old_param_content,
+      ["span", " » "],
+      param_content
+    ];
+  }
+  return param_content;
+};
+
 window.templates.webgl.state_parameters = function(state_parameters)
 {
-  var value_to_html = function(value)
+  var content = [];
+  for (var param_name in state_parameters)
   {
-    var param_content;
-    if (value != null && value instanceof cls.WebGLLinkedObject)
+    if (!state_parameters.hasOwnProperty(param_name)) continue;
+    var param = state_parameters[param_name];
+    var param_content = window.templates.webgl.state_parameter(param_name, param);
+    content.push(["tr", [["td", param_name], ["td", param_content]]]);
+  }
+
+  return [
+    "table", content,
+    "class", "state-table sortable-table"
+  ];
+};
+
+window.templates.webgl.state_parameter_value = function(param, value)
+{
+  var param_content;
+  if (value != null && value instanceof cls.WebGLLinkedObject)
+  {
+    if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
     {
-      if (window.webgl.api.STATE_PARAMETER_TYPES[param] === window.webgl.api.TYPES.COLOR)
-      {
-        var color = value.data;
-        var colors = Math.round(color[0] * 255) + ", " +
-                     Math.round(color[1] * 255) + ", " +
-                     Math.round(color[2] * 255) + ", " +
-                     color[3];
-        param_content = [
-          "div",
-          [
-            ["div", ["div", "style", "background-color: rgba(" + colors + ");"], "class", "color-box checkerboard"],
-            ["span", value.text]
-          ]
-        ];
-      }
-      else
-      {
-        param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
-      }
+      var color = value.data;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      param_content = [
+        "div",
+        [
+          ["div",
+            ["div", "style", "background-color: rgba(" + colors + ");"],
+            "class", "color-box checkerboard"
+          ],
+          ["span", value.text]
+        ]
+      ];
     }
     else
     {
-      param_content = ["span", window.webgl.api.state_parameter_to_string(param, value)];
+      param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
     }
-
-    return param_content;
-  };
-
-  var content = [];
-  for (var param in state_parameters)
-  {
-    if (!state_parameters.hasOwnProperty(param)) continue;
-    var value = state_parameters[param].value;
-    var param_content = value_to_html(value);
-    if (state_parameters[param].old_value)
-    {
-      var old_value = state_parameters[param].old_value;
-      var old_param_content = value_to_html(old_value);
-      old_param_content.push("class", "old-value");
-      param_content = [
-        old_param_content,
-        ["span", " » "],
-        param_content
-      ];
-    }
-    content.push(["tr", [["td", param], ["td", param_content]]]);
   }
-  return [
-    "div", [
-      ["h3", "State parameters"],
-      [
-        "table", content,
-        "class", "state-table sortable-table"
-      ]
-    ]
-  ];
+  else
+  {
+    param_content = [
+      "span", window.webgl.api.state_parameter_to_string(param, value)
+    ];
+  }
+
+  return param_content;
 };
 
 window.templates.webgl.error_message = function(call)
@@ -745,6 +914,22 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   window.templates.webgl.goto_script(trace_call.loc, function_name);
 
   var state = window.templates.webgl.state_parameters(state_parameters);
+  state = [
+    "div", [
+      [
+        "h3", "State parameters"
+      ],
+      [
+        "span", "Show all parameters",
+        "handler", "webgl-toggle-state-list",
+        "id", "webgl-state-table-text"
+      ],
+    ],
+    [
+      "div", state,
+      "id", "webgl-state-table-container"
+    ]
+  ];
 
   var header = [
     "div",
@@ -827,6 +1012,10 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   return html;
 };
 
+/**
+ * Returns a div containing the buffer preview to be used together with draw
+ * calls, including select form for switching attribute
+ */
 window.templates.webgl.drawcall_buffer = function (draw_call)
 {
   var call_index = draw_call.call_index;
@@ -855,10 +1044,21 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
     ],
     [
       "div",
-      [ "div", "id", "webgl-canvas-info-box" ],
       "handler", "webgl-canvas",
       "id", "webgl-canvas-holder",
       "class", "webgl-holder"
+    ]
+  ];
+};
+
+window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
+{
+  return ["div",
+    ['div', "Buffer size (" + buffer_size + "kB) is larger than maximum preview size (" + setting_size + "kB), automatic download disabled."],
+    ['span',
+      ['span', "Load buffer"],
+      'handler', 'webgl-force-buffer',
+      'class', 'ui-button',
     ]
   ];
 };

@@ -36,6 +36,25 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index, includ
   return result;
 };
 
+cls.WebGLState.prototype.get_all_parameters = function(call_index, include_old_value)
+{
+  include_old_value = Boolean(include_old_value);
+
+  var result = {};
+
+  for (var group in cls.WebGLState.PARAMETER_GROUPS)
+  {
+    var params = cls.WebGLState.PARAMETER_GROUPS[group];
+    for (var i = 0; i < params.length; i++)
+    {
+      var param = params[i];
+      result[param] = this.get_parameter(param, call_index, include_old_value);
+    }
+  }
+
+  return result;
+};
+
 cls.WebGLState.prototype.get_function_parameters = function(function_name, call_index, include_old_value)
 {
   include_old_value = Boolean(include_old_value);
@@ -99,15 +118,15 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "finish": "draw",
   "flush": "draw",
   "activeTexture": "generic",
-  "blendColor": "generic",
-  "blendEquation": "generic",
-  "blendEquationSeparate": "generic",
-  "blendFunc": "generic",
-  "blendFuncSeparate": "generic",
-  "clearColor": "generic",
-  "clearDepth": "generic",
-  "clearStencil": "generic",
-  "colorMask": "generic",
+  "blendColor": "blend",
+  "blendEquation": "blend",
+  "blendEquationSeparate": "blend",
+  "blendFunc": "blend",
+  "blendFuncSeparate": "blend",
+  "clearColor": "clear",
+  "clearDepth": "clear",
+  "clearStencil": "stencil",
+  "colorMask": "clear",
   "cullFace": "generic",
   "depthFunc": "generic",
   "depthMask": "generic",
@@ -123,12 +142,12 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "pixelStorei": "generic",
   "polygonOffset": "generic",
   "sampleCoverage": "generic",
-  "stencilFunc": "generic",
-  "stencilFuncSeparate": "generic",
-  "stencilMask": "generic",
-  "stencilMaskSeparate": "generic",
-  "stencilOp": "generic",
-  "stencilOpSeparate": "generic",
+  "stencilFunc": "stencil",
+  "stencilFuncSeparate": "stencil",
+  "stencilMask": "stencil",
+  "stencilMaskSeparate": "stencil",
+  "stencilOp": "stencil",
+  "stencilOpSeparate": "stencil",
   "scissor": "viewport",
   "viewport": "viewport",
   "bindBuffer": "buffer",
@@ -194,6 +213,44 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "ALIASED_LINE_WIDTH_RANGE",
     "ALIASED_POINT_SIZE_RANGE",
     "ALPHA_BITS",
+    "BLUE_BITS",
+    "COLOR_WRITEMASK",
+    "CULL_FACE",
+    "CULL_FACE_MODE",
+    "DEPTH_BITS",
+    "DEPTH_FUNC",
+    "DEPTH_RANGE",
+    "DEPTH_TEST",
+    "DEPTH_WRITEMASK",
+    "DITHER",
+    "FRONT_FACE",
+    "GENERATE_MIPMAP_HINT",
+    "GREEN_BITS",
+    "LINE_WIDTH",
+    "PACK_ALIGNMENT",
+    "POLYGON_OFFSET_FACTOR",
+    "POLYGON_OFFSET_FILL",
+    "POLYGON_OFFSET_UNITS",
+    "RED_BITS",
+    "SAMPLES",
+    "SAMPLE_BUFFERS",
+    "SAMPLE_COVERAGE_INVERT",
+    "SAMPLE_COVERAGE_VALUE",
+    "SUBPIXEL_BITS",
+    "UNPACK_ALIGNMENT",
+    "UNPACK_COLORSPACE_CONVERSION_WEBGL",
+    "UNPACK_FLIP_Y_WEBGL",
+    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
+  ],
+  program: [
+    "CURRENT_PROGRAM"
+  ],
+  viewport: [
+    "VIEWPORT",
+    "SCISSOR_BOX",
+    "SCISSOR_TEST"
+  ],
+  blend: [
     "BLEND",
     "BLEND_COLOR",
     "BLEND_DST_ALPHA",
@@ -202,34 +259,8 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "BLEND_EQUATION_RGB",
     "BLEND_SRC_ALPHA",
     "BLEND_SRC_RGB",
-    "BLUE_BITS",
-    "COLOR_WRITEMASK",
-    "COMPRESSED_TEXTURE_FORMATS",
-    "CULL_FACE",
-    "CULL_FACE_MODE",
-    "CURRENT_PROGRAM",
-    "DEPTH_BITS",
-    "DEPTH_FUNC",
-    "DEPTH_RANGE",
-    "DEPTH_TEST",
-    "DEPTH_WRITEMASK",
-    "DITHER",
-    "FRAMEBUFFER_BINDING",
-    "FRONT_FACE",
-    "GENERATE_MIPMAP_HINT",
-    "GREEN_BITS",
-    "LINE_WIDTH",
-    "NUM_COMPRESSED_TEXTURE_FORMATS",
-    "PACK_ALIGNMENT",
-    "POLYGON_OFFSET_FACTOR",
-    "POLYGON_OFFSET_FILL",
-    "POLYGON_OFFSET_UNITS",
-    "RED_BITS",
-    "RENDERBUFFER_BINDING",
-    "SAMPLES",
-    "SAMPLE_BUFFERS",
-    "SAMPLE_COVERAGE_INVERT",
-    "SAMPLE_COVERAGE_VALUE",
+  ],
+  stencil: [
     "STENCIL_BACK_FAIL",
     "STENCIL_BACK_FUNC",
     "STENCIL_BACK_PASS_DEPTH_FAIL",
@@ -246,22 +277,20 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "STENCIL_TEST",
     "STENCIL_VALUE_MASK",
     "STENCIL_WRITEMASK",
-    "SUBPIXEL_BITS",
-    "UNPACK_ALIGNMENT",
-    "UNPACK_COLORSPACE_CONVERSION_WEBGL",
-    "UNPACK_FLIP_Y_WEBGL",
-    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
-  ],
-  viewport: [
-    "VIEWPORT",
-    "SCISSOR_BOX",
-    "SCISSOR_TEST"
   ],
   buffer: [
     "ARRAY_BUFFER_BINDING",
     "ELEMENT_ARRAY_BUFFER_BINDING"
   ],
+  framebuffer: [
+    "FRAMEBUFFER_BINDING",
+  ],
+  renderbuffer: [
+    "RENDERBUFFER_BINDING",
+  ],
   constants: [
+    "NUM_COMPRESSED_TEXTURE_FORMATS",
+    "COMPRESSED_TEXTURE_FORMATS",
     "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
     "MAX_CUBE_MAP_TEXTURE_SIZE",
     "MAX_RENDERBUFFER_SIZE",

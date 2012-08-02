@@ -70,6 +70,72 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
   }
 };
 
+/* General settings view */
+cls.WebGLGeneralView = function(id, name, container_class)
+{
+  this.init(id, name, container_class);
+}
+
+cls.WebGLGeneralView.create_ui_widgets = function()
+{
+  var checkboxes =
+  [
+    'enable-debugger'
+  ];
+
+  new Settings
+  (
+    // id
+    'webgl-general',
+    // key-value map
+    {
+      'enable-debugger' : true,
+      'max_preview_size' : 128 // In KB
+    },
+    // key-label map
+    {
+      'enable-debugger': "Enable the WebGL Debugger",
+      'max_preview_size': "Max size of automatic buffer preview"
+    },
+    // settings map
+    {
+      checkboxes: checkboxes,
+      customSettings:
+      [
+        'max_preview_size'
+      ]
+    },
+    // template
+    {
+      'max_preview_size':
+      function(setting)
+      {
+        return (
+        [
+          'setting-composite',
+          ['label',
+            setting.label_map['max_preview_size'] + ': ',
+            ['input',
+              'type', 'number',
+              'handler', 'set_max_preview_size',
+              'max', '10240', // Roughly 10 Megabyte
+              'min', '0',
+              'value', setting.get('max_preview_size')
+            ],
+            'kB'
+          ]
+        ] );
+      }
+    },
+    "webgl"
+  );
+
+  eventHandlers.change['set_max_preview_size'] = function(event, target)
+  {
+    var preview_size = Number(event.target.value);
+    settings['webgl-general'].set('max_preview_size', preview_size);
+  }
+};
 
 /**
  * Base class for all call views.
@@ -77,13 +143,13 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
  * @extends ViewBase
  */
 cls.WebGLCallView = Object.create(ViewBase, {
-  _render_enabled: {
-    writable: true,
-    value: true
-  },
   _container: {
     writable: true,
     value: null
+  },
+  _render_enabled: {
+    writable: true,
+    value: true
   },
   createView: {
     writable: true, configurable: true,
@@ -91,6 +157,7 @@ cls.WebGLCallView = Object.create(ViewBase, {
     {
       this._container = container;
       if (this._render_enabled) this.render();
+      cls.WebGLCallView.active_view = this;
     }
   },
   ondestroy: {
@@ -98,6 +165,7 @@ cls.WebGLCallView = Object.create(ViewBase, {
     value: function()
     {
       this._container = null;
+      cls.WebGLCallView.active_view = null;
     }
   },
   render: {
@@ -123,6 +191,9 @@ cls.WebGLCallView = Object.create(ViewBase, {
         this._render_enabled = true;
       }
 
+      this._snapshot = snapshot;
+      this._call_index = call_index;
+
       this._render.apply(this, arguments);
     }
   },
@@ -143,6 +214,47 @@ cls.WebGLCallView = Object.create(ViewBase, {
 
       this._container.clearAndRender(template);
     }
+  },
+  show_full_state_table: {
+    value: function()
+    {
+      var parameters = this._snapshot.state.get_all_parameters(this._call_index, true);
+      var data = [];
+      for (var key in parameters)
+      {
+        if (!parameters.hasOwnProperty(key)) continue;
+        var param = parameters[key];
+        data.push({
+          parameter: String(key),
+          value: window.templates.webgl.state_parameter(key, param)
+        });
+      }
+      this._state_table.set_data(data);
+    }
+  },
+  toggle_state_list: {
+    value: function()
+    {
+      if (!this._container) return;
+      this._full_state = !this._full_state;
+
+      var state_container = document.getElementById("webgl-state-table-container");
+      if (this._full_state)
+      {
+        this.show_full_state_table();
+        state_container.clearAndRender(this._state_table.render());
+      }
+      else
+      {
+        var trace = this._snapshot.trace[this._call_index];
+        var state_parameters = this._snapshot.state.get_function_parameters(trace.function_name, this._call_index, true);
+        var state = window.templates.webgl.state_parameters(state_parameters);
+        state_container.clearAndRender(state);
+      }
+
+      var state_toggle = document.getElementById("webgl-state-table-text");
+      state_toggle.textContent = "Show " + (this._full_state ? "a selection of" : "all") + " parameters";
+    }
   }
 });
 
@@ -150,6 +262,28 @@ cls.WebGLCallView = Object.create(ViewBase, {
 // Add listeners and methods for call view events.
 cls.WebGLCallView.initialize = function()
 {
+  var tabledef = {
+    handler: "webgl-state-table",
+    column_order: ["parameter", "value"],
+    columns: {
+      parameter: {
+        label: "Parameter"
+      },
+      value: {
+        label: "Value"
+      }
+    },
+    groups: {
+      type: {
+        label: "Parameter type", // TODO
+        // TODO use the parameter groups
+        grouper : function (res) { return Math.round(Math.random() * 5); },
+      }
+    }
+  };
+
+  this._state_table = new SortableTable(tabledef, null, ["parameter", "value"], null, null, false, "state-table");
+
   var on_goto_script_click = function(evt, target)
   {
     var line = parseInt(target.getAttribute("data-line"));
@@ -166,12 +300,22 @@ cls.WebGLCallView.initialize = function()
 
   var on_speclink_click = function(evt, target)
   {
-      window.open(target.getAttribute("function_name"));
+    window.open(target.getAttribute("function_name"));
+  };
+
+  var on_toggle_state_list = function(evt, target)
+  {
+    var view = cls.WebGLCallView.active_view;
+    if (view)
+    {
+      view.toggle_state_list();
+    }
   };
 
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
+  eh.click["webgl-toggle-state-list"] = on_toggle_state_list;
 };
 
 cls.WebGLSnapshotSelect = function(id)
