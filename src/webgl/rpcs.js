@@ -215,23 +215,26 @@ cls.WebGL.RPCs.injection = function () {
       else
       {
         var new_data = args[1];
-        if (new_data.length === buffer.length)
+        if (typeof(new_data) === "object" && new_data !== null)
         {
-          redundant = true;
-          for (var i in new_data)
+          if (new_data.length === buffer.data.length)
           {
-            if (new_data[i] !== buffer.data[i])
+            redundant = true;
+            for (var i in new_data)
             {
-              redundant = false;
-              break;
+              if (new_data[i] !== buffer.data[i])
+              {
+                redundant = false;
+                break;
+              }
             }
           }
+          buffer.size = new_data.byteLength;
+          buffer.data = clone_array(new_data);
+          buffer.constructor = new_data.constructor.name;
         }
-        buffer.size = new_data.byteLength;
-        buffer.data = clone_array(new_data);
         // TODO: Make data cloning a selectable option?
       }
-      buffer.constructor = args[1].constructor.name;
       buffer.target = target;
       buffer.usage = args[2];
       return redundant;
@@ -244,6 +247,8 @@ cls.WebGL.RPCs.injection = function () {
       if (!buffer) return;
 
       var new_data = args[2];
+      if (typeof(new_data) !== "object" || new_data == null)
+        return false;
       var end = new_data.length - offset;
       var redundant = true;
       for (var i = 0; i < end; i++)
@@ -260,6 +265,8 @@ cls.WebGL.RPCs.injection = function () {
     {
       var buffer_index = this.lookup_buffer_index(args[0]);
       if (buffer_index == null) return;
+      if (this.capturing_frame)
+        this.deleted_buffers.push(this.buffers[buffer_index]);
       this.buffers.splice(buffer_index, 1);
 
       var buffer = this.buffers[buffer_index];
@@ -305,7 +312,8 @@ cls.WebGL.RPCs.injection = function () {
     {
       var texture_index = this.lookup_texture_index(args[0]);
       if (texture_index == null) return;
-      // TODO since the texture is removed before the call have been added to the snapshot the linked_object can not be created properly.
+      if (this.capturing_frame)
+        this.deleted_textures.push(this.textures[texture_index]);
       this.textures.splice(texture_index, 1);
 
       var texture = this.textures[texture_index];
@@ -500,6 +508,8 @@ cls.WebGL.RPCs.injection = function () {
         ? this.bound_program
         : this.gl.getParameter(this.gl.CURRENT_PROGRAM));
 
+      if (program == null) return false;
+
       var index = args[0];
       var size = args[1];
       var type = args[2];
@@ -519,7 +529,7 @@ cls.WebGL.RPCs.injection = function () {
       };
 
       // A bit ugly, but optimized for speed not beauty
-      for (var i=0; i<program.attributes.length; i++)
+      for (var i = 0; i < program.attributes.length; i++)
       {
         var attrib = program.attributes[i];
         if (attrib.loc !== index) continue;
@@ -744,6 +754,11 @@ cls.WebGL.RPCs.injection = function () {
     snapshot_functions.drawArrays = draw_call("drawArrays");
     snapshot_functions.drawElements = draw_call("drawElements");
 
+    snapshot_functions.createBuffer = function (result, args)
+    {
+      var buf = this.lookup_buffer(result);
+      this.snapshot.add_buffer(buf);
+    };
     snapshot_functions.bufferData = function (result, args)
     {
       var target = args[0];
@@ -754,6 +769,11 @@ cls.WebGL.RPCs.injection = function () {
     };
     snapshot_functions.bufferSubData = snapshot_functions.bufferData;
 
+    snapshot_functions.createTexture = function (result, args)
+    {
+      var tex = this.lookup_texture(result);
+      this.snapshot.add_texture(tex);
+    };
     snapshot_functions.texImage2D = function (result, args)
     {
       var target = args[0];
@@ -769,7 +789,6 @@ cls.WebGL.RPCs.injection = function () {
       var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
       if (!program) return;
 
-      var gl = this.gl;
       var attribute = args[0];
       this.snapshot.add_attribpointer(this.lookup_program(program), attribute);
     };
@@ -914,6 +933,8 @@ cls.WebGL.RPCs.injection = function () {
           snapshot: handler.snapshot.end()
         });
         handler.snapshot = null;
+        handler.deleted_textures.length = 0;
+        handler.deleted_buffers.length = 0;
       }
 
       if (handler.capture_next_frame)
@@ -987,11 +1008,13 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers = [];
     this.buffers.number = 0;
     this.buffers.number_snapshot = 0;
+    this.deleted_buffers = [];
     this.buffer_binding = {};
 
     this.textures = [];
     this.textures.number = 0;
     this.textures.number_snapshot = 0;
+    this.deleted_textures = [];
     this.texture_binding = {};
     this.active_texture = null; //gl.getParameter(gl.ACTIVE_TEXTURE);
 
@@ -1049,9 +1072,11 @@ cls.WebGL.RPCs.injection = function () {
 
     this.lookup_buffer = generic_lookup(this.buffers, "buffer");
     this.lookup_buffer_index = generic_lookup_index(this.buffers, "buffer");
+    this.lookup_deleted_buffer = generic_lookup(this.deleted_buffers, "buffer");
 
     this.lookup_texture = generic_lookup(this.textures, "texture");
     this.lookup_texture_index = generic_lookup_index(this.textures, "texture");
+    this.lookup_deleted_texture = generic_lookup(this.deleted_textures, "texture");
 
     this.lookup_program = generic_lookup(this.programs, "program");
 
@@ -1085,10 +1110,10 @@ cls.WebGL.RPCs.injection = function () {
     {
       var program_info = this.lookup_program(program);
       return {
-        index : program_info.index,
-        shaders : program_info.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
-        attributes : program_info.attributes.map(function (a) { return {index:a.index, loc:a.loc, name:a.name, size:a.size, type:a.type, pointers:[{call_index: -1, buffer_index: a.pointer.buffer_index, layout: a.pointer.layout}] }}),
-        uniforms : program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type, values:[{call_index: -1, value:u.value}]}; })
+        index: program_info.index,
+        shaders: program_info.shaders.map(function (s) { return {index:s.index, src:s.src, type:s.type}; }),
+        attributes: program_info.attributes.map(function (a) { return {index:a.index, loc:a.loc, name:a.name, size:a.size, type:a.type, pointers:[{call_index: -1, buffer_index: a.pointer.buffer_index, layout: a.pointer.layout}] }}),
+        uniforms: program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type, values:[{call_index: -1, value:u.value}]}; })
       };
     };
 
@@ -1441,6 +1466,7 @@ cls.WebGL.RPCs.injection = function () {
       else if (obj instanceof WebGLBuffer)
       {
         var buffer = this.lookup_buffer(obj);
+        if (buffer == null) buffer = this.lookup_deleted_buffer(obj);
         if (buffer == null) return arg;
         arg.buffer_index = buffer.index;
       }
@@ -1453,6 +1479,7 @@ cls.WebGL.RPCs.injection = function () {
       else if (obj instanceof WebGLTexture)
       {
         var texture = this.lookup_texture(obj);
+        if (texture == null) texture = this.lookup_deleted_texture(obj);
         if (texture == null) return arg;
         arg.texture_index = texture.index;
       }
@@ -1517,6 +1544,7 @@ cls.WebGL.RPCs.injection = function () {
 
     function clone_history(history)
     {
+      if (history == null) return null;
       var res = Array.prototype.slice.call(history);
       res.create = history.create;
       res.number = history.number;
@@ -1574,15 +1602,15 @@ cls.WebGL.RPCs.injection = function () {
     this.add_call = function (function_name, error, args, result, redundant, loc)
     {
       var call_args = [];
-      
+
       // Very ugly hack to link first argument of a call to vertexAttribPointer :(
       if (function_name === "vertexAttribPointer")
       {
         var gl = this.handler.gl;
         var program = this.handler.lookup_program(this.handler.bound_program || gl.getParameter(gl.CURRENT_PROGRAM));
 
-        var trace_ref = { 
-          type: "WebGLVertexLocation", 
+        var trace_ref = {
+          type: "WebGLVertexLocation",
           program_index: program.index,
           loc_index: args[0]
         }
@@ -1872,7 +1900,7 @@ cls.WebGL.RPCs.injection = function () {
       {
         var attrib = program.attributes[i];
         if (attrib.loc !== attribute) continue;
-        
+
         var pointers = this.programs[program.index].attributes[i].pointers;
         pointers.push({
           call_index: this.call_index,
