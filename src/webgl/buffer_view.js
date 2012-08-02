@@ -88,7 +88,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         var inputbox = document.getElementById("webgl-layout-input");
         inputbox.hidden = false;
         this._inputbox_hidden = false;
-        return;
       }
       else
       {
@@ -100,8 +99,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   this._on_row_input = function(e)
   {
-    if (e.keyCode !== 13) return;
-    if (!this._buffer) return;
+    if (e.keyCode !== 13 || !this._buffer) return;
     if (this._buffer.data_is_loaded())
     {
       var inputbox = document.getElementById("webgl-row-input");
@@ -116,8 +114,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
   this._on_layout_input = function(e)
   {
-    if (e.keyCode !== 13) return;
-    if (!this._buffer) return;
+    if (e.keyCode !== 13 || !this._buffer) return;
     if (this._buffer.data_is_loaded())
     {
       var inputbox = document.getElementById("webgl-layout-input");
@@ -163,7 +160,8 @@ cls.WebGLBufferSideView = function(id, name, container_class)
     this._container = container;
     if (!this._table)
     {
-      this._table = new SortableTable(this.tabledef, null, ["name", "usage", "size"], null, "call", false, "buffer-table");
+      this._table = new SortableTable(this.tabledef, null,
+          ["name", "usage", "size"], null, "call", false, "buffer-table");
       this._table.group = WebGLUtils.make_group(this._table,
         [ {group: "call",    remove: "call_index", add: "name"},
           {group: "buffer",  remove: "name",       add: "call_index"} ]
@@ -201,7 +199,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
 
   this._format_buffer_table = function(buffers)
   {
-    var i=0;
+    var i = 0;
     return buffers.map(function(buffer) {
       return {
         buffer: buffer,
@@ -211,7 +209,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
         size: String(buffer.size),
         size_val: buffer.size,
         call_index_val: buffer.call_index,
-        call_index: String(buffer.call_index === -1 ? " " : buffer.call_index+1),
+        call_index: String(buffer.call_index === -1 ? " " : buffer.call_index + 1),
         id: i++
       };
     });
