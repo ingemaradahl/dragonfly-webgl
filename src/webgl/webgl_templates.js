@@ -1271,16 +1271,26 @@ window.templates.webgl.program = function(call_index, program)
     ]);
   }
 
-  var attribute_table = window.templates.webgl.attribute_table(call_index, program);
-  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
-
-  var html =
+  var attribute_table = null;
+  var uniform_table = null;
+  var html = 
   [
     "div",
-     attribute_table,
-     uniform_table,
-     programs
+    programs
   ];
+  if (call_index !== -1)
+  {
+    attribute_table = window.templates.webgl.attribute_table(call_index, program);
+    uniform_table = window.templates.webgl.uniform_table(call_index, program);
+    html =
+    [
+      "div",
+      attribute_table,
+      uniform_table,
+      programs
+    ];
+  }
+
 
 
   return html;

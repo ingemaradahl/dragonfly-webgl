@@ -201,7 +201,8 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       var script_id = lookup_script_id(loc.url);
       loc.script_id = script_id;
-      loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
+      var res = short_url_regexp.exec(loc.url);
+      loc.short_url = res && res[1] ? res[1] : null;
     };
 
     var init_trace = function (calls, call_locs, call_refs)
@@ -497,6 +498,7 @@ cls.WebGLSnapshotArray = function(context_id)
       var types = [textures, buffers];
       types.forEach(function(type){
         type.forEach(function(unit){
+          if (unit.history == null) return null;
           if (unit.history.create) init_loc(unit.history.create.loc);
 
           unit.history.forEach(function(call){

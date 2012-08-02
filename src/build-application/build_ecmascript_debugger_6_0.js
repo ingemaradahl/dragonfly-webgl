@@ -289,6 +289,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                                  "scroll side-panel texture");
     cls.WebGLTextureSideView.create_ui_widgets();
 
+    new cls.WebGLProgramSideView("program-side-panel",
+                                 "Program",
+                                 "scroll side-panel program");
+    cls.WebGLProgramSideView.create_ui_widgets();
+
     /* the following views must be created to get entry in the Settings tab */
 
     /* WebGL */
