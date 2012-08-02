@@ -67,9 +67,13 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 
     sh_highlightDocument();
 
-    // Hilight eventual uniform/attribute
-    //var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
-    //if (uniattrib) hilight_uniform(uniattrib);
+    if (call_index !== -1)
+    {
+      var call = snapshot.trace[call_index];
+      //Hilight eventual uniform/attribute
+      var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
+      if (uniattrib) hilight_uniform(uniattrib);
+    }
   };
 
   this.init(id, name, container_class);
