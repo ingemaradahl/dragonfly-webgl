@@ -285,10 +285,8 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
         ['td',
           ['select',
             buffer_settings.options.modes.map(function(mode) {
-              var option = ['option',
-                mode === 1 // The api defined in webgl has the enum '1' mapped to both LINES and ONE
-                  ? "LINES"
-                  : window.webgl.api.constant_value_to_string(mode),
+              var option = [
+                'option', window.webgl.api.draw_mode_to_sting(mode),
                 'value', String(mode)
               ];
 
