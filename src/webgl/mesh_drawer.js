@@ -17,6 +17,7 @@ cls.WebGLMeshDrawer = function(gl)
   this.distance = 0;
 
   var info_container = null;
+  var help_container = null;
 
   var on_mousemove = function(event)
   {
@@ -57,6 +58,20 @@ cls.WebGLMeshDrawer = function(gl)
     this.init_buffer(true)
   };
 
+  var on_help = function(event, target)
+  {
+    switch (help_container.style.visibility)
+    {
+      case "":
+      case "hidden":
+        help_container.style.visibility = "visible";
+        break;
+      case "visible":
+        help_container.style.visibility = "hidden";
+        break;
+    }
+  };
+
   this.onresize = function()
   {
     var canvas = this.gl.canvas;
@@ -74,6 +89,11 @@ cls.WebGLMeshDrawer = function(gl)
   this.set_info_container = function(container)
   {
     info_container = container;
+  };
+
+  this.set_help_container = function(container)
+  {
+    help_container = container;
   };
 
   this.on_buffer_download = function()
@@ -105,6 +125,7 @@ cls.WebGLMeshDrawer = function(gl)
   var eh = window.eventHandlers;
   eh.mousedown["webgl-canvas"] = on_mousedown.bind(this);
   eh.mousewheel["webgl-canvas"] = on_mousewheel.bind(this);
+  eh.click["webgl-preview-help"] = on_help.bind(this);
   eh.click["webgl-force-buffer"] = on_force_buffer.bind(this);
 
   this.cache = new (function()

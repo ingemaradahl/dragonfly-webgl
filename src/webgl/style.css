@@ -324,11 +324,49 @@ img.flipped
   z-index: 2;
 }
 
+/* Preview help toggle div */
+.webgl-holder > div
+{
+  position:absolute;
+  top:2px;
+  right:3px;
+  text-shadow: 0px 0px 4px #888;
+  font-weight: 700;
+  z-index: 2;
+}
+
+.webgl-holder > div:hover
+{
+  color: #888;
+}
+
 .draw-call-info td,
 .draw-call-info th
 {
   vertical-align: top;
   word-wrap: break-word;
+}
+
+/* Preview help container */
+.webgl-holder > div > div {
+  position: absolute;
+  visibility: hidden;
+  right: 15px;
+  top: 15px;
+  width: 150px;
+
+  color: #ffffff;
+  text-shadow: 0px 0px 0px;
+  font-weight: normal;
+  text-align: left;
+
+  padding:5px;
+  border: 2px solid #b1b1b1;
+  box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.64), 0px 1px 6px rgba(0, 0, 0, 0.300);
+  background: rgba(16, 16, 16, 0.8);
+  border-radius: 5px;
+
+  z-index:2;
 }
 
 .draw-call-info th

@@ -370,11 +370,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
   ];
 
   return ["div",
-    ["div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ],
+    window.templates.webgl.preview_canvas(),
     ["div",
       ["div", position],
       ["div", parameters],
@@ -1044,12 +1040,25 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
       "handler", "webgl-select-attribute",
       "id", "webgl-attribute-selector"
     ],
-    [
-      "div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ]
+    window.templates.webgl.preview_canvas()
+  ];
+};
+
+window.templates.webgl.preview_canvas = function()
+{
+  return ["div",
+    ["div",
+      "?",
+      ["div",
+        "The front facing triangles are drawn as a wireframe model, while the back facing triangles are drawn with their normals used as color value.",
+        "id", "webgl-preview-help",
+        "handler", "webgl-preview-help",
+      ],
+      "handler", "webgl-preview-help",
+    ],
+    "handler", "webgl-canvas",
+    "id", "webgl-canvas-holder",
+    "class", "webgl-holder"
   ];
 };
 
