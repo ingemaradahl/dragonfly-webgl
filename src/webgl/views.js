@@ -427,17 +427,18 @@ cls.WebGLSnapshotSelect = function(id)
     var context_id = target_ele['context-id'];
     var snapshot_index = target_ele['snapshot-index'];
     var take_snapshot = target_ele['take-snapshot'];
-    this._selected_context_id = context_id;
 
     if (take_snapshot !== undefined)
     {
       window.webgl.request_snapshot(context_id);
+      this._selected_context_id = context_id;
+      this._selected_snapshot_index = null;
       return false;
     }
     else if (snapshot_index != null && this._selected_snapshot_index !== snapshot_index)
     {
-      this._selected_snapshot_index = snapshot_index;
       this._selected_context_id = context_id;
+      this._selected_snapshot_index = snapshot_index;
       messages.post('webgl-changed-snapshot', window.webgl.snapshots[context_id][snapshot_index]);
       return true;
     }
@@ -476,7 +477,6 @@ cls.WebGLSnapshotSelect = function(id)
     var snapshot = snapshots[ctx_id].get_latest_snapshot();
     messages.post("webgl-changed-snapshot", snapshot);
     this.updateElement();
-
   };
 
   var clear = function()
