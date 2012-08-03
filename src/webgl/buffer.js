@@ -4,7 +4,7 @@ window.cls || (window.cls = {});
 
 cls.WebGLBuffer = function()
 {
-  // Buffer layouts as specified by vertexAttribPointer, indexed by call_index
+  // Buffer layouts at draw calls, indexed by call_index
   this.vertex_attribs = {};
 };
 
