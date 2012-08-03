@@ -195,8 +195,18 @@ cls.WebGLSnapshotArray = function(context_id)
     init_state(this.state);
 
     var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
-    var base_url = new RegExp("^(.*)/[^/]*$").exec(runtime.uri)[1] + "/";
-    var short_url_regexp = new RegExp("^" + base_url + "(.*)$");
+
+    // Get the protocol, host and port
+    var url_base = new RegExp("^(.*://[^/]*)/?").exec(runtime.uri);
+    url_base = url_base != null && url_base[1] ? url_base[1] : runtime.uri;
+    if (url_base[url_base.length - 1] === "/") url_base = url_base.substr(0, url_base.length - 1);
+
+    // Get the path of url, up until the last dir
+    var url_path = new RegExp("^" + url_base + "/(.*)/[^/]*$").exec(runtime.uri);
+    url_path = url_path != null && url_path[1] ? url_path[1] + "/" : "";
+
+    var short_url_regexp = new RegExp("^" + url_base + "(?:/" + url_path + ")?(.*)$");
+
     var init_loc = function(loc)
     {
       var script_id = lookup_script_id(loc.url);
@@ -307,7 +317,14 @@ cls.WebGLSnapshotArray = function(context_id)
             if (!linked_object || !linked_object.texture) group = "generic";
             break;
           case "uniform":
-            linked_object = args[0];
+            switch (function_name)
+            {
+              case "getUniformLocation":
+                linked_object = result;
+                break;
+              default:
+                linked_object = args[0];
+            }
             break;
           case "attrib":
             // TODO figure out program stuff

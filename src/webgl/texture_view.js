@@ -168,8 +168,10 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     columns: {
       call_index : {
         label: "Call",
-        sorter: function(a,b) { return a.call_index_val < b.call_index_val ? -1 :
-          a.call_index_val > b.call_index_val ? 1 : 0; }
+        sorter: function(a,b) {
+          return a.call_index_val < b.call_index_val ? -1 :
+            a.call_index_val > b.call_index_val ? 1 : 0;
+        }
       },
       name: {
         label: "Texture",
@@ -177,21 +179,26 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       },
       dimension: {
         label: "Dimension",
-        sorter: function(a,b) { return a.size < b.size ? -1 : a.size > b.size ? 1 : 0; } 
+        sorter: function(a,b) {
+          return a.size < b.size ? -1 : a.size > b.size ? 1 : 0;
+        }
       }
     },
     groups: {
       call: {
         label: "call", // TODO
-        grouper : function (res) 
-          { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) 
-          { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        grouper : function (res) {
+          return res.call_index_val === -1 ? "Start of frame" :
+            "Call #" + res.call_index;
+        },
+        sorter : function (a, b) {
+          return a.call_index_val < b.call_index_val ? -1 :
+            a.call_index_val > b.call_index_val ? 1 : 0;
+        }
       },
       texture: {
         label: "texture", // TODO
-        grouper : function (res) { return res.name; },
-        sorter: "unsortable"
+        grouper : function (res) { return res.name; }
       }
     }
   };

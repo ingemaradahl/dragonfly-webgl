@@ -80,6 +80,11 @@ img.flipped
   color: #686868;
 }
 
+.state-table td > div
+{
+  display: inline-block;
+}
+
 .color-box
 {
   border: 1px solid #ccc;

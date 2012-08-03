@@ -54,23 +54,30 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 
   this._render = function(snapshot, call_index, program)
   {
-    if (typeof call_index !== "number" || isNaN(call_index))
-    {
-      call_index = -1;
-    }
-    else
+    if (!program)
     {
       program = snapshot.trace[call_index].linked_object.program;
     }
     var template = window.templates.webgl.program(call_index, program);
-    this.render_with_header(snapshot, call_index, template);
 
+    // If called from the trace list we will render_with_header.
+    // Else this function is called from the program list, and 
+    // the we render only a simple view.
+    if (call_index !== null)
+    {
+      this.render_with_header(snapshot, call_index, template);
+    }
+    else
+    {
+      this._template = template;
+      this.render();
+    }
     sh_highlightDocument();
 
-    if (call_index !== -1)
+    // If render has been called from a trace call hilight eventual uniform/attribute 
+    if (call_index !== -1 && call_index !== null)
     {
       var call = snapshot.trace[call_index];
-      //Hilight eventual uniform/attribute
       var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
       if (uniattrib) hilight_uniform(uniattrib);
     }
@@ -146,7 +153,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var program = snapshot.programs[item_id];
 
-    window.views.webgl_program_call.display_call(snapshot, null, program);
+    window.views.webgl_program_call._render(snapshot, null, program);
   };
 
   this.tabledef = {
