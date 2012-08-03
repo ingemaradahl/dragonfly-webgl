@@ -171,6 +171,12 @@ cls.WebGLCallView = Object.create(ViewBase, {
   render: {
     value: function()
     {
+      if (!this._container)
+      {
+        this._render_enabled = false;
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+        this._render_enabled = true;
+      }
       if (this._template)
       {
         this._container.clearAndRender(this._template);

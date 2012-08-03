@@ -84,7 +84,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       return null;
 
     var calls = [];
-    var vertex_attrib = null;
     var layout = null;
 
     // Find all the calls that used this buffer as a vertex attribute pointer
@@ -92,37 +91,49 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     {
       if (this._buffer.vertex_attribs.hasOwnProperty(call))
       {
-        calls.push(Number(call));
+        var pointers = this._buffer.vertex_attribs[call];
+        for (var p=0; p<pointers.length; p++)
+        {
+          if (pointers[p].buffer === this._buffer)
+            calls.push(Number(call));
+        }
       }
     }
 
     if (calls.length === 0)
     {
       // Buffer was never used as an VAP, so just load the default settings
-      return null; // TODO;
+      return {
+        offset : 0,
+        stride : 0,
+        size : 3,
+        type : gl.FLOAT,
+        mode : gl.TRIANGLES,
+        'element-array' : null,
+        'element-type'  : null,
+        start : 0,
+        count : this._buffer.data.length
+          ? Math.round(this._buffer.data.length / 3) // Default size is 3
+          : Math.round(this._buffer.size / 12), // Default type is FLOAT (4 bytes), times size (3)
+        options : buffer_options(gl)
+      };
     }
 
     // Load the next drawcall after the current call index
     var call_index = this._call_index;
     var call = calls.reduce(function(prev, curr) { return curr < prev && curr > call_index ? curr : prev; }, Infinity);
-    vertex_attrib = this._buffer.vertex_attribs[call];
+    var vertex_attrib = this._buffer.vertex_attribs[call];
     var draw_call = this._snapshot.drawcalls.get_by_call(call);
     var element_buffer = vertex_attrib.element_buffer;
 
     for (var i=0; i<vertex_attrib.length; i++)
     {
-      for (var j=0; j<vertex_attrib[i].pointers.length; j++)
+      var pointer = vertex_attrib[i];
+      if (pointer.buffer === this._buffer)
       {
-        var pointer = vertex_attrib[i].pointers[j];
-        if (pointer.buffer.index === this._buffer.index)
-        {
-          layout = pointer.layout;
-          break;
-        }
-      }
-
-      if (layout)
+        layout = pointer.layout;
         break;
+      }
     }
 
     return {
@@ -205,8 +216,11 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     buffer.request_data();
     this.render_with_header(snapshot, call_index, template);
 
-    add_canvas();
-    this.set_preview();
+    if (this._buffer_settings)
+    {
+      add_canvas();
+      this.set_preview();
+    }
   };
 
   this._on_buffer_data = function(msg)
@@ -227,7 +241,9 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         selected_index);
 
       this.render_with_header(this._snapshot, this._call_index, template);
-      add_canvas();
+
+      if (this._buffer_settings)
+        add_canvas();
     }
   };
 

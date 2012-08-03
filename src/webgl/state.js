@@ -73,8 +73,8 @@ cls.WebGLState.prototype.get_function_parameters = function(function_name, call_
 };
 
 cls.WebGLState.FUNCTION_GROUPS = {
-  "disableVertexAttribArray": "attrib",
-  "enableVertexAttribArray": "attrib",
+  "disableVertexAttribArray": "generic",
+  "enableVertexAttribArray": "generic",
   "getActiveAttrib": "attrib",
   "getActiveUniform": "uniform",
   "getAttribLocation": "attrib",

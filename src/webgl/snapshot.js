@@ -403,37 +403,27 @@ cls.WebGLSnapshotArray = function(context_id)
         attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 
         // Connect buffers to vertex attribute bindings
-        for (var j=0; j<attribute.pointers.length; j++)
+        var pointer = attribute.pointers.lookup(call_index);
+        pointer.buffer = pointer.buffer ? pointer.buffer : this.buffers.lookup(pointer.buffer_index, call_index);
+
+        if (pointer.buffer !== null)
         {
-          var pointer = attribute.pointers[j];
-          var buffer;
-
-          if (pointer.buffer)
+          if (pointer.buffer.vertex_attribs[call_index])
           {
-            buffer = pointer.buffer
+            pointer.buffer.vertex_attribs[call_index].push(pointer);
           }
           else
           {
-            buffer = this.buffers.lookup(pointer.buffer_index, call_index);
-            if (buffer == null) continue;
-
-            pointer.buffer = buffer;
-            delete pointer.buffer_index;
-          }
-
-          if (buffer.vertex_attribs[call_index])
-          {
-            buffer.vertex_attribs[call_index].push(attribute);
-          }
-          else
-          {
-            buffer.vertex_attribs[call_index] = [attribute];
+            pointer.buffer.vertex_attribs[call_index] = [pointer];
           }
 
           if (drawcall.element_buffer)
           {
-            buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
+            pointer.buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
           }
+
+          if (pointer.buffer_index)
+            delete pointer.buffer_index;
         }
       }
 

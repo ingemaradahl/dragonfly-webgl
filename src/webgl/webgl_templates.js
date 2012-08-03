@@ -248,7 +248,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
             'type', 'number',
             'handler', 'webgl-buffer-settings',
             'setting', 'size',
-            'min', '0',
+            'min', '1',
             'max', '4',
             'value', String(buffer_settings.size)
           ]
@@ -286,7 +286,9 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
           ['select',
             buffer_settings.options.modes.map(function(mode) {
               var option = ['option',
-                window.webgl.api.constant_value_to_string(mode),
+                mode === 1 // The api defined in webgl has the enum '1' mapped to both LINES and ONE
+                  ? "LINES"
+                  : window.webgl.api.constant_value_to_string(mode),
                 'value', String(mode)
               ];
 
@@ -1269,18 +1271,28 @@ window.templates.webgl.program = function(call_index, program)
     ]);
   }
 
-  var attribute_table = window.templates.webgl.attribute_table(call_index, program);
-  var uniform_table = window.templates.webgl.uniform_table(call_index, program);
-
-  var html =
+  var attribute_table = null;
+  var uniform_table = null;
+  var html = 
   [
     "div",
-     attribute_table,
-     uniform_table,
-     programs
+    programs
   ];
 
-
+  // If the program is related to a call, attribute and uniforms tables 
+  // will be created and attached to the template.
+  if (call_index !== -1&&& call_index !== null)
+  {
+    attribute_table = window.templates.webgl.attribute_table(call_index, program);
+    uniform_table = window.templates.webgl.uniform_table(call_index, program);
+    html =
+    [
+      "div",
+      attribute_table,
+      uniform_table,
+      programs
+    ];
+  }
   return html;
 };
 
