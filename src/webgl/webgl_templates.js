@@ -1046,11 +1046,20 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
 
 window.templates.webgl.preview_canvas = function()
 {
+  var front_face = window.settings['webgl-preview'].map['front-face-normal']
+    ? "normal value"
+    : "black";
+  var back_face = window.settings['webgl-preview'].map['back-face-normal']
+    ? "normal value"
+    : "black";
+
   return ["div",
     ["div",
       "?",
       ["div",
-        "The front facing triangles are drawn as a wireframe model, while the back facing triangles are drawn with their normals used as color value.",
+        ["span", "Front facing: " + front_face],
+        ["br"],
+        ["span", "Back facing: " + back_face],
         "id", "webgl-preview-help",
         "handler", "webgl-preview-help",
       ],

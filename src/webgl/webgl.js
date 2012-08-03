@@ -267,6 +267,8 @@ cls.WebGL.WebGLDebugger = function ()
       program.pMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
       program.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
       program.windowScaleUniform = gl.getUniformLocation(program, "uWindowScale");
+      program.frontFaceUniform = gl.getUniformLocation(program, "uFrontFaceNormal");
+      program.backFaceUniform = gl.getUniformLocation(program, "uBackFaceNormal");
 
       gl.enableVertexAttribArray(program.position0Attrib);
       gl.enableVertexAttribArray(program.position1Attrib);

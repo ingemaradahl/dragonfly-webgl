@@ -111,7 +111,7 @@ cls.WebGLMeshDrawer = function(gl)
   this.on_size_limit = function()
   {
     var buffer_size = Number(this.buffer.size / 1024).toFixed(2);
-    var setting_size = window.settings['webgl-general'].map['max_preview_size'];
+    var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
     info_container.clearAndRender(window.templates.webgl.preview_disabled(buffer_size, setting_size));
     info_container.style.visibility = "visible";
   };
@@ -254,7 +254,7 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(force)
   }.bind(this);
 
   // max_size in bytes, settings value in kB
-  var max_size = window.settings['webgl-general'].map['max_preview_size'] * 1024;
+  var max_size = window.settings['webgl-preview'].map['max_preview_size'] * 1024;
 
   if (this.buffers_loaded())
   {
@@ -838,6 +838,8 @@ cls.WebGLMeshDrawer.prototype.render = function(program)
   if (this.preview.mode === gl.TRIANGLES)
   {
     gl.uniform2f(program.windowScaleUniform, width, height);
+    gl.uniform1i(program.frontFaceUniform, window.settings["webgl-preview"].map["front-face-normal"]);
+    gl.uniform1i(program.backFaceUniform, window.settings["webgl-preview"].map["back-face-normal"]);
 
     var stride = 52; // 4 Byte * (3*3 Float + 4 Float)
     gl.vertexAttribPointer(program.position0Attrib, 4, gl.FLOAT, false, stride, 0);
