@@ -45,6 +45,7 @@ cls.WebGL.RPCs.injection = function () {
       if (contexts[c].new_frame) contexts[c].new_frame();
     }
   };
+  window.webkitRequestAnimationFrame = window.mozRequestAnimationFrame = window.requestAnimationFrame;
 
   /**
    * Clone regular and typed arrays.
@@ -160,7 +161,7 @@ cls.WebGL.RPCs.injection = function () {
       var lines = stacktrace.split("\n");
       if (lines.length < 3) return null;
       var matches = stacktrace_regexp.exec(lines[2]);
-      if (matches.length < 5) return null;
+      if (matches == null || matches.length < 5) return null;
       return {
         line: Number(matches[1]),
         column: Number(matches[2]),
