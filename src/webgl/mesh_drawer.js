@@ -16,6 +16,8 @@ cls.WebGLMeshDrawer = function(gl)
   this.rot = {x:0, y:0};
   this.distance = 0;
 
+  var info_container = null;
+
   var on_mousemove = function(event)
   {
     this.prev_mouse.x = this.mouse.x;
@@ -50,6 +52,11 @@ cls.WebGLMeshDrawer = function(gl)
     this.render();
   };
 
+  var on_force_buffer = function()
+  {
+    this.init_buffer(true)
+  };
+
   this.onresize = function()
   {
     var canvas = this.gl.canvas;
@@ -64,39 +71,41 @@ cls.WebGLMeshDrawer = function(gl)
     this.render();
   };
 
+  this.set_info_container = function(container)
+  {
+    info_container = container;
+  };
+
   this.on_buffer_download = function()
   {
-    var info = document.getElementById("webgl-canvas-info-box");
-    if (info)
-    {
-      info.innerText = "Downloading buffer data...";
-      info.style.visibility = "visible";
-    }
+    info_container.clearAndRender(["div", "Downloading buffer data"]);
+    info_container.style.visibility = "visible";
   };
 
   this.on_buffer_prepare = function()
   {
-    var info = document.getElementById("webgl-canvas-info-box");
-    if (info)
-    {
-      info.innerText = "Preparing buffer data...";
-      info.style.visibility = "visible";
-    }
+    info_container.clearAndRender(["div", "Preparing buffer data"]);
+    info_container.style.visibility = "visible";
+  };
+
+  this.on_size_limit = function()
+  {
+    var buffer_size = Number(this.buffer.size / 1024).toFixed(2);
+    var setting_size = window.settings['webgl-general'].map['max_preview_size'];
+    info_container.clearAndRender(window.templates.webgl.preview_disabled(buffer_size, setting_size));
+    info_container.style.visibility = "visible";
   };
 
   this.disable_info_box = function()
   {
-    var info = document.getElementById("webgl-canvas-info-box");
-    if (info)
-    {
-      info.style.visibility = "hidden";
-    }
+    info_container.style.visibility = "hidden";
 
   };
 
   var eh = window.eventHandlers;
   eh.mousedown["webgl-canvas"] = on_mousedown.bind(this);
   eh.mousewheel["webgl-canvas"] = on_mousewheel.bind(this);
+  eh.click["webgl-force-buffer"] = on_force_buffer.bind(this);
 
   this.cache = new (function()
   {
@@ -115,26 +124,28 @@ cls.WebGLMeshDrawer = function(gl)
       return true;
     };
 
-    this.post = function(gl_buffer, attribute, state, element_buffer)
+    this.post = function(gl_buffer, buffer, attribute, state, element_buffer)
     {
       cache_arr.push({
-        attrib:attribute, 
-        state:state, 
-        element_buffer:element_buffer, 
-        gl_buffer: gl_buffer
+        buffer : buffer,
+        attrib : attribute,
+        state  : state,
+        element_buffer : element_buffer,
+        gl_buffer : gl_buffer
       });
       
       cache_arr.splice(0, cache_arr.length-MAX_SIZE)
     };
 
-    this.lookup = function(attribute, state, element_buffer)
+    this.lookup = function(buffer, attribute, state, element_buffer)
     {
       for (var i=0; i<cache_arr.length; i++)
       {
         var c = cache_arr[i];
         if (equals(c.attrib, attribute)
             && equals(c.state, state)
-            && c.element_buffer === element_buffer)
+            && c.element_buffer === element_buffer
+            && c.buffer === buffer)
         {
           if (i !== MAX_SIZE)
           {
@@ -169,7 +180,14 @@ cls.WebGLMeshDrawer.prototype.buffers_loaded = function()
     : this.buffer.data_is_loaded();
 }
 
-cls.WebGLMeshDrawer.prototype.init_buffer = function()
+/**
+ * Initiates the buffer to be drawn by reconstructing it using the original
+ * constructor. Also makes sure that the buffer is being downloaded if it is not
+ * present.
+ * @param force {Boolean} optional If the buffer should be loaded even though it
+ *  is larger than the maximum allowed preview size.
+ */
+cls.WebGLMeshDrawer.prototype.init_buffer = function(force)
 {
   var build_buffer = function (buffer)
   {
@@ -214,11 +232,14 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function()
     this.prepare_buffer();
   }.bind(this);
 
+  // max_size in bytes, settings value in kB
+  var max_size = window.settings['webgl-general'].map['max_preview_size'] * 1024;
+
   if (this.buffers_loaded())
   {
     prepare();
   }
-  else
+  else if(this.buffer.size < max_size || force)
   {
     var listener = function(buffer)
     {
@@ -240,6 +261,11 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function()
     {
       this.element_buffer.request_data();
     }
+  }
+  else
+  {
+    this.on_size_limit();
+
   }
 };
 
@@ -514,7 +540,7 @@ cls.WebGLMeshDrawer.prototype.get_buffer_data = function()
 
 cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 {
-  var preview = this.cache.lookup(this.layout, this.state, this.element_buffer);
+  var preview = this.cache.lookup(this.buffer, this.layout, this.state, this.element_buffer);
   if (!preview)
   {
     // Notify that data mangling starts
@@ -695,7 +721,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
     preview.max_extent = max_extent;
     preview.center = center;
 
-    this.cache.post(preview, this.layout, this.state, this.element_buffer);
+    this.cache.post(preview, this.buffer, this.layout, this.state, this.element_buffer);
   }
 
   this.preview = preview;
@@ -708,8 +734,9 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
   this.render();
 };
 
-cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_buffer)
+cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_buffer, clear_rot)
 {
+  clear_rot = clear_rot === undefined ? true : clear_rot;
   this.element_buffer = element_buffer;
   this.buffer = pointer.buffer;
   this.layout = pointer.layout;
@@ -717,7 +744,8 @@ cls.WebGLMeshDrawer.prototype.set_attribute = function(pointer, state, element_b
 
   this.init_buffer();
 
-  this.rot = {x:0, y:0};
+  if (clear_rot)
+    this.rot = {x:0, y:0};
 
   // Refit the viewport to the canvas
   this.onresize();

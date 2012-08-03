@@ -201,7 +201,8 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       var script_id = lookup_script_id(loc.url);
       loc.script_id = script_id;
-      loc.short_url = short_url_regexp.exec(loc.url)[1] || null;
+      var res = short_url_regexp.exec(loc.url);
+      loc.short_url = res && res[1] ? res[1] : null;
     };
 
     var init_trace = function (calls, call_locs, call_refs)
@@ -302,6 +303,8 @@ cls.WebGLSnapshotArray = function(context_id)
                 linked_object = this.state.get_parameter(param, j);
                 break;
             }
+            // TODO temporary, since texture cant be null in the texture template
+            if (!linked_object || !linked_object.texture) group = "generic";
             break;
           case "uniform":
             linked_object = args[0];
@@ -346,10 +349,29 @@ cls.WebGLSnapshotArray = function(context_id)
         }.bind(drawcall.fbo);
       }
 
+      // Copy the parameters from the function call to the drawcall object
+      var state = {
+        mode : this.trace[call_index].args[0],
+        indexed : false
+      };
+
+      if (drawcall.element_buffer)
+      {
+        state.count = this.trace[call_index].args[1];
+        state.offset = this.trace[call_index].args[3];
+      }
+      else
+      {
+        state.first = this.trace[call_index].args[1];
+        state.count = this.trace[call_index].args[2];
+      }
+      drawcall.parameters = state;
+
       // Link up eventual element array buffer if it was used
       if (drawcall.element_buffer)
       {
         drawcall.element_buffer = this.buffers.lookup(drawcall.element_buffer, call_index);
+        drawcall.parameters.indexed = true;
       }
 
       // Link up program
@@ -364,29 +386,27 @@ cls.WebGLSnapshotArray = function(context_id)
         attribute.pointers.lookup = lookup_attrib.bind(attribute.pointers);
 
         // Connect buffers to vertex attribute bindings
-        for (var j=0; j<attribute.pointers.length; j++)
+        var pointer = attribute.pointers.lookup(call_index);
+        pointer.buffer = pointer.buffer ? pointer.buffer : this.buffers.lookup(pointer.buffer_index, call_index);
+
+        if (pointer.buffer !== null)
         {
-          var pointer = attribute.pointers[j];
-          var buffer = this.buffers.lookup(pointer.buffer_index, call_index);
-
-          if (buffer == null) continue;
-
-          pointer.buffer = buffer;
-          delete pointer.buffer_index;
-
-          if (buffer.vertex_attribs[call_index])
+          if (pointer.buffer.vertex_attribs[call_index])
           {
-            buffer.vertex_attribs[call_index].push(attribute);
+            pointer.buffer.vertex_attribs[call_index].push(pointer);
           }
           else
           {
-            buffer.vertex_attribs[call_index] = [attribute];
+            pointer.buffer.vertex_attribs[call_index] = [pointer];
           }
 
           if (drawcall.element_buffer)
           {
-            buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
+            pointer.buffer.vertex_attribs[call_index].element_buffer = drawcall.element_buffer;
           }
+
+          if (pointer.buffer_index)
+            delete pointer.buffer_index;
         }
       }
 
@@ -478,6 +498,7 @@ cls.WebGLSnapshotArray = function(context_id)
       var types = [textures, buffers];
       types.forEach(function(type){
         type.forEach(function(unit){
+          if (unit.history == null) return null;
           if (unit.history.create) init_loc(unit.history.create.loc);
 
           unit.history.forEach(function(call){

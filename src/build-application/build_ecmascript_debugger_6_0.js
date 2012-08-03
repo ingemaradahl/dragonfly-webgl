@@ -233,10 +233,19 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.StorageViewActions("widget_preferences");
 
     /* WebGL inspection */
+
+    // Add the General Settings first, telling whether the WebGL inspection
+    // should be enabled
+    cls.WebGLGeneralView.prototype = ViewBase;
+    new cls.WebGLGeneralView('webgl-general',
+                              "General", // TODO
+                              'scroll');
+    cls.WebGLGeneralView.create_ui_widgets();
+
     window.webgl = new cls.WebGL.WebGLDebugger();
 
-    // Add some listeners and corresponding methods for call views.
-    cls.WebGLHeaderViewBase.initialize();
+    // Initialize some listeners and corresponding methods for call views.
+    cls.WebGLCallView.initialize();
 
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
@@ -247,7 +256,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
 
-    new cls.WebGLCallView("webgl_call",
+    new cls.WebGLGenericCallView("webgl_generic_call",
                           "Call",
                           "scroll webgl_view call");
 
@@ -280,11 +289,16 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                                  "scroll side-panel texture");
     cls.WebGLTextureSideView.create_ui_widgets();
 
+    new cls.WebGLProgramSideView("program-side-panel",
+                                 "Program",
+                                 "scroll side-panel program");
+    cls.WebGLProgramSideView.create_ui_widgets();
+
     /* the following views must be created to get entry in the Settings tab */
 
     /* WebGL */
     cls.WebGLSnapshotView.prototype = ViewBase;
-    new cls.WebGLSnapshotView('snapshot', 
+    new cls.WebGLSnapshotView('snapshot',
                               "Snapshot", // TODO
                               'scroll');
     cls.WebGLSnapshotView.create_ui_widgets();

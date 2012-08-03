@@ -40,7 +40,8 @@ cls.WebGL.WebGLDebugger = function ()
 
   this.inject = function (rt_id, cont_callback)
   {
-    if (this.runtime_id !== rt_id)
+    // TODO: Better disabling
+    if (this.runtime_id !== rt_id && window.settings['webgl-general'].map['enable-debugger'])
     {
       this.runtime_id = rt_id;
       window.host_tabs.activeTab.addEventListener("webgl-debugger-ready",

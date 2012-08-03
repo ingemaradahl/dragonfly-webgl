@@ -5,20 +5,14 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLHeaderViewBase
+ * @extends cls.WebGLCallView
  */
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
-  this._container = null;
   this._snapshot = null;
   this._call_index = null;
 
-  this.createView = function(container)
-  {
-    this._container = container;
-  };
-
-  this.display_by_call = function(snapshot, call_index, texture)
+  this._render = function(snapshot, call_index, texture)
   {
     if (call_index !== -1 && !texture)
     {
@@ -32,11 +26,6 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
     var template = window.templates.webgl.texture(texture);
     this.render_with_header(snapshot, call_index, template);
-  };
-
-  this._ondestroy = function()
-  {
-    this._container = null;
   };
 
   this._on_texture_data = function(msg)
@@ -83,13 +72,16 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     window.onmouseup = on_texture_end_drag;
   };
 
+  var eh = window.eventHandlers;
+  eh.mousedown["webgl-texture-image"] = on_texture_start_drag.bind(this);
+  eh.mouseup["webgl-texture-image"] = on_texture_end_drag.bind(this);
 
   messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLTextureCallView.prototype = cls.WebGLHeaderViewBase;
+cls.WebGLTextureCallView.prototype = cls.WebGLCallView;
 
 // ----------------------------------------------------------------------------
 
@@ -144,16 +136,17 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   this._on_snapshot_change = function(snapshot)
   {
-    var i = 0;
+    var i=0;
     this._content = snapshot.textures.map(function(texture) {
       var lvl0 = texture.levels[0];
       return {
         name: String(texture),
         dimension: lvl0 && lvl0.width ? String(lvl0.width) + "x" + String(lvl0.height) : "?",
+        size: lvl0 && lvl0.width && lvl0.height ? lvl0.width*lvl0.height: 0,
         texture: texture,
-        call_index_val : texture.call_index,
-        call_index : String(texture.call_index === -1 ? " " : texture.call_index+1),
-        id : i++
+        call_index_val: texture.call_index,
+        call_index: String(texture.call_index === -1 ? " " : texture.call_index+1),
+        id: i++
       };
     });
   };
@@ -161,13 +154,11 @@ cls.WebGLTextureSideView = function(id, name, container_class)
   this._on_table_click = function(evt, target)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
-    var table_data = this._table.get_data();
-    var texture = table_data[item_id].texture;
     var snapshot =
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
+    var texture = snapshot.textures[item_id];
 
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_texture_call");
-    window.views.webgl_texture_call.display_by_call(snapshot, texture.call_index, texture);
+    window.views.webgl_texture_call.display_call(snapshot, texture.call_index, texture);
   };
 
   this.tabledef = {
@@ -177,29 +168,32 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     columns: {
       call_index : {
         label: "Call",
+        sorter: function(a,b) { return a.call_index_val < b.call_index_val ? -1 :
+          a.call_index_val > b.call_index_val ? 1 : 0; }
       },
       name: {
         label: "Texture",
+        sorter: "unsortable"
       },
       dimension: {
         label: "Dimension",
-        sorter: "unsortable"
+        sorter: function(a,b) { return a.size < b.size ? -1 : a.size > b.size ? 1 : 0; } 
       }
     },
     groups: {
       call: {
         label: "call", // TODO
-        grouper : function (res) { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
-        sorter : function (a, b) { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
+        grouper : function (res) 
+          { return res.call_index_val === -1 ? "Start of frame" : "Call #" + res.call_index; },
+        sorter : function (a, b) 
+          { return a.call_index_val < b.call_index_val ? -1 : a.call_index_val > b.call_index_val ? 1 : 0 }
       },
       texture: {
         label: "texture", // TODO
-        grouper : function (res) { return res.name; }
+        grouper : function (res) { return res.name; },
+        sorter: "unsortable"
       }
     }
-  };
-
-  this.groupby = {
   };
 
   var eh = window.eventHandlers;
