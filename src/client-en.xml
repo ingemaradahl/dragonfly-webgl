@@ -429,6 +429,7 @@ window.load_screen_timeout = window.setTimeout(function()
 <script src="./webgl/snapshot.js"/>
 <script src="./webgl/program.js"/>
 <script src="./webgl/buffer.js"/>
+<script src="./webgl/framebuffer.js"/>
 <script src="./webgl/state.js"/>
 <script src="./webgl/texture.js"/>
 <script src="./webgl/rpcs.js"/>

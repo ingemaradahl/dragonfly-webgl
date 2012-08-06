@@ -39,21 +39,22 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
+      framebuffers: {
+        _array_elements: {
+          _class: cls.WebGLFramebuffer,
+          image: {
+            img: {
+              _action: cls.Scoper.ACTIONS.NOTHING,
+            }
+          }
+        }
+      },
       buffers: {
         _array_elements: {
           _class: cls.WebGLBuffer,
           data: {
             _action: cls.Scoper.ACTIONS.NOTHING,
             _reviver: scoper.reviver_typed
-          }
-        }
-      },
-      drawcalls: {
-        _array_elements: {
-          fbo: {
-            img: {
-              _action: cls.Scoper.ACTIONS.NOTHING
-            }
           }
         }
       },
@@ -102,6 +103,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.programs = snapshot.programs;
     this.textures = snapshot.textures;
     this.state = snapshot.state;
+    this.framebuffers = snapshot.framebuffers;
     this.drawcalls = [];
     this.trace = [];
 
@@ -122,6 +124,7 @@ cls.WebGLSnapshotArray = function(context_id)
     };
     this.buffers.lookup = lookup.bind(this.buffers);
     this.textures.lookup = lookup.bind(this.textures);
+    this.framebuffers.lookup = lookup.bind(this.framebuffers);
 
     /**
      * Tries to find a matching script id to the provided url.
@@ -344,11 +347,31 @@ cls.WebGLSnapshotArray = function(context_id)
                 linked_object = args[0];
                 break;
             }
+            break;
           case "program":
             switch (function_name)
             {
               case "useProgram":
                 linked_object = args[0];
+                break;
+              default:
+                linked_object = null;
+                greup = "generic";
+                break;
+            }
+            break;
+          case "framebuffer":
+            switch (function_name)
+            {
+              case "isFramebuffer":
+                linked_object = args[0];
+                break;
+              case "bindFramebuffer":
+                linked_object = args[1];
+                break;
+              default:
+                linked_object = null;
+                greup = "generic";
                 break;
             }
         }
@@ -368,25 +391,6 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       var call_index = drawcall.call_index;
       this.trace[call_index].drawcall = true;
-
-      // Add fbo image data downloader function
-      if (drawcall.fbo.img) {
-        drawcall.fbo.request_data = function()
-        {
-          if (this.img.downloading)
-            return;
-
-          var finalize = function (data)
-          {
-            this.img = data;
-            messages.post('webgl-fbo-data', this);
-          };
-
-          var scoper = new cls.Scoper(finalize, this);
-          scoper.examine_object(this.img, true);
-          this.img.downloading = true;
-        }.bind(drawcall.fbo);
-      }
 
       // Copy the parameters from the function call to the drawcall object
       var state = {
@@ -648,6 +652,9 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
         window.views.webgl_program_call._render(snapshot, null, this.program);
       }.bind(this);
       break;
+    case "WebGLFramebuffer":
+      this.framebuffer = snapshot.framebuffers.lookup(this.framebuffer_index, call_index);
+      this.text = String(this.framebuffer)
     default:
       matched = false;
   }

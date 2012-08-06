@@ -968,9 +968,9 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   return res;
 };
 
-window.templates.webgl.drawcall = function(draw_call, trace_call)
+window.templates.webgl.drawcall = function(draw_call, trace_call, framebuffer)
 {
-  var img = window.templates.webgl.image(draw_call.fbo);
+  var img = window.templates.webgl.image(framebuffer.image);
 
   var buffer_display = [];
   if (window.webgl.gl)
