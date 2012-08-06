@@ -266,7 +266,8 @@ img.flipped
 
 .trace-table span.link
 {
-  color: blue;
+  color: black;
+  font-weight: 700;
 }
 
 .trace-table tr.trace-error
@@ -372,22 +373,6 @@ img.flipped
   border-radius: 5px;
 
   z-index:2;
-}
-
-.draw-call-info th
-{
-  text-align: left;
-  padding-right: 30px;
-}
-
-.draw-call-info table
-{
-  border-collapse: collapse;
-}
-
-.draw-call-info span.link
-{
-  color: blue;
 }
 
 /* Texture */
