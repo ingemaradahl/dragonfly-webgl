@@ -294,6 +294,7 @@ cls.WebGLSnapshotArray = function(context_id)
             }
             break;
           case "texture":
+          case "texImage":
             switch (function_name)
             {
               case "activeTexture":
@@ -329,6 +330,14 @@ cls.WebGLSnapshotArray = function(context_id)
           case "attrib":
             // TODO figure out program stuff
             linked_object = args[0];
+            break;
+          case "program":
+            switch (function_name)
+            {
+              case "useProgram":
+                linked_object = args[0];
+                break;
+            }
         }
 
         if (linked_object == null && group !== "draw") group = "generic";
