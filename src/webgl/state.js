@@ -82,6 +82,7 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "getUniformLocation": "uniform",
   "getVertexAttrib": "attrib",
   "getVertexAttribOffset": "attrib",
+  "bindAttribLocation": "attrib",
   "uniform1f": "uniform",
   "uniform1fv": "uniform",
   "uniform1i": "uniform",
@@ -112,34 +113,34 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "vertexAttrib4f": "attrib",
   "vertexAttrib4fv": "attrib",
   "vertexAttribPointer": "attrib",
-  "clear": "clear",
   "drawArrays": "draw",
   "drawElements": "draw",
   "finish": "draw",
   "flush": "draw",
-  "activeTexture": "generic",
+  "activeTexture": "activeTexture",
   "blendColor": "blend",
   "blendEquation": "blend",
   "blendEquationSeparate": "blend",
   "blendFunc": "blend",
   "blendFuncSeparate": "blend",
+  "clear": "clear",
   "clearColor": "clear",
   "clearDepth": "clear",
-  "clearStencil": "stencil",
   "colorMask": "clear",
+  "clearStencil": "clear",
   "cullFace": "generic",
-  "depthFunc": "generic",
-  "depthMask": "generic",
-  "depthRange": "generic",
-  "disable": "generic",
-  "enable": "generic",
-  "frontFace": "generic",
-  "getError": "generic",
-  "getParameter": "generic",
-  "hint": "generic",
-  "isEnabled": "generic",
-  "lineWidth": "generic",
-  "pixelStorei": "generic",
+  "depthFunc": "depth",
+  "depthMask": "depth",
+  "depthRange": "depth",
+  "disable": "toggle",
+  "enable": "toggle",
+  "isEnabled": "toggle",
+  "frontFace": "frontFace",
+  "getError": "empty",
+  "getParameter": "empty",
+  "hint": "hints",
+  "lineWidth": "lineWidth",
+  "pixelStorei": "pixelStore",
   "polygonOffset": "generic",
   "sampleCoverage": "generic",
   "stencilFunc": "stencil",
@@ -181,74 +182,58 @@ cls.WebGLState.FUNCTION_GROUPS = {
   "generateMipmap": "texture",
   "getTexParameter": "texture",
   "isTexture": "texture",
-  "texImage2D": "texture",
   "texParameterf": "texture",
   "texParameteri": "texture",
-  "texSubImage2D": "texture",
-  "attachShader": "shader",
-  "bindAttribLocation": "attrib",
-  "compileShader": "shader",
-  "createProgram": "shader",
-  "createShader": "shader",
-  "deleteProgram": "shader",
-  "deleteShader": "shader",
-  "detachShader": "shader",
-  "getAttachedShaders": "shader",
-  "getProgramInfoLog": "shader",
-  "getProgramParameter": "shader",
-  "getShaderInfoLog": "shader",
-  "getShaderParameter": "shader",
-  "getShaderPrecisionFormat": "shader",
-  "getShaderSource": "shader",
-  "isProgram": "shader",
-  "isShader": "shader",
-  "linkProgram": "shader",
-  "shaderSource": "shader",
-  "useProgram": "shader",
-  "validateProgram": "shader"
+  "texImage2D": "texImage",
+  "texSubImage2D": "texImage",
+  "attachShader": "empty",
+  "compileShader": "empty",
+  "createProgram": "empty",
+  "createShader": "empty",
+  "deleteProgram": "empty",
+  "deleteShader": "empty",
+  "detachShader": "empty",
+  "getAttachedShaders": "empty",
+  "getProgramInfoLog": "empty",
+  "getProgramParameter": "empty",
+  "getShaderInfoLog": "empty",
+  "getShaderParameter": "empty",
+  "getShaderPrecisionFormat": "empty",
+  "getShaderSource": "empty",
+  "isProgram": "program",
+  "isShader": "empty",
+  "linkProgram": "program",
+  "shaderSource": "empty",
+  "validateProgram": "program",
+  "useProgram": "program",
 };
 
 cls.WebGLState.PARAMETER_GROUPS = {
   uncategorized: [
     "ALIASED_LINE_WIDTH_RANGE",
     "ALIASED_POINT_SIZE_RANGE",
-    "ALPHA_BITS",
-    "BLUE_BITS",
     "COLOR_WRITEMASK",
     "CULL_FACE",
     "CULL_FACE_MODE",
-    "DEPTH_BITS",
-    "DEPTH_FUNC",
-    "DEPTH_RANGE",
-    "DEPTH_TEST",
-    "DEPTH_WRITEMASK",
     "DITHER",
-    "FRONT_FACE",
-    "GENERATE_MIPMAP_HINT",
-    "GREEN_BITS",
-    "LINE_WIDTH",
-    "PACK_ALIGNMENT",
     "POLYGON_OFFSET_FACTOR",
     "POLYGON_OFFSET_FILL",
     "POLYGON_OFFSET_UNITS",
-    "RED_BITS",
     "SAMPLES",
     "SAMPLE_BUFFERS",
     "SAMPLE_COVERAGE_INVERT",
     "SAMPLE_COVERAGE_VALUE",
     "SUBPIXEL_BITS",
-    "UNPACK_ALIGNMENT",
-    "UNPACK_COLORSPACE_CONVERSION_WEBGL",
-    "UNPACK_FLIP_Y_WEBGL",
-    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
-  ],
-  program: [
-    "CURRENT_PROGRAM"
-  ],
-  viewport: [
-    "VIEWPORT",
-    "SCISSOR_BOX",
     "SCISSOR_TEST"
+  ],
+  activeTexture: [
+    "ACTIVE_TEXTURE",
+    "TEXTURE_BINDING_2D",
+    "TEXTURE_BINDING_CUBE_MAP"
+  ],
+  attrib: [
+    "ARRAY_BUFFER_BINDING",
+    "CURRENT_PROGRAM"
   ],
   blend: [
     "BLEND",
@@ -259,6 +244,78 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "BLEND_EQUATION_RGB",
     "BLEND_SRC_ALPHA",
     "BLEND_SRC_RGB",
+  ],
+  buffer: [
+    "ARRAY_BUFFER_BINDING",
+    "ELEMENT_ARRAY_BUFFER_BINDING"
+  ],
+  clear: [
+    "COLOR_CLEAR_VALUE",
+    "DEPTH_CLEAR_VALUE",
+    "STENCIL_CLEAR_VALUE"
+  ],
+  constants: [
+    "ALPHA_BITS",
+    "RED_BITS",
+    "GREEN_BITS",
+    "BLUE_BITS",
+    "DEPTH_BITS",
+    "NUM_COMPRESSED_TEXTURE_FORMATS",
+    "COMPRESSED_TEXTURE_FORMATS",
+    "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+    "MAX_CUBE_MAP_TEXTURE_SIZE",
+    "MAX_RENDERBUFFER_SIZE",
+    "MAX_FRAGMENT_UNIFORM_VECTORS",
+    "MAX_TEXTURE_IMAGE_UNITS",
+    "MAX_TEXTURE_SIZE",
+    "MAX_VARYING_VECTORS",
+    "MAX_VERTEX_ATTRIBS",
+    "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+    "MAX_VERTEX_UNIFORM_VECTORS",
+    "MAX_VIEWPORT_DIMS",
+    "RENDERER",
+    "SHADING_LANGUAGE_VERSION",
+    "VENDOR",
+    "VERSION"
+  ],
+  depth: [
+    "DEPTH_FUNC",
+    "DEPTH_RANGE",
+    "DEPTH_WRITEMASK",
+    "DEPTH_TEST"
+  ],
+  draw: [
+    "ELEMENT_ARRAY_BUFFER_BINDING",
+    "ARRAY_BUFFER_BINDING",
+    "CURRENT_PROGRAM",
+    "FRAMEBUFFER_BINDING"
+  ],
+  empty: [
+  ],
+  framebuffer: [
+    "FRAMEBUFFER_BINDING",
+  ],
+  frontFace: [
+    "FRONT_FACE",
+  ],
+  hints: [
+    "GENERATE_MIPMAP_HINT",
+  ],
+  lineWidth: [
+    "LINE_WIDTH",
+  ],
+  pixelStore: [
+    "PACK_ALIGNMENT",
+    "UNPACK_ALIGNMENT",
+    "UNPACK_COLORSPACE_CONVERSION_WEBGL",
+    "UNPACK_FLIP_Y_WEBGL",
+    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
+  ],
+  program: [
+    "CURRENT_PROGRAM"
+  ],
+  renderbuffer: [
+    "RENDERBUFFER_BINDING",
   ],
   stencil: [
     "STENCIL_BACK_FAIL",
@@ -278,52 +335,33 @@ cls.WebGLState.PARAMETER_GROUPS = {
     "STENCIL_VALUE_MASK",
     "STENCIL_WRITEMASK",
   ],
-  buffer: [
-    "ARRAY_BUFFER_BINDING",
-    "ELEMENT_ARRAY_BUFFER_BINDING"
-  ],
-  framebuffer: [
-    "FRAMEBUFFER_BINDING",
-  ],
-  renderbuffer: [
-    "RENDERBUFFER_BINDING",
-  ],
-  constants: [
-    "NUM_COMPRESSED_TEXTURE_FORMATS",
-    "COMPRESSED_TEXTURE_FORMATS",
-    "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
-    "MAX_CUBE_MAP_TEXTURE_SIZE",
-    "MAX_RENDERBUFFER_SIZE",
-    "MAX_FRAGMENT_UNIFORM_VECTORS",
-    "MAX_TEXTURE_IMAGE_UNITS",
-    "MAX_TEXTURE_SIZE",
-    "MAX_VARYING_VECTORS",
-    "MAX_VERTEX_ATTRIBS",
-    "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
-    "MAX_VERTEX_UNIFORM_VECTORS",
-    "MAX_VIEWPORT_DIMS",
-    "RENDERER",
-    "SHADING_LANGUAGE_VERSION",
-    "VENDOR",
-    "VERSION"
-  ],
-  clear: [
-    "COLOR_CLEAR_VALUE",
-    "DEPTH_CLEAR_VALUE",
-    "STENCIL_CLEAR_VALUE"
-  ],
   texture: [
-    "ACTIVE_TEXTURE",
     "TEXTURE_BINDING_2D",
     "TEXTURE_BINDING_CUBE_MAP"
   ],
-  attrib: [
-    "ARRAY_BUFFER_BINDING",
+  texImage: [
+    "TEXTURE_BINDING_2D",
+    "TEXTURE_BINDING_CUBE_MAP",
+    "PACK_ALIGNMENT",
+    "UNPACK_ALIGNMENT",
+    "UNPACK_COLORSPACE_CONVERSION_WEBGL",
+    "UNPACK_FLIP_Y_WEBGL",
+    "UNPACK_PREMULTIPLY_ALPHA_WEBGL"
+  ],
+  toggle: [
+    "CULL_FACE",
+    "BLEND",
+    "DITHER",
+    "SCISSOR_TEST",
+    "STENCIL_TEST",
+    "DEPTH_TEST",
+    "POLYGON_OFFSET_FILL"
+  ],
+  uniform: [
     "CURRENT_PROGRAM"
   ],
-  draw: [
-    "ARRAY_BUFFER_BINDING",
-    "FRAMEBUFFER_BINDING",
-    "ELEMENT_ARRAY_BUFFER_BINDING"
+  viewport: [
+    "VIEWPORT",
+    "SCISSOR_BOX"
   ]
 };

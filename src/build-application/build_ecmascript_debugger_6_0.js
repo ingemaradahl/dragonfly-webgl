@@ -303,6 +303,12 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                               'scroll');
     cls.WebGLSnapshotView.create_ui_widgets();
 
+    cls.WebGLPreviewView.prototype = ViewBase;
+    new cls.WebGLPreviewView('webgl-preview',
+                              "Buffer preview", // TODO
+                              'scroll');
+    cls.WebGLPreviewView.create_ui_widgets();
+
     /* Environment */
     cls.EnvironmentView.prototype = ViewBase;
     new cls.EnvironmentView('environment',

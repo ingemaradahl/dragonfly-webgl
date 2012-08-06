@@ -85,7 +85,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
     ];
 
   var history = window.templates.webgl.history(buffer);
-  var preview = buffer_settings ? window.templates.webgl.buffer_preview(buffer_settings) : ""; 
+  var preview = buffer_settings && window.webgl.gl ? window.templates.webgl.buffer_preview(buffer_settings) : "";
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -285,10 +285,8 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
         ['td',
           ['select',
             buffer_settings.options.modes.map(function(mode) {
-              var option = ['option',
-                mode === 1 // The api defined in webgl has the enum '1' mapped to both LINES and ONE
-                  ? "LINES"
-                  : window.webgl.api.constant_value_to_string(mode),
+              var option = [
+                'option', window.webgl.api.draw_mode_to_sting(mode),
                 'value', String(mode)
               ];
 
@@ -370,11 +368,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
   ];
 
   return ["div",
-    ["div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ],
+    window.templates.webgl.preview_canvas(),
     ["div",
       ["div", position],
       ["div", parameters],
@@ -389,7 +383,7 @@ window.templates.webgl.linked_object = function(obj, handler, data_name)
   if (obj.action)
   {
     html.push("handler", handler ? handler : "webgl-linked-object");
-    html.push("class", "link");
+    if (window.settings["webgl-general"].map["highlight-objects"]) html.push("class", "link");
   }
 
   if (obj.tooltip) html.push("title", obj.tooltip);
@@ -978,27 +972,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var img = window.templates.webgl.image(draw_call.fbo);
 
-  var table_rows = [];
-
-  if (draw_call.element_buffer)
-  {
-    var buffer_link = [ "span",
-      String(draw_call.element_buffer),
-      "handler", "webgl-drawcall-buffer",
-      "class", "link",
-      "buffer", draw_call.element_buffer
-    ];
-
-    table_rows.push(["tr", ["th", "Element buffer"], ["td", buffer_link]]);
-  }
-
-  table_rows.push([ "tr",  [ "th", "Program" ], [ "td", String(draw_call.program.index)]])
-
-  var state = [ "table",
-    table_rows,
-    "class", "draw-call-info"
-  ];
-
   var buffer_display = [];
   if (window.webgl.gl)
   {
@@ -1006,7 +979,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   }
 
   var html = [ "div",
-    state,
     buffer_display,
     img
   ];
@@ -1044,12 +1016,34 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
       "handler", "webgl-select-attribute",
       "id", "webgl-attribute-selector"
     ],
-    [
-      "div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ]
+    window.templates.webgl.preview_canvas()
+  ];
+};
+
+window.templates.webgl.preview_canvas = function()
+{
+  var front_face = window.settings['webgl-preview'].map['front-face-normal']
+    ? "normal value"
+    : "black";
+  var back_face = window.settings['webgl-preview'].map['back-face-normal']
+    ? "normal value"
+    : "black";
+
+  return ["div",
+    ["div",
+      "?",
+      ["div",
+        ["span", "Front facing: " + front_face],
+        ["br"],
+        ["span", "Back facing: " + back_face],
+        "id", "webgl-preview-help",
+        "handler", "webgl-preview-help",
+      ],
+      "handler", "webgl-preview-help",
+    ],
+    "handler", "webgl-canvas",
+    "id", "webgl-canvas-holder",
+    "class", "webgl-holder"
   ];
 };
 
@@ -1319,13 +1313,13 @@ window.templates.webgl.program = function(call_index, program)
 
   var attribute_table = null;
   var uniform_table = null;
-  var html = 
+  var html =
   [
     "div",
     programs
   ];
 
-  // If the program is related to a call, attribute and uniforms tables 
+  // If the program is related to a call, attribute and uniforms tables
   // will be created and attached to the template.
   if (call_index !== -1 && call_index !== null)
   {
