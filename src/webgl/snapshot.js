@@ -63,6 +63,7 @@ cls.WebGLSnapshotArray = function(context_id)
       },
       programs: {
         _array_elements: {
+          _class: cls.WebGLProgram,
           uniforms: {
             _array_elements: {
               locations: {
@@ -627,6 +628,14 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       }
       this.text = this.attribute.name;
       this.action = function() {  /* alert("attribute!"); */ };
+      break;
+    case "WebGLProgram":
+      this.program = snapshot.programs[this.program_index];
+      this.text = String(this.program);
+      this.action = function ()
+      {
+        window.views.webgl_program_call._render(snapshot, null, this.program);
+      }.bind(this);
       break;
     default:
       matched = false;
