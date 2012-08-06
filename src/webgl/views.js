@@ -318,6 +318,7 @@ cls.WebGLCallView.initialize = function()
     }
   };
 
+
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
