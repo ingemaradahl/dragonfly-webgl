@@ -330,9 +330,20 @@ cls.WebGLSnapshotArray = function(context_id)
             }
             break;
           case "attrib":
-            // TODO figure out program stuff
-            linked_object = args[0];
-            break;
+            switch (function_name)
+            {
+              case "getAttribLocation":
+                break;
+              case "bindAttribLocation":
+              case "getActiveAttrib":
+                linked_object = args[1];
+                break;
+              case "getVertexAttribOffset":
+              case "getVertexAttrib":
+              default: // vertexAttribPointer || vertexAttrib[1234]f[v]
+                linked_object = args[0];
+                break;
+            }
           case "program":
             switch (function_name)
             {
