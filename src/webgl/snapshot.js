@@ -200,24 +200,30 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
 
-    // Get the protocol, host and port
-    var url_base = new RegExp("^(.*://[^/]*)/?").exec(runtime.uri);
-    url_base = url_base != null && url_base[1] ? url_base[1] : runtime.uri;
-    if (url_base[url_base.length - 1] === "/") url_base = url_base.substr(0, url_base.length - 1);
+    var shorten_url = function(uri)
+    {
+      var same = uri.protocol === runtime.protocol &&
+          uri.host === runtime.host &&
+          uri.port === runtime.port;
+      if (!same) return null;
 
-    // Get the path of url, up until the last dir
-    var url_path = new RegExp("^" + url_base + "/(.*)/[^/]*$").exec(runtime.uri);
-    url_path = url_path != null && url_path[1] ? url_path[1] + "/" : "";
-
-    var short_url_regexp = new RegExp("^" + url_base + "(?:/" + url_path + ")?(.*)$");
+      if (uri.dir_pathname.indexOf(runtime.dir_pathname) === 0)
+      {
+        // Relative path
+        return uri.pathname.substr(runtime.dir_pathname.length);
+      }
+      else
+      {
+        // Absolute path
+        return uri.pathname;
+      }
+    };
 
     var init_loc = function(loc)
     {
       if (loc == null) return;
-      var script_id = lookup_script_id(loc.url);
-      loc.script_id = script_id;
-      var res = short_url_regexp.exec(loc.url);
-      loc.short_url = res && res[1] ? res[1] : null;
+      loc.script_id = lookup_script_id(loc.url);
+      loc.short_url = shorten_url(new URI(loc.url));
     };
 
     var init_trace = function (calls, call_locs, call_refs)

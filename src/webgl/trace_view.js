@@ -9,6 +9,8 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLTraceView = function(id, name, container_class)
 {
+  this._tooltip;
+
   this._render = function()
   {
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
@@ -58,6 +60,7 @@ cls.WebGLTraceView = function(id, name, container_class)
 
   this.init(id, name, container_class);
   this.init_events();
+
 };
 
 cls.WebGLTraceView.prototype = cls.WebGLSideView;

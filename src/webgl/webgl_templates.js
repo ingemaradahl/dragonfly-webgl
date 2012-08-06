@@ -530,7 +530,7 @@ window.templates.webgl.trace_table = function(calls, view_id)
 
   return [
     "table", content,
-    "class", "sortable-table trace-table", // TODO css
+    "class", "sortable-table trace-table" // TODO css
   ];
 };
 
@@ -945,7 +945,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
       ["h2", ")"],
       spec_link
     ],
-    "class", "call-header"
+    "class", "call-header",
   ];
 
   var res = [header];
@@ -1054,7 +1054,7 @@ window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
     ['span',
       ['span', "Load buffer"],
       'handler', 'webgl-force-buffer',
-      'class', 'ui-button',
+      'class', 'ui-button'
     ]
   ];
 };
@@ -1198,6 +1198,22 @@ window.templates.webgl.uniform_table = function(call_index, program)
       value = values[last_index].value;
     }
 
+    // Adding a tooltip to matrices
+    var data_tooltip = null;
+    var uniform_tooltip = null;
+    var type = window.webgl.api.constant_value_to_string(uniform.type)
+    switch (type)
+    {
+      case "FLOAT_MAT3": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip";
+                         break;
+      case "FLOAT_MAT4": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip"; 
+                         break;
+      default: break;
+    }
+    // End
+
     rows.push([
       "tr",
       [
@@ -1212,7 +1228,9 @@ window.templates.webgl.uniform_table = function(call_index, program)
         [
           "td",
           String(value),
-          "class", changed_this_call ? "changed" : ""
+          "id", uniform.index,
+          "class", changed_this_call ? "changed" : "",
+          data_tooltip, uniform_tooltip
         ]
       ]
     ]);
@@ -1229,6 +1247,34 @@ window.templates.webgl.uniform_table = function(call_index, program)
   ];
 
   return table;
+};
+
+
+window.templates.webgl.uniform_tooltip = function(value)
+{
+  var html = [];
+  var row = [];
+  var cols = [];
+  var table = ["table"];
+  var dim = Math.sqrt(value.length);
+  
+  for (var i=0; i<dim; i++)
+  {
+    row = ["tr"];
+    cols = [];
+    for (var j=0; j<dim; j++)
+    {
+      var fixed_val = value[i+j].toFixed(5);
+      var val = fixed_val === "0.00000" ? "0" : fixed_val;
+      cols.push(["td", val]);
+    }
+    row.push(cols);
+    table.push(row);
+  }
+
+  html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
+  
+  return html;
 };
 
 window.templates.webgl.taking_snapshot = function()
