@@ -63,6 +63,7 @@ cls.WebGLSnapshotArray = function(context_id)
       },
       programs: {
         _array_elements: {
+          _class: cls.WebGLProgram,
           uniforms: {
             _array_elements: {
               locations: {
@@ -301,6 +302,7 @@ cls.WebGLSnapshotArray = function(context_id)
             }
             break;
           case "texture":
+          case "texImage":
             switch (function_name)
             {
               case "activeTexture":
@@ -336,6 +338,14 @@ cls.WebGLSnapshotArray = function(context_id)
           case "attrib":
             // TODO figure out program stuff
             linked_object = args[0];
+            break;
+          case "program":
+            switch (function_name)
+            {
+              case "useProgram":
+                linked_object = args[0];
+                break;
+            }
         }
 
         if (linked_object == null && group !== "draw") group = "generic";
@@ -577,6 +587,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
     if (object.hasOwnProperty(key)) this[key] = object[key];
   }
 
+  var call_index = Number(call_index);
   var matched = true;
   switch (this.type)
   {
@@ -584,16 +595,20 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.buffer_index == null) return;
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
-      // TODO Define an action.
-      //this.action = this.buffer.show.bind(this.buffer);
+      this.action = function ()
+      {
+        window.views["webgl_buffer_call"].display_call(snapshot, call_index, this.buffer);
+      }.bind(this);
       break;
     case "WebGLTexture":
       if (this.texture_index == null) return;
       this.texture = snapshot.textures.lookup(this.texture_index, call_index);
       if (this.texture == null) return;
       this.text = String(this.texture);
-      // TODO Define an action.
-      //this.action = this.texture.show.bind(this.texture);
+      this.action = function ()
+      {
+        window.views["webgl_texture_call"].display_call(snapshot, call_index, this.texture);
+      }.bind(this);
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
@@ -619,6 +634,14 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       }
       this.text = this.attribute.name;
       this.action = function() {  /* alert("attribute!"); */ };
+      break;
+    case "WebGLProgram":
+      this.program = snapshot.programs[this.program_index];
+      this.text = String(this.program);
+      this.action = function ()
+      {
+        window.views.webgl_program_call._render(snapshot, null, this.program);
+      }.bind(this);
       break;
     default:
       matched = false;

@@ -85,7 +85,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
     ];
 
   var history = window.templates.webgl.history(buffer);
-  var preview = buffer_settings ? window.templates.webgl.buffer_preview(buffer_settings) : "";
+  var preview = buffer_settings && window.webgl.gl ? window.templates.webgl.buffer_preview(buffer_settings) : "";
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -383,7 +383,7 @@ window.templates.webgl.linked_object = function(obj, handler, data_name)
   if (obj.action)
   {
     html.push("handler", handler ? handler : "webgl-linked-object");
-    html.push("class", "link");
+    if (window.settings["webgl-general"].map["highlight-objects"]) html.push("class", "link");
   }
 
   if (obj.tooltip) html.push("title", obj.tooltip);
@@ -972,27 +972,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
 {
   var img = window.templates.webgl.image(draw_call.fbo);
 
-  var table_rows = [];
-
-  if (draw_call.element_buffer)
-  {
-    var buffer_link = [ "span",
-      String(draw_call.element_buffer),
-      "handler", "webgl-drawcall-buffer",
-      "class", "link",
-      "buffer", draw_call.element_buffer
-    ];
-
-    table_rows.push(["tr", ["th", "Element buffer"], ["td", buffer_link]]);
-  }
-
-  table_rows.push([ "tr",  [ "th", "Program" ], [ "td", String(draw_call.program.index)]])
-
-  var state = [ "table",
-    table_rows,
-    "class", "draw-call-info"
-  ];
-
   var buffer_display = [];
   if (window.webgl.gl)
   {
@@ -1000,7 +979,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   }
 
   var html = [ "div",
-    state,
     buffer_display,
     img
   ];

@@ -140,7 +140,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
     var i=1;
     this._content = snapshot.programs.map(function(program) {
       return {
-        name: "Program " + i++,
+        name: String(program),
         index: program.index,
       };
     });

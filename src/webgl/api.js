@@ -131,7 +131,8 @@ cls.WebGLAPI = function ()
           case this.TYPES.BITMASK:
             return "0x" + value.toString(16).toUpperCase();
           case this.TYPES.COLOR:
-            return "rgba(" + Array.prototype.join.call(value, ", ") + ")";
+            var colors = Array.prototype.map.call(value, function(v) { return v.toFixed(2); });
+            return "rgba(" + colors.join(", ") + ")";
           case this.TYPES.ENUM:
             return this.constant_value_to_string(value);
           case this.TYPES.COLORMASK:
@@ -139,9 +140,9 @@ cls.WebGLAPI = function ()
           case this.TYPES.RANGE:
             return String(value[0]) + " - " + String(value[1]);
           case this.TYPES.RECT:
-            return "(" + String(value[0]) + ", " + String(value[1]) + ") " + String(value[2]) + "x" + String(value[3]);
+            return "(" + String(value[0]) + ", " + String(value[1]) + ") " + String(value[2]) + "×" + String(value[3]);
           case this.TYPES.WH:
-            return String(value[0]) + "x" + String(value[1]);
+            return String(value[0]) + "×" + String(value[1]);
           default:
         }
       }
