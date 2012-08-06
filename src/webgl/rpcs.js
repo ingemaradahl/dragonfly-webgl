@@ -155,7 +155,7 @@ cls.WebGL.RPCs.injection = function () {
       };
     }
 
-    var stacktrace_regexp = new RegExp("^called from line (\\d+), column (\\d+) in ([^(]+)\\([^)]*\\) in (.+):$");
+    var stacktrace_regexp = new RegExp("^called as bound function from line (\\d+), column (\\d+) in ([^(]+)\\([^)]*\\) in (.+):$");
     function analyse_stacktrace(stacktrace)
     {
       var lines = stacktrace.split("\n");
@@ -912,7 +912,7 @@ cls.WebGL.RPCs.injection = function () {
       if (typeof this[i] === "function")
       {
         gl[i] = this[i].bind(this);
-        this[i] = wrap_function(handler, i, this[i], innerFuns, snapshot_functions, history_functions);
+        this[i] = wrap_function(handler, i, this[i], innerFuns, snapshot_functions, history_functions).bind(this);
       }
       else
       {
@@ -1300,7 +1300,7 @@ cls.WebGL.RPCs.injection = function () {
       {
         group = function_groups[function_name];
         param_names = param_groups[group];
-        if(param_names == null) 
+        if(param_names == null)
           return null;
 
         for (p = 0; p < param_names.length; p++)
