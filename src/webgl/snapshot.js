@@ -209,6 +209,7 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var init_loc = function(loc)
     {
+      if (loc == null) return;
       var script_id = lookup_script_id(loc.url);
       loc.script_id = script_id;
       var res = short_url_regexp.exec(loc.url);

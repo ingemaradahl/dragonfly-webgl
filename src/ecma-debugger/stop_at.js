@@ -430,6 +430,17 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
           "breakpoint_id":1
 
         */
+
+        // If the script is not loaded in DF then step out of the call.
+        // This is to prevent to step into the injected WebGL rpcs code.
+        // TODO only step out of the call when the script is the WebGL rpcs.
+        var script = window.runtimes.getScript(stopAt.script_id);
+        if (!script)
+        {
+          this.__continue("step-out-of-call");
+          return;
+        }
+
         var condition = this._bps.get_condition(stopAt.breakpoint_id);
         if (condition)
         {

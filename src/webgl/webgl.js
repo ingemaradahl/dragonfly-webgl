@@ -114,20 +114,19 @@ cls.WebGL.WebGLDebugger = function ()
       scoper.set_reviver_tree({
         _depth: 1
       });
+      // TODO remove the debugging flag when releasing.
       scoper.eval_script(rt_id, script, [["_scope_settings", settings_object.object_id]], false, true);
     };
 
     // First, create a reference to an object containing the initial settings to
     // be used..
     var script = "(function(){return " + JSON.stringify(window.settings.snapshot.map) + ";})()";
-    var scoper = new cls.Scoper(settings_complete, this)
+    var scoper = new cls.Scoper(settings_complete, this);
     scoper.set_reviver_tree({
       _depth: 0,
       _action: cls.Scoper.ACTIONS.NOTHING
     });
     scoper.eval_script(rt_id, script, [], false);
-
-
   };
 
   this._on_new_context = function (message)
