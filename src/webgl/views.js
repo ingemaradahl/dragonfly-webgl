@@ -90,11 +90,56 @@ cls.WebGLGeneralView.create_ui_widgets = function()
     // key-value map
     {
       'enable-debugger' : true,
-      'max_preview_size' : 128 // In KB
     },
     // key-label map
     {
       'enable-debugger': "Enable the WebGL Debugger",
+    },
+    // settings map
+    {
+      checkboxes: checkboxes,
+    },
+    // template
+    {
+    },
+    "webgl"
+  );
+
+  eventHandlers.change['set_max_preview_size'] = function(event, target)
+  {
+    var preview_size = Number(event.target.value);
+    settings['webgl-general'].set('max_preview_size', preview_size);
+  };
+};
+
+/* Preview settings view */
+cls.WebGLPreviewView = function(id, name, container_class)
+{
+  this.init(id, name, container_class);
+}
+
+cls.WebGLPreviewView.create_ui_widgets = function()
+{
+  var checkboxes =
+  [
+    'front-face-normal',
+    'back-face-normal'
+  ];
+
+  new Settings
+  (
+    // id
+    'webgl-preview',
+    // key-value map
+    {
+      'front-face-normal' : false,
+      'back-face-normal' : true,
+      'max_preview_size' : 128 // In KB
+    },
+    // key-label map
+    {
+      'front-face-normal': "Show normal on front facing triangles",
+      'back-face-normal': "Show normal on back facing triangles",
       'max_preview_size': "Max size of automatic buffer preview"
     },
     // settings map
@@ -133,8 +178,8 @@ cls.WebGLGeneralView.create_ui_widgets = function()
   eventHandlers.change['set_max_preview_size'] = function(event, target)
   {
     var preview_size = Number(event.target.value);
-    settings['webgl-general'].set('max_preview_size', preview_size);
-  }
+    settings['webgl-preview'].set('max_preview_size', preview_size);
+  };
 };
 
 /**

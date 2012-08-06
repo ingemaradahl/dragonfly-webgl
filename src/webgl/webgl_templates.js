@@ -368,11 +368,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
   ];
 
   return ["div",
-    ["div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ],
+    window.templates.webgl.preview_canvas(),
     ["div",
       ["div", position],
       ["div", parameters],
@@ -1042,12 +1038,34 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
       "handler", "webgl-select-attribute",
       "id", "webgl-attribute-selector"
     ],
-    [
-      "div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ]
+    window.templates.webgl.preview_canvas()
+  ];
+};
+
+window.templates.webgl.preview_canvas = function()
+{
+  var front_face = window.settings['webgl-preview'].map['front-face-normal']
+    ? "normal value"
+    : "black";
+  var back_face = window.settings['webgl-preview'].map['back-face-normal']
+    ? "normal value"
+    : "black";
+
+  return ["div",
+    ["div",
+      "?",
+      ["div",
+        ["span", "Front facing: " + front_face],
+        ["br"],
+        ["span", "Back facing: " + back_face],
+        "id", "webgl-preview-help",
+        "handler", "webgl-preview-help",
+      ],
+      "handler", "webgl-preview-help",
+    ],
+    "handler", "webgl-canvas",
+    "id", "webgl-canvas-holder",
+    "class", "webgl-holder"
   ];
 };
 
