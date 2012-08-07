@@ -1,4 +1,27 @@
-﻿.js-dd-dir-path,
+﻿.summary-item
+{
+  margin: 5px;
+  float: left;
+}
+
+.summary-item.fit
+{
+  width: 100%;
+}
+
+.summary-item > h3
+{
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 5px;
+}
+
+.clear
+{
+  clear: both;
+}
+
+
+.js-dd-dir-path,
 .webgl_snapshot_menu cst-webgl-title
 {
   font-style: italic;
@@ -298,9 +321,9 @@ img.flipped
   border-style: solid;
   border-color: gray;
 
-  width: 100%;
-  max-width: 450px;
-  height: 450px;
+
+  width: 300px;
+  height: 300px;
   overflow: hidden;
 
   position:relative;

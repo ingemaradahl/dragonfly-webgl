@@ -212,11 +212,15 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 
     this._buffer_settings = build_settings();
 
-    var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
-      selected_index, start_row);
+    //var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
+      //selected_index, start_row);
+
+    var preview = window.webgl.gl ? window.templates.webgl.buffer_preview(this._buffer_settings) : [];
+    var primary = [{title: "Buffer", content: preview}];
 
     buffer.request_data();
-    this.render_with_header(snapshot, call_index, template);
+    this.render_with_header(snapshot, call_index, primary);
+    //this.render_with_header(this._snapshot, this._call_index, primary, secondary);
 
     if (this._buffer_settings)
     {

@@ -558,8 +558,8 @@ window.templates.webgl.image = function(level)
     image = [
       "div",
       img,
-      "class", "texture-container",
-      "style", "max-width: " + String(level.width) + "px"
+      "class", "texture-container fit",
+      "style", "max-width: " + String(300) + "px"
     ];
   }
   else
@@ -813,7 +813,7 @@ window.templates.webgl.error_message = function(call)
 {
   var error_code = window.webgl.api.constant_value_to_string(call.error_code);
   var header = [
-    "h2", [
+    "h3", [
       ["span", "Error: " + error_code],
     ]
   ];
@@ -822,7 +822,7 @@ window.templates.webgl.error_message = function(call)
 
   var result = [
     "div", content,
-    "class", "error-message"
+    "class", "error-message summary-item"
   ];
 
   var fun_errors = window.webgl.api.functions[call.function_name].errors;
@@ -881,7 +881,7 @@ window.templates.webgl.info_with_header = function(template)
   return html;
 };
 
-window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, template)
+window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, primary, secondary)
 {
   var callnr = parseInt(call) + 1; // Start call count on 1.
 
@@ -910,22 +910,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   window.templates.webgl.goto_script(trace_call.loc, function_name);
 
   var state = window.templates.webgl.state_parameters(state_parameters);
-  state = [
-    "div", [
-      [
-        "h3", "State parameters"
-      ],
-      [
-        "span", "Show all parameters",
-        "handler", "webgl-toggle-state-list",
-        "id", "webgl-state-table-text"
-      ],
-    ],
-    [
-      "div", state,
-      "id", "webgl-state-table-container"
-    ]
-  ];
+  //state = window.templates.webgl.summary_item({title: "State parameters", content: state});
 
   var header = [
     "div",
@@ -953,19 +938,50 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   var content = [];
   if (trace_call.error_code !== cls.WebGLAPI.CONSTANTS.NO_ERROR)
   {
-    content.push(window.templates.webgl.error_message(trace_call));
+    content.push({title: "Error", content: window.templates.webgl.error_message(trace_call)});
   }
-  content.push(state);
+  content.push({title: "State parameters", content: state});
+  if (primary) content = content.concat((primary));
   res.push([
     "div",
-    content,
+    window.templates.webgl.summary(content, secondary),
     "class", "call-info"
   ]);
 
-  // If additional content have been provided add it after the header.
-  if (template) content.push(template);
-
   return res;
+};
+
+window.templates.webgl.summary = function(primary, secondary)
+{
+  return [
+    [
+      "div",
+      primary.map(window.templates.webgl.summary_view),
+      "class", "primary-summary"
+    ],
+    secondary && secondary.length > 0 ? [
+      "div",
+      secondary.map(window.templates.webgl.summary_view),
+      "class", "secondary-summary"
+    ] : []
+  ];
+};
+
+window.templates.webgl.summary_view = function(item)
+{
+  var header = [
+    "h3",
+    item.title
+  ];
+
+  return [
+    "div",
+    [
+      header,
+      item.content
+    ],
+    "class", "summary-item"
+  ];
 };
 
 window.templates.webgl.drawcall = function(draw_call, trace_call)
@@ -978,9 +994,20 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
     buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
   }
 
-  var html = [ "div",
-    buffer_display,
-    img
+  var program = draw_call.program;
+
+  var call_index = draw_call.call_index;
+  var html = [
+    window.templates.webgl.summary_item(["h3", "Framebuffer"], img),
+    window.templates.webgl.summary_item(["h3", "Buffer"], buffer_display),
+
+    [
+      "div",
+      [
+       window.templates.webgl.summary_item(["h3", "Attributes"], window.templates.webgl.attribute_table(call_index, program)),
+       window.templates.webgl.summary_item(["h3", "Uniforms"], window.templates.webgl.uniform_table(call_index, program))
+      ] ,
+      "style", "clear: both;"]
   ];
 
   return html;
@@ -1211,7 +1238,7 @@ window.templates.webgl.uniform_table = function(call_index, program)
         ],
         [
           "td",
-          String(value),
+          String(value).substring(0, 10),
           "class", changed_this_call ? "changed" : ""
         ]
       ]

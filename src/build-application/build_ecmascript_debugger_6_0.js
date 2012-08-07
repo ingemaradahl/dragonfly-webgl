@@ -252,7 +252,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     // Tabs on the left side
 
-    new cls.WebGLDrawCallView("webgl_draw_call",
+    new cls.WebGLDrawCallView2("webgl_draw_call",
                            "Draw call", // TODO
                            "scroll webgl_view draw-call");
 

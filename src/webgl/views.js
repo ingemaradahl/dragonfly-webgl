@@ -75,7 +75,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 cls.WebGLGeneralView = function(id, name, container_class)
 {
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLGeneralView.create_ui_widgets = function()
 {
@@ -122,7 +122,7 @@ cls.WebGLGeneralView.create_ui_widgets = function()
 cls.WebGLPreviewView = function(id, name, container_class)
 {
   this.init(id, name, container_class);
-}
+};
 
 cls.WebGLPreviewView.create_ui_widgets = function()
 {
@@ -187,8 +187,6 @@ cls.WebGLPreviewView.create_ui_widgets = function()
     var preview_size = Number(event.target.value);
     settings['webgl-preview'].set('max_preview_size', preview_size);
   };
-
-
 };
 
 /**
@@ -258,17 +256,18 @@ cls.WebGLCallView = Object.create(ViewBase, {
     }
   },
   render_with_header: {
-    value: function(snapshot, call_index, template)
+    value: function(snapshot, call_index, primary, secondary)
     {
+      var template;
       if (call_index === -1)
       {
-        template = window.templates.webgl.info_with_header(template);
+        template = window.templates.webgl.info_with_header(primary, secondary);
       }
       else
       {
         var trace = snapshot.trace[call_index];
         var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
-        template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, template);
+        template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, primary, secondary);
       }
       this._template = template;
 
@@ -663,3 +662,290 @@ cls.WebGLSideView.create_ui_widgets = function(id)
     ]
   );
 };
+
+cls.WebGLCallView2 = Object.create(ViewBase, {
+  tabs: {
+    value: []
+  },
+  _lookupTab: {
+    value: function(tab_name)
+    {
+      for (var i = 0; i < this.tabs.length; i++)
+      {
+        var tab = this.tabs[i];
+        if (tab.name === tab_name)
+        {
+          return tab;
+        }
+      }
+      return null;
+    }
+  },
+  showTab: {
+    value: function(tab_name)
+    {
+      var tab = this._lookupTab(tab_name);
+      if (!tab) return;
+
+      // Set the tab active
+
+
+      tab.render();
+    }
+  }
+});
+
+cls.WebGLTab = Object.create(ViewBase, {
+  display_call: {
+    value: function(snapshot, call_index)
+    {
+      if (!this._container)
+      {
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+      }
+
+      this.render.apply(this, arguments);
+    }
+  },
+  _container: {
+    writable: true,
+    value: null
+  },
+  createView: {
+    writable: true, configurable: true,
+    value: function(container)
+    {
+      this._container = container;
+      //this.render();
+    }
+  },
+  ondestroy: {
+    writable: true, configurable: true,
+    value: function()
+    {
+      this._container = null;
+    }
+  },
+  _snapshot: {
+    writable: true,
+    value: null
+  },
+  _call_index: {
+    writable: true,
+    value: null
+  },
+  render: {
+    value: function(snapshot, call_index)
+    {
+      this._snapshot = snapshot;
+      this._call_index = call_index;
+    }
+  }
+});
+
+cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
+  _call: {
+    writable: true,
+    value: null
+  },
+  createView: {
+    writable: true, configurable: true,
+    value: function(container)
+    {
+      this._container = container;
+      //this.render();
+    }
+  },
+  ondestroy: {
+    writable: true, configurable: true,
+    value: function()
+    {
+      this._container = null;
+      messages.addListener("resize", this.layout.bind(this));
+    }
+  },
+  getStateView: {
+    value: function()
+    {
+      var state_parameters = this._snapshot.state.get_function_parameters(
+        this._call.function_name, this._call_index, true);
+      var state_content = window.templates.webgl.state_parameters(state_parameters);
+      return {title: "State parameters", content: state_content};
+    }
+  },
+  getErrorView: {
+    value: function()
+    {
+      var error_content = window.templates.webgl.error_message(this._call);
+      return {title: "Error: ", content: error_content};
+    }
+  },
+  getFrameBufferView: {
+    value: function()
+    {
+      var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+
+      // Make sure the fbo image is downloading if isn't but exists
+      if (draw_call.fbo.img && !draw_call.fbo.img.data && !draw_call.fbo.img.downloading)
+      {
+        draw_call.fbo.request_data();
+      }
+
+      var img = window.templates.webgl.image(draw_call.fbo);
+      return {title: "Framebuffer", content: img};
+    }
+  },
+  getPrimaryViews: {
+    writable: true,
+    value: function()
+    {
+      var primary = [];
+      if (this._call.have_error) primary.push(this.getErrorView());
+      primary.push(this.getStateView());
+      primary.push(this.getFrameBufferView());
+      return primary;
+    }
+  },
+  getAdditionalPrimaryViews: {
+    writable: true,
+    value: function()
+    {
+      return [];
+    }
+  },
+  getSecondaryViews: {
+    writable: true,
+    value: function()
+    {
+      return [];
+    }
+  },
+  render: {
+    value: function(snapshot, call_index)
+    {
+      cls.WebGLTab.render.call(this, snapshot, call_index);
+      this._call = snapshot.trace[call_index];
+
+      this.renderTabs();
+      this.renderAfter();
+    }
+  },
+  renderAfter: {
+    writable: true,
+    value: function()
+    {
+      this.layout();
+    }
+  },
+  renderTabs: {
+    value: function()
+    {
+      var primary = this.getPrimaryViews().concat(this.getAdditionalPrimaryViews());
+      var secondary = this.getSecondaryViews();
+      var template = window.templates.webgl.summary(primary, secondary);
+      this._container.clearAndRender(template);
+    }
+  },
+  layout: {
+    value: function()
+    {
+      var primary = this._container.querySelector(".primary-summary");
+      var max_width = this._container.offsetWidth;
+      var childs = primary.querySelectorAll(".summary-item");
+
+      //var lastChild = childs[0];
+      //for (var i = 1; i < childs.length; i++)
+      //{
+        //var child = childs[i];
+        //if (child.offsetWidth + lastChild.offsetWidth >= max_width)
+        //{
+          //var clear = document.createElement("div");
+          //clear.className = "clear";
+          //primary.insertBefore(clear, child);
+          //lastChild.className += " fit";
+        //}
+        //lastChild = child;
+      //}
+      //
+
+      var total_child_width = 0;
+      childs.forEach(function(c){total_child_width += c.offsetWidth;});
+
+      if (total_child_width >= primary.offsetWidth)
+      {
+        if (childs.length >= 3)
+        {
+          var last = childs[childs.length - 1].offsetHeight;
+          var second_last = childs[childs.length - 2].offsetHeight;
+          var third_last = childs[childs.length - 3].offsetHeight;
+
+          if (last + second_last >= third_last + Math.max(last, second_last))
+          {
+            var clear = document.createElement("div");
+            clear.className = "clear";
+            primary.insertBefore(clear, childs[childs.length - 2]);
+            third_last.className += " fit";
+          }
+        }
+      }
+    }
+  }
+});
+
+cls.WebGLDrawCallView2 = function(id, name, container_class)
+{
+  this.createView = function(container)
+  {
+    cls.WebGLSummaryTab.createView.apply(this, arguments);
+
+    var preview_container = new Container(document.createElement("container"));
+    preview_container.setup("webgl_buffer_preview");
+    this._preview_container = preview_container.cell;
+  };
+
+  var add_canvas = function()
+  {
+    var canvas_holder = document.getElementById("webgl-canvas-holder");
+    canvas_holder.appendChild(window.webgl.gl.canvas);
+    canvas_holder.appendChild(this._preview_container);
+
+    this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
+  }.bind(this);
+
+  var render_preview = function()
+  {
+    add_canvas();
+    var preview = window.webgl.preview;
+    var preview_help = document.getElementById("webgl-preview-help");
+
+    var select = document.getElementById("webgl-attribute-selector");
+    var pointer = select.options[select.selectedIndex].pointer;
+
+    preview.set_help_container(preview_help);
+    preview.set_info_container(this._preview_container);
+    preview.set_attribute(pointer, this._state, this._element_buffer);
+    preview.render();
+  }.bind(this);
+
+  this.getBufferView = function()
+  {
+    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+
+    var buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
+    return {title: "Buffer", content: buffer_display};
+  };
+
+  this.getAdditionalPrimaryViews = function()
+  {
+    return [this.getBufferView()];
+  };
+
+  this.renderAfter = function()
+  {
+    //render_preview();
+    cls.WebGLSummaryTab.renderAfter.call(this);
+  };
+
+  this.init(id, name, container_class);
+};
+cls.WebGLDrawCallView2.prototype = cls.WebGLSummaryTab;
