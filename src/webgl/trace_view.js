@@ -9,6 +9,8 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLTraceView = function(id, name, container_class)
 {
+  this._tooltip;
+
   this._render = function()
   {
     var snapshot = window['cst-selects']['snapshot-select'].get_selected_snapshot();
@@ -45,11 +47,20 @@ cls.WebGLTraceView = function(id, name, container_class)
     view.display_call(snapshot, call_index);
   };
 
+  var on_setting_changed = function(msg)
+  {
+    if (msg.id === "webgl-general" && msg.key === "highlight-objects")
+      this._render();
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-trace-row"] = this._on_row_click.bind(this);
 
+  messages.addListener("setting-changed", on_setting_changed.bind(this));
+
   this.init(id, name, container_class);
   this.init_events();
+
 };
 
 cls.WebGLTraceView.prototype = cls.WebGLSideView;

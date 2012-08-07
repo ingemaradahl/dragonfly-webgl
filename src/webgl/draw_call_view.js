@@ -37,10 +37,13 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   {
     add_canvas();
     var preview = window.webgl.preview;
+    var preview_help = document.getElementById("webgl-preview-help");
 
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
+
+    preview.set_help_container(preview_help);
     preview.set_info_container(this._preview_container);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
@@ -51,15 +54,16 @@ cls.WebGLDrawCallView = function(id, name, container_class)
     if (!this._container || !this._snapshot) return;
 
     var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+    var framebuffer = this._snapshot.framebuffers.lookup(draw_call.framebuffer_index, this._call_index);
     var trace_call = this._snapshot.trace[this._call_index];
 
     // Make sure the fbo image is downloading if isn't but exists
-    if (draw_call.fbo.img && !draw_call.fbo.img.data && !draw_call.fbo.img.downloading)
+    if (!framebuffer.is_loaded())
     {
-      draw_call.fbo.request_data();
+      framebuffer.request_data();
     }
 
-    var draw_template = window.templates.webgl.drawcall(draw_call, trace_call);
+    var draw_template = window.templates.webgl.drawcall(draw_call, trace_call, framebuffer);
     this.render_with_header(this._snapshot, this._call_index, draw_template);
 
     if (window.webgl.gl)

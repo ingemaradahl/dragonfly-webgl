@@ -48,17 +48,42 @@ cls.WebGLAPI = function ()
     TYPES_BACK[TYPES[type]] = type;
   }
 
+  /**
+   * Make lookup on WebGL constants limited to the constants in the provided list.
+   */
+  function enumLookup(list)
+  {
+    return function(value)
+    {
+      var consts = cls.WebGLAPI.CONSTANTS;
+      for (var key in list)
+      {
+        if (!list.hasOwnProperty(key)) continue;
+        var param = list[key];
+        if (consts[param] === value) return param;
+      }
+      return String(value);
+    };
+  }
+
+  this.draw_mode_to_sting = enumLookup(["POINTS", "LINE_STRIP", "LINE_LOOP", "LINES", "TRIANGLES", "TRIANGLE_STRIP", "TRIANGLE_FAN"]);
+
+  var _blend_dst = enumLookup(["ZERO", "ONE", "SRC_COLOR", "ONE_MINUS_SRC_COLOR", "DST_COLOR", "ONE_MINUS_DST_COLOR", "SRC_ALPHA", "ONE_MINUS_SRC_ALPHA", "DST_ALPHA", "ONE_MINUS_DST_ALPHA. GL_CONSTANT_COLOR", "ONE_MINUS_CONSTANT_COLOR", "CONSTANT_ALPHA", "ONE_MINUS_CONSTANT_ALPHA"]);
+  var _blend_equation = enumLookup(["FUNC_ADD", "FUNC_SUBTRACT", "FUNC_REVERSE_SUBTRACT"]);
+  var _blend_src = enumLookup(["ZERO", "ONE", "SRC_COLOR", "ONE_MINUS_SRC_COLOR", "DST_COLOR", "ONE_MINUS_DST_COLOR", "SRC_ALPHA", "ONE_MINUS_SRC_ALPHA", "DST_ALPHA", "ONE_MINUS_DST_ALPHA", "CONSTANT_COLOR", "ONE_MINUS_CONSTANT_COLOR", "CONSTANT_ALPHA", "ONE_MINUS_CONSTANT_ALPHA", "SRC_ALPHA_SATURATE"]);
+  var _unpack_colorpace = enumLookup(["NONE", "BROWSER_DEFAULT_WEBGL"]);
+
   this.STATE_PARAMETER_TYPES = {
     "ACTIVE_TEXTURE": this.TYPES.ENUM,
     "ALIASED_LINE_WIDTH_RANGE": this.TYPES.RANGE,
     "ALIASED_POINT_SIZE_RANGE": this.TYPES.RANGE,
     "BLEND_COLOR": this.TYPES.COLOR,
-    "BLEND_DST_ALPHA": this.TYPES.ENUM,
-    "BLEND_DST_RGB": this.TYPES.ENUM,
-    "BLEND_EQUATION_ALPHA": this.TYPES.ENUM,
-    "BLEND_EQUATION_RGB": this.TYPES.ENUM,
-    "BLEND_SRC_ALPHA": this.TYPES.ENUM,
-    "BLEND_SRC_RGB": this.TYPES.ENUM,
+    "BLEND_DST_ALPHA": _blend_dst,
+    "BLEND_DST_RGB": _blend_dst,
+    "BLEND_EQUATION_ALPHA": _blend_equation,
+    "BLEND_EQUATION_RGB": _blend_equation,
+    "BLEND_SRC_ALPHA": _blend_src,
+    "BLEND_SRC_RGB": _blend_src,
     "COLOR_CLEAR_VALUE": this.TYPES.COLOR,
     "COLOR_WRITEMASK": this.TYPES.COLORMASK,
     "CULL_FACE_MODE": this.TYPES.ENUM,
@@ -81,7 +106,7 @@ cls.WebGLAPI = function ()
     "STENCIL_PASS_DEPTH_PASS": this.TYPES.ENUM,
     "STENCIL_VALUE_MASK": this.TYPES.BITMASK,
     "STENCIL_WRITEMASK": this.TYPES.BITMASK,
-    "UNPACK_COLORSPACE_CONVERSION_WEBGL": this.TYPES.ENUM,
+    "UNPACK_COLORSPACE_CONVERSION_WEBGL": _unpack_colorpace,
     "VIEWPORT": this.TYPES.RECT
   };
 
@@ -95,22 +120,31 @@ cls.WebGLAPI = function ()
     if (parameter_name in this.STATE_PARAMETER_TYPES && value != null)
     {
       var type = this.STATE_PARAMETER_TYPES[parameter_name];
-      switch (type)
+      if (typeof(type) === "function")
       {
-        case this.TYPES.BITMASK:
-          return "0x" + value.toString(16).toUpperCase();
-        case this.TYPES.COLOR:
-          return "rgba(" + Array.prototype.join.call(value, ", ") + ")";
-        case this.TYPES.ENUM:
-          return this.constant_value_to_string(value);
-        case this.TYPES.COLORMASK:
-          return Array.prototype.join.call(value, ", ");
-        case this.TYPES.RANGE:
-          return String(value[0]) + " - " + String(value[1]);
-        case this.TYPES.RECT:
-          return "(" + String(value[0]) + ", " + String(value[1]) + ") " + String(value[2]) + "x" + String(value[3]);
-        case this.TYPES.WH:
-          return String(value[0]) + "x" + String(value[1]);
+        return type(value);
+      }
+      else if (type != null)
+      {
+        switch (type)
+        {
+          case this.TYPES.BITMASK:
+            return "0x" + value.toString(16).toUpperCase();
+          case this.TYPES.COLOR:
+            var colors = Array.prototype.map.call(value, function(v) { return v.toFixed(2); });
+            return "rgba(" + colors.join(", ") + ")";
+          case this.TYPES.ENUM:
+            return this.constant_value_to_string(value);
+          case this.TYPES.COLORMASK:
+            return Array.prototype.join.call(value, ", ");
+          case this.TYPES.RANGE:
+            return String(value[0]) + " - " + String(value[1]);
+          case this.TYPES.RECT:
+            return "(" + String(value[0]) + ", " + String(value[1]) + ") " + String(value[2]) + "×" + String(value[3]);
+          case this.TYPES.WH:
+            return String(value[0]) + "×" + String(value[1]);
+          default:
+        }
       }
     }
     return String(value);

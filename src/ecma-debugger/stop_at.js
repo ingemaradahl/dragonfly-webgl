@@ -398,7 +398,12 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
           stopAt.stopped_reason == 'new script')
       {
         runtime_id = stopAt.runtime_id;
-        if (settings['js_source'].get('script')
+        if (!webgl.injected)
+        {
+          var continue_callback = (function () { this.__continue('run'); }).bind(this);
+          webgl.inject(stopAt.runtime_id, continue_callback);
+        }
+        else if (settings['js_source'].get('script')
              || runtimes.getObserve(runtime_id)
               // this is a workaround for Bug 328220
               // if there is a breakpoint at the first statement of a script
@@ -406,11 +411,6 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
              || this._bps.script_has_breakpoint_on_line(stopAt.script_id, line))
         {
           this._stop_in_script(stopAt);
-        }
-        else if (!webgl.injected)
-        {
-          var continue_callback = (function () { this.__continue('run'); }).bind(this);
-          webgl.inject(stopAt.runtime_id, continue_callback);
         }
         else
         {
@@ -430,6 +430,17 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
           "breakpoint_id":1
 
         */
+
+        // If the script is not loaded in DF then step out of the call.
+        // This is to prevent to step into the injected WebGL rpcs code.
+        // TODO only step out of the call when the script is the WebGL rpcs.
+        var script = window.runtimes.getScript(stopAt.script_id);
+        if (!script)
+        {
+          this.__continue("step-out-of-call");
+          return;
+        }
+
         var condition = this._bps.get_condition(stopAt.breakpoint_id);
         if (condition)
         {

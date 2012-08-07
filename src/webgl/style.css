@@ -80,6 +80,11 @@ img.flipped
   color: #686868;
 }
 
+.state-table td > div
+{
+  display: inline-block;
+}
+
 .color-box
 {
   border: 1px solid #ccc;
@@ -261,7 +266,8 @@ img.flipped
 
 .trace-table span.link
 {
-  color: blue;
+  color: black;
+  font-weight: 700;
 }
 
 .trace-table tr.trace-error
@@ -324,6 +330,22 @@ img.flipped
   z-index: 2;
 }
 
+/* Preview help toggle div */
+.webgl-holder > div
+{
+  position:absolute;
+  top:2px;
+  right:3px;
+  text-shadow: 0px 0px 4px #888;
+  font-weight: 700;
+  z-index: 2;
+}
+
+.webgl-holder > div:hover
+{
+  color: #888;
+}
+
 .draw-call-info td,
 .draw-call-info th
 {
@@ -331,20 +353,26 @@ img.flipped
   word-wrap: break-word;
 }
 
-.draw-call-info th
-{
+/* Preview help container */
+.webgl-holder > div > div {
+  position: absolute;
+  visibility: hidden;
+  right: 15px;
+  top: 15px;
+  width: 200px;
+
+  color: #ffffff;
+  text-shadow: 0px 0px 0px;
+  font-weight: normal;
   text-align: left;
-  padding-right: 30px;
-}
 
-.draw-call-info table
-{
-  border-collapse: collapse;
-}
+  padding:5px;
+  border: 2px solid #b1b1b1;
+  box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.64), 0px 1px 6px rgba(0, 0, 0, 0.300);
+  background: rgba(16, 16, 16, 0.8);
+  border-radius: 5px;
 
-.draw-call-info span.link
-{
-  color: blue;
+  z-index:2;
 }
 
 /* Texture */

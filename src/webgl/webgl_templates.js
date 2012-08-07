@@ -85,7 +85,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
     ];
 
   var history = window.templates.webgl.history(buffer);
-  var preview = buffer_settings ? window.templates.webgl.buffer_preview(buffer_settings) : ""; 
+  var preview = buffer_settings && window.webgl.gl ? window.templates.webgl.buffer_preview(buffer_settings) : "";
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -285,10 +285,8 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
         ['td',
           ['select',
             buffer_settings.options.modes.map(function(mode) {
-              var option = ['option',
-                mode === 1 // The api defined in webgl has the enum '1' mapped to both LINES and ONE
-                  ? "LINES"
-                  : window.webgl.api.constant_value_to_string(mode),
+              var option = [
+                'option', window.webgl.api.draw_mode_to_sting(mode),
                 'value', String(mode)
               ];
 
@@ -370,11 +368,7 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
   ];
 
   return ["div",
-    ["div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ],
+    window.templates.webgl.preview_canvas(),
     ["div",
       ["div", position],
       ["div", parameters],
@@ -389,7 +383,7 @@ window.templates.webgl.linked_object = function(obj, handler, data_name)
   if (obj.action)
   {
     html.push("handler", handler ? handler : "webgl-linked-object");
-    html.push("class", "link");
+    if (window.settings["webgl-general"].map["highlight-objects"]) html.push("class", "link");
   }
 
   if (obj.tooltip) html.push("title", obj.tooltip);
@@ -536,8 +530,33 @@ window.templates.webgl.trace_table = function(calls, view_id)
 
   return [
     "table", content,
-    "class", "sortable-table trace-table", // TODO css
+    "class", "sortable-table trace-table" // TODO css
   ];
+};
+
+window.templates.webgl.framebuffer_image = function (framebuffer)
+{
+  switch (framebuffer.type)
+  {
+    case "init":
+      return [];
+    case "clear":
+      var color = framebuffer.image.color;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      return ["div",
+        "style",
+          "width:" + String(framebuffer.image.width) +
+          "px; height:" + String(framebuffer.image.height) +
+          "px; background: rgba(" + colors + ");",
+        "class", "checkerboard"
+      ];
+    case "draw":
+      return window.templates.webgl.image(framebuffer.image);
+      break;
+  }
 };
 
 window.templates.webgl.image = function(level)
@@ -951,7 +970,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
       ["h2", ")"],
       spec_link
     ],
-    "class", "call-header"
+    "class", "call-header",
   ];
 
   var res = [header];
@@ -974,30 +993,9 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   return res;
 };
 
-window.templates.webgl.drawcall = function(draw_call, trace_call)
+window.templates.webgl.drawcall = function(draw_call, trace_call, framebuffer)
 {
-  var img = window.templates.webgl.image(draw_call.fbo);
-
-  var table_rows = [];
-
-  if (draw_call.element_buffer)
-  {
-    var buffer_link = [ "span",
-      String(draw_call.element_buffer),
-      "handler", "webgl-drawcall-buffer",
-      "class", "link",
-      "buffer", draw_call.element_buffer
-    ];
-
-    table_rows.push(["tr", ["th", "Element buffer"], ["td", buffer_link]]);
-  }
-
-  table_rows.push([ "tr",  [ "th", "Program" ], [ "td", String(draw_call.program.index)]])
-
-  var state = [ "table",
-    table_rows,
-    "class", "draw-call-info"
-  ];
+  var img = window.templates.webgl.framebuffer_image(framebuffer);
 
   var buffer_display = [];
   if (window.webgl.gl)
@@ -1006,7 +1004,6 @@ window.templates.webgl.drawcall = function(draw_call, trace_call)
   }
 
   var html = [ "div",
-    state,
     buffer_display,
     img
   ];
@@ -1044,12 +1041,34 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
       "handler", "webgl-select-attribute",
       "id", "webgl-attribute-selector"
     ],
-    [
-      "div",
-      "handler", "webgl-canvas",
-      "id", "webgl-canvas-holder",
-      "class", "webgl-holder"
-    ]
+    window.templates.webgl.preview_canvas()
+  ];
+};
+
+window.templates.webgl.preview_canvas = function()
+{
+  var front_face = window.settings['webgl-preview'].map['front-face-normal']
+    ? "normal value"
+    : "black";
+  var back_face = window.settings['webgl-preview'].map['back-face-normal']
+    ? "normal value"
+    : "black";
+
+  return ["div",
+    ["div",
+      "?",
+      ["div",
+        ["span", "Front facing: " + front_face],
+        ["br"],
+        ["span", "Back facing: " + back_face],
+        "id", "webgl-preview-help",
+        "handler", "webgl-preview-help",
+      ],
+      "handler", "webgl-preview-help",
+    ],
+    "handler", "webgl-canvas",
+    "id", "webgl-canvas-holder",
+    "class", "webgl-holder"
   ];
 };
 
@@ -1060,7 +1079,7 @@ window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
     ['span',
       ['span', "Load buffer"],
       'handler', 'webgl-force-buffer',
-      'class', 'ui-button',
+      'class', 'ui-button'
     ]
   ];
 };
@@ -1204,6 +1223,22 @@ window.templates.webgl.uniform_table = function(call_index, program)
       value = values[last_index].value;
     }
 
+    // Adding a tooltip to matrices
+    var data_tooltip = null;
+    var uniform_tooltip = null;
+    var type = window.webgl.api.constant_value_to_string(uniform.type)
+    switch (type)
+    {
+      case "FLOAT_MAT3": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip";
+                         break;
+      case "FLOAT_MAT4": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip"; 
+                         break;
+      default: break;
+    }
+    // End
+
     rows.push([
       "tr",
       [
@@ -1218,7 +1253,9 @@ window.templates.webgl.uniform_table = function(call_index, program)
         [
           "td",
           String(value),
-          "class", changed_this_call ? "changed" : ""
+          "id", uniform.index,
+          "class", changed_this_call ? "changed" : "",
+          data_tooltip, uniform_tooltip
         ]
       ]
     ]);
@@ -1235,6 +1272,34 @@ window.templates.webgl.uniform_table = function(call_index, program)
   ];
 
   return table;
+};
+
+
+window.templates.webgl.uniform_tooltip = function(value)
+{
+  var html = [];
+  var row = [];
+  var cols = [];
+  var table = ["table"];
+  var dim = Math.sqrt(value.length);
+  
+  for (var i=0; i<dim; i++)
+  {
+    row = ["tr"];
+    cols = [];
+    for (var j=0; j<dim; j++)
+    {
+      var fixed_val = value[i+j].toFixed(5);
+      var val = fixed_val === "0.00000" ? "0" : fixed_val;
+      cols.push(["td", val]);
+    }
+    row.push(cols);
+    table.push(row);
+  }
+
+  html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
+  
+  return html;
 };
 
 window.templates.webgl.taking_snapshot = function()
@@ -1273,12 +1338,15 @@ window.templates.webgl.program = function(call_index, program)
 
   var attribute_table = null;
   var uniform_table = null;
-  var html = 
+  var html =
   [
     "div",
     programs
   ];
-  if (call_index !== -1)
+
+  // If the program is related to a call, attribute and uniforms tables
+  // will be created and attached to the template.
+  if (call_index !== -1 && call_index !== null)
   {
     attribute_table = window.templates.webgl.attribute_table(call_index, program);
     uniform_table = window.templates.webgl.uniform_table(call_index, program);
@@ -1290,9 +1358,6 @@ window.templates.webgl.program = function(call_index, program)
       programs
     ];
   }
-
-
-
   return html;
 };
 

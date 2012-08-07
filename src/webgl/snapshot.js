@@ -39,6 +39,16 @@ cls.WebGLSnapshotArray = function(context_id)
 
     var scoper = new cls.Scoper(finalize, this);
     scoper.set_reviver_tree({
+      framebuffers: {
+        _array_elements: {
+          _class: cls.WebGLFramebuffer,
+          image: {
+            img: {
+              _action: cls.Scoper.ACTIONS.NOTHING,
+            }
+          }
+        }
+      },
       buffers: {
         _array_elements: {
           _class: cls.WebGLBuffer,
@@ -48,21 +58,13 @@ cls.WebGLSnapshotArray = function(context_id)
           }
         }
       },
-      drawcalls: {
-        _array_elements: {
-          fbo: {
-            img: {
-              _action: cls.Scoper.ACTIONS.NOTHING
-            }
-          }
-        }
-      },
       state: {
         _reviver: scoper.reviver_typed,
         _class: cls.WebGLState
       },
       programs: {
         _array_elements: {
+          _class: cls.WebGLProgram,
           uniforms: {
             _array_elements: {
               locations: {
@@ -101,6 +103,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.programs = snapshot.programs;
     this.textures = snapshot.textures;
     this.state = snapshot.state;
+    this.framebuffers = snapshot.framebuffers;
     this.drawcalls = [];
     this.trace = [];
 
@@ -121,6 +124,7 @@ cls.WebGLSnapshotArray = function(context_id)
     };
     this.buffers.lookup = lookup.bind(this.buffers);
     this.textures.lookup = lookup.bind(this.textures);
+    this.framebuffers.lookup = lookup.bind(this.framebuffers);
 
     /**
      * Tries to find a matching script id to the provided url.
@@ -195,14 +199,31 @@ cls.WebGLSnapshotArray = function(context_id)
     init_state(this.state);
 
     var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
-    var base_url = new RegExp("^(.*)/[^/]*$").exec(runtime.uri)[1] + "/";
-    var short_url_regexp = new RegExp("^" + base_url + "(.*)$");
+
+    var shorten_url = function(uri)
+    {
+      var same = uri.protocol === runtime.protocol &&
+          uri.host === runtime.host &&
+          uri.port === runtime.port;
+      if (!same) return null;
+
+      if (uri.dir_pathname.indexOf(runtime.dir_pathname) === 0)
+      {
+        // Relative path
+        return uri.pathname.substr(runtime.dir_pathname.length);
+      }
+      else
+      {
+        // Absolute path
+        return uri.pathname;
+      }
+    };
+
     var init_loc = function(loc)
     {
-      var script_id = lookup_script_id(loc.url);
-      loc.script_id = script_id;
-      var res = short_url_regexp.exec(loc.url);
-      loc.short_url = res && res[1] ? res[1] : null;
+      if (loc == null) return;
+      loc.script_id = lookup_script_id(loc.url);
+      loc.short_url = shorten_url(new URI(loc.url));
     };
 
     var init_trace = function (calls, call_locs, call_refs)
@@ -284,6 +305,7 @@ cls.WebGLSnapshotArray = function(context_id)
             }
             break;
           case "texture":
+          case "texImage":
             switch (function_name)
             {
               case "activeTexture":
@@ -307,11 +329,58 @@ cls.WebGLSnapshotArray = function(context_id)
             if (!linked_object || !linked_object.texture) group = "generic";
             break;
           case "uniform":
-            linked_object = args[0];
+            switch (function_name)
+            {
+              case "getUniformLocation":
+                linked_object = result;
+                break;
+              default:
+                linked_object = args[0];
+            }
             break;
           case "attrib":
-            // TODO figure out program stuff
-            linked_object = args[0];
+            switch (function_name)
+            {
+              case "getAttribLocation":
+                linked_object = result;
+                break;
+              case "bindAttribLocation":
+              case "getActiveAttrib":
+                linked_object = args[1];
+                break;
+              case "getVertexAttribOffset":
+              case "getVertexAttrib":
+              default: // vertexAttribPointer || vertexAttrib[1234]f[v]
+                linked_object = args[0];
+                break;
+            }
+            break;
+          case "program":
+            switch (function_name)
+            {
+              case "useProgram":
+                linked_object = args[0];
+                break;
+              default:
+                linked_object = null;
+                greup = "generic";
+                break;
+            }
+            break;
+          case "framebuffer":
+            switch (function_name)
+            {
+              case "isFramebuffer":
+                linked_object = args[0];
+                break;
+              case "bindFramebuffer":
+                linked_object = args[1];
+                break;
+              default:
+                linked_object = null;
+                greup = "generic";
+                break;
+            }
         }
 
         if (linked_object == null && group !== "draw") group = "generic";
@@ -329,25 +398,6 @@ cls.WebGLSnapshotArray = function(context_id)
     {
       var call_index = drawcall.call_index;
       this.trace[call_index].drawcall = true;
-
-      // Add fbo image data downloader function
-      if (drawcall.fbo.img) {
-        drawcall.fbo.request_data = function()
-        {
-          if (this.img.downloading)
-            return;
-
-          var finalize = function (data)
-          {
-            this.img = data;
-            messages.post('webgl-fbo-data', this);
-          };
-
-          var scoper = new cls.Scoper(finalize, this);
-          scoper.examine_object(this.img, true);
-          this.img.downloading = true;
-        }.bind(drawcall.fbo);
-      }
 
       // Copy the parameters from the function call to the drawcall object
       var state = {
@@ -553,6 +603,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
     if (object.hasOwnProperty(key)) this[key] = object[key];
   }
 
+  var call_index = Number(call_index);
   var matched = true;
   switch (this.type)
   {
@@ -560,16 +611,20 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       if (this.buffer_index == null) return;
       this.buffer = snapshot.buffers[this.buffer_index];
       this.text = String(this.buffer);
-      // TODO Define an action.
-      //this.action = this.buffer.show.bind(this.buffer);
+      this.action = function ()
+      {
+        window.views["webgl_buffer_call"].display_call(snapshot, call_index, this.buffer);
+      }.bind(this);
       break;
     case "WebGLTexture":
       if (this.texture_index == null) return;
       this.texture = snapshot.textures.lookup(this.texture_index, call_index);
       if (this.texture == null) return;
       this.text = String(this.texture);
-      // TODO Define an action.
-      //this.action = this.texture.show.bind(this.texture);
+      this.action = function ()
+      {
+        window.views["webgl_texture_call"].display_call(snapshot, call_index, this.texture);
+      }.bind(this);
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
@@ -595,6 +650,18 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       }
       this.text = this.attribute.name;
       this.action = function() {  /* alert("attribute!"); */ };
+      break;
+    case "WebGLProgram":
+      this.program = snapshot.programs[this.program_index];
+      this.text = String(this.program);
+      this.action = function ()
+      {
+        window.views.webgl_program_call._render(snapshot, null, this.program);
+      }.bind(this);
+      break;
+    case "WebGLFramebuffer":
+      this.framebuffer = snapshot.framebuffers.lookup(this.framebuffer_index, call_index);
+      this.text = String(this.framebuffer);
       break;
     default:
       matched = false;

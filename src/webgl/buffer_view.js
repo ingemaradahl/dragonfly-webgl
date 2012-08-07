@@ -45,12 +45,14 @@ cls.WebGLBufferCallView = function(id, name, container_class)
    */
   var add_canvas = function()
   {
+    var preview_help = document.getElementById("webgl-preview-help");
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
     canvas_holder.appendChild(this._preview_container)
 
     this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
     window.webgl.preview.set_info_container(this._preview_container);
+    window.webgl.preview.set_help_container(preview_help);
   }.bind(this);
 
   /**
