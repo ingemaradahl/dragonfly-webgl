@@ -10,20 +10,20 @@ cls.WebGLFramebuffer = function ()
 cls.WebGLFramebuffer.prototype.is_loaded = function()
 {
   return this.type === "draw" 
-    ? Boolean(this.image.data)
+    ? Boolean(this.image.img.data)
     : true;
 };
 
 cls.WebGLFramebuffer.prototype.request_data = function()
 {
-  if (this.type !== "draw" || this.downloading || this.image.data) return;
+  if (this.is_loaded() || this.downloading) return;
 
   var finalize = function(img)
   {
     this.image.img = img;
 
     this.downloading = false;
-    messages.post('webgl-fbo-data', this);
+    messages.post('webgl-fbo-data', {framebuffer:this});
   };
 
   this.downloading = true;

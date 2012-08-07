@@ -534,6 +534,31 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
+window.templates.webgl.framebuffer_image = function (framebuffer)
+{
+  switch (framebuffer.type)
+  {
+    case "init":
+      return [];
+    case "clear":
+      var color = framebuffer.image.color;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      return ["div",
+        "style",
+          "width:" + String(framebuffer.image.width) +
+          "px; height:" + String(framebuffer.image.height) +
+          "px; background: rgba(" + colors + ");",
+        "class", "checkerboard"
+      ];
+    case "draw":
+      return window.templates.webgl.image(framebuffer.image);
+      break;
+  }
+};
+
 window.templates.webgl.image = function(level)
 {
   var image;
@@ -970,7 +995,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
 
 window.templates.webgl.drawcall = function(draw_call, trace_call, framebuffer)
 {
-  var img = window.templates.webgl.image(framebuffer.image);
+  var img = window.templates.webgl.framebuffer_image(framebuffer);
 
   var buffer_display = [];
   if (window.webgl.gl)
