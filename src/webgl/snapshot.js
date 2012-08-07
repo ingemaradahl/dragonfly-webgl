@@ -342,6 +342,7 @@ cls.WebGLSnapshotArray = function(context_id)
             switch (function_name)
             {
               case "getAttribLocation":
+                linked_object = result;
                 break;
               case "bindAttribLocation":
               case "getActiveAttrib":
@@ -660,7 +661,8 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       break;
     case "WebGLFramebuffer":
       this.framebuffer = snapshot.framebuffers.lookup(this.framebuffer_index, call_index);
-      this.text = String(this.framebuffer)
+      this.text = String(this.framebuffer);
+      break;
     default:
       matched = false;
   }
