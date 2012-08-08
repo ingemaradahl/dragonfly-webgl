@@ -11,6 +11,8 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTestHeaderView = function(id, name, container_class)
 {
   this._container;
+  this._header;
+  this._tabs = [];
   this._content;
 
   this.createView = function(container)
@@ -19,20 +21,22 @@ cls.WebGLTestHeaderView = function(id, name, container_class)
     this._render();
   };
 
+  // Argument tabs is a list of strings which represents
+  // the views unique tabs.
+  this._set_tabs = function(tabs)
+  {
+    for (var i=0; i<tabs.length; i++)
+    {
+      this._tabs.push(["tab", tabs[i], "id", String(i), "handler", "webgl-tab-handler"]);
+    }
+    return this._tabs;
+  };
+
   this.ondestroy = function()
   {
     cls.WebGLCallView.ondestroy.apply(this, arguments);
   };
 
-  this._long_text = function(x)
-  {
-    var ret;
-    for (var i=0; i<x; i++)
-    {
-      ret = ret + "hej ";
-    }
-    return ret;
-  };
 
   this._render = function()
   {
@@ -42,10 +46,7 @@ cls.WebGLTestHeaderView = function(id, name, container_class)
       this._container.offsetHeight;
     
     var header = ["div", "Header", "class" ,"header"];
-    var tabbar = ["div",
-        ["tab", "Choice 1", "id", "1", "handler", "webgl-tab-handler"],
-        ["tab", "Choice 2", "id", "2", "handler", "webgl-tab-handler"],
-        ["tab", "Choice 3", "id", "3", "handler", "webgl-tab-handler"],
+    var tabbar = ["div", this._tabs,
         ["div", "style", "clear:both;"],
         "class", "tabs"
       ];
@@ -75,11 +76,22 @@ cls.WebGLTestHeaderView = function(id, name, container_class)
     this._content = target.textContent + this._long_text(1000); 
     this._render();
   };
+  
+  this._long_text = function(x)
+  {
+    var ret;
+    for (var i=0; i<x; i++)
+    {
+      ret = ret + "hej ";
+    }
+    return ret;
+  };
 
   var eh = window.eventHandlers;
   eh.click["webgl-tab-handler"] = this._on_tab_click.bind(this);
 
   this._content = this._long_text(1000);
+  this._tabs = this._set_tabs(["Choice 1", "Choice 2"]);
   this.init(id, name, container_class);
 };
 
