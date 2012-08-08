@@ -272,6 +272,9 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                                  "Program call",
                                  "scroll webgl_view program-call");
 
+    new cls.WebGLTestHeaderView("webgl_test_header",
+                                "Test header",
+                                "scroll webgl_view test-header");
     // Tabs to the right
 
     new cls.WebGLTraceView("trace-side-panel",
