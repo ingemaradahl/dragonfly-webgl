@@ -68,7 +68,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
   {
     var history_size = Number(event.target.value);
     settings.snapshot.set('history_length', history_size);
-  }
+  };
 };
 
 /* General settings view */
@@ -864,6 +864,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       var MAX_CHILD_WIDTH = 500;
 
       var primary = this._container.querySelector(".primary-summary");
+      if (!primary) return;
       var primary_childs = primary.querySelectorAll(".summary-item");
       var childs = this._container.querySelectorAll(".summary-item");
 
@@ -966,8 +967,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   }
 });
 
-var z = 0;
-
 cls.WebGLDrawCallView2 = function(id, name, container_class)
 {
   this.createView = function(container)
@@ -985,7 +984,6 @@ cls.WebGLDrawCallView2 = function(id, name, container_class)
     canvas_holder.appendChild(window.webgl.gl.canvas);
     canvas_holder.appendChild(this._preview_container);
 
-    this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
   }.bind(this);
 
   var render_preview = function()
@@ -1037,7 +1035,13 @@ cls.WebGLDrawCallView2 = function(id, name, container_class)
 
   this.renderAfter = function()
   {
-    //render_preview();
+    if (window.webgl.gl)
+    {
+      var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+      this._element_buffer = draw_call.element_buffer;
+      this._state = draw_call.parameters;
+      render_preview();
+    }
     cls.WebGLSummaryTab.renderAfter.call(this);
   };
 
@@ -1050,6 +1054,7 @@ cls.WebGLDrawCallView2 = function(id, name, container_class)
     var width = framebuffer.offsetWidth;
     buffer_preview.children[1].style.width = width + "px";
     buffer_preview.children[1].style.height = height + "px";
+    window.webgl.preview.onresize();
   };
 
   this.init(id, name, container_class);

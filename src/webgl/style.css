@@ -4,11 +4,6 @@
   float: left;
 }
 
-.summary-item.fit
-{
-  width: 100%;
-}
-
 .summary-item > h3
 {
   border-bottom: 1px solid #ccc;
