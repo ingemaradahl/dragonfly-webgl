@@ -28,7 +28,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   {
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
-    canvas_holder.appendChild(this._preview_container)
+    canvas_holder.appendChild(this._preview_container);
 
     this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
   }.bind(this);
@@ -62,25 +62,8 @@ cls.WebGLDrawCallView = function(id, name, container_class)
       draw_call.fbo.request_data();
     }
 
-    var program = draw_call.program;
-    var call_index = draw_call.call_index;
-
-    var img = window.templates.webgl.image(draw_call.fbo);
-
-    var primary = [{title: "Framebuffer", content: img}];
-
-    var buffer_display = [];
-    if (window.webgl.gl)
-    {
-      buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
-      primary.push({title: "Buffer", content: buffer_display});
-    }
-
-    var secondary = [
-      {title: "Attributes", content: window.templates.webgl.attribute_table(call_index, program)},
-      {title: "Uniforms", content: window.templates.webgl.uniform_table(call_index, program)}
-    ];
-    this.render_with_header(this._snapshot, this._call_index, primary, secondary);
+    var draw_template = window.templates.webgl.drawcall(draw_call, trace_call);
+    this.render_with_header(this._snapshot, this._call_index, draw_template);
 
     if (window.webgl.gl)
     {

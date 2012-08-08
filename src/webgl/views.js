@@ -663,6 +663,9 @@ cls.WebGLSideView.create_ui_widgets = function(id)
   );
 };
 
+
+
+
 cls.WebGLCallView2 = Object.create(ViewBase, {
   tabs: {
     value: []
@@ -748,6 +751,10 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true,
     value: null
   },
+  _primary_clearer: {
+    writable: true,
+    value: false
+  },
   createView: {
     writable: true, configurable: true,
     value: function(container)
@@ -761,7 +768,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       this._container = null;
-      messages.addListener("resize", this.layout.bind(this));
     }
   },
   getStateView: {
@@ -770,7 +776,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       var state_parameters = this._snapshot.state.get_function_parameters(
         this._call.function_name, this._call_index, true);
       var state_content = window.templates.webgl.state_parameters(state_parameters);
-      return {title: "State parameters", content: state_content};
+      return {title: "State parameters", content: state_content, onclick: "state"};
     }
   },
   getErrorView: {
@@ -792,7 +798,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       }
 
       var img = window.templates.webgl.image(draw_call.fbo);
-      return {title: "Framebuffer", content: img};
+      return {title: "Framebuffer", content: img, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
   getPrimaryViews: {
@@ -834,7 +840,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true,
     value: function()
     {
-      this.layout();
+      this.layout(true);
     }
   },
   renderTabs: {
@@ -847,50 +853,120 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     }
   },
   layout: {
-    value: function()
+    value: function(after_render, second_pass)
     {
+      after_render = after_render === true;
+      second_pass = second_pass === true;
+      if (after_render) this._primary_clearer = false;
+
+      var MIN_CHILD_WIDTH = 300;
+      var MIN_CHILD_IMAGE_WIDTH = 200;
+      var MAX_CHILD_WIDTH = 500;
+
       var primary = this._container.querySelector(".primary-summary");
-      var max_width = this._container.offsetWidth;
-      var childs = primary.querySelectorAll(".summary-item");
+      var primary_childs = primary.querySelectorAll(".summary-item");
+      var childs = this._container.querySelectorAll(".summary-item");
 
-      //var lastChild = childs[0];
-      //for (var i = 1; i < childs.length; i++)
-      //{
-        //var child = childs[i];
-        //if (child.offsetWidth + lastChild.offsetWidth >= max_width)
-        //{
-          //var clear = document.createElement("div");
-          //clear.className = "clear";
-          //primary.insertBefore(clear, child);
-          //lastChild.className += " fit";
-        //}
-        //lastChild = child;
-      //}
-      //
+      var container_offset_width = this._container.childNodes[0].offsetWidth;
+      var container_width = container_offset_width -
+        parseInt(this._container.childNodes[0].currentStyle.paddingLeft, 10) -
+        parseInt(this._container.childNodes[0].currentStyle.paddingRight, 10);
 
+      // Assume the same margin on all children
+      var child_margin = parseInt(childs[0].currentStyle.marginLeft, 10) +
+        parseInt(childs[0].currentStyle.marginRight, 10);
+      if (isNaN(child_margin)) child_margin = 0;
+
+      // Get the total width of all children and save the original dimensions if
+      // this call is directly after a render
       var total_child_width = 0;
-      childs.forEach(function(c){total_child_width += c.offsetWidth;});
-
-      if (total_child_width >= primary.offsetWidth)
+      var max_child_width = 0;
+      for (var i = 0; i < childs.length; i++)
       {
-        if (childs.length >= 3)
+        if (after_render)
         {
-          var last = childs[childs.length - 1].offsetHeight;
-          var second_last = childs[childs.length - 2].offsetHeight;
-          var third_last = childs[childs.length - 3].offsetHeight;
+          childs[i].originalWidth = childs[i].offsetWidth;
+          childs[i].originalHeight = childs[i].offsetHeight;
+        }
+        var child_width = childs[i].originalWidth + child_margin;
+        total_child_width += child_width;
+        if (max_child_width < child_width && !childs[i].hasClass("fit"))
+          max_child_width = child_width;
+      }
+
+      // Calculate how many columns to use and their width
+      if (max_child_width < MIN_CHILD_WIDTH + child_margin)
+        max_child_width = MIN_CHILD_WIDTH + child_margin;
+      var max_columns = Math.floor(container_width / max_child_width);
+      var column_width = Math.floor(container_width / max_columns) - child_margin;
+      if (max_columns === 1) column_width = container_width;
+      if (column_width > container_width) column_width = container_width;
+      if (column_width > MAX_CHILD_WIDTH) column_width = MAX_CHILD_WIDTH;
+
+      // Set the width on all children
+      for (var j = 0; j < childs.length; j++)
+      {
+        childs[j].style.width = String(column_width) + "px";
+      }
+
+      // Arrange the primary items in an order where minimum height is used
+      var remove_primary_clearer = true;
+      if (total_child_width >= container_width && max_columns <= 2)
+      {
+        if (primary_childs.length >= 3)
+        {
+          var len = primary_childs.length;
+          var last = primary_childs[len - 1].originalHeight;
+          var second_last = primary_childs[len - 2].originalHeight;
+          var third_last = primary_childs[len - 3].originalHeight;
 
           if (last + second_last >= third_last + Math.max(last, second_last))
           {
-            var clear = document.createElement("div");
-            clear.className = "clear";
-            primary.insertBefore(clear, childs[childs.length - 2]);
-            third_last.className += " fit";
+            var width = max_columns === 1 ?
+              Math.floor(container_width / 2) - child_margin : column_width;
+            if (width < MIN_CHILD_IMAGE_WIDTH)
+              width = Math.max(MIN_CHILD_IMAGE_WIDTH, column_width);
+
+            primary_childs[len - 1].style.width = String(width) + "px";
+            primary_childs[len - 2].style.width = String(width) + "px";
+
+            if (!this._primary_clearer)
+            {
+              var clear = document.createElement("div");
+              clear.className = "clear";
+              primary.insertBefore(clear, primary_childs[len - 2]);
+              third_last.className += " fit";
+              this._primary_clearer = true;
+            }
+            remove_primary_clearer = false;
           }
         }
       }
+
+      if (this._primary_clearer && remove_primary_clearer)
+      {
+        var clear_elem = primary.querySelector(".clear");
+        primary.removeChild(clear_elem);
+        this._primary_clearer = false;
+      }
+
+      // If the "container" does not have a scrollbar before the calculation
+      // but afterwards then make a second pass
+      if (container_offset_width !== this._container.childNodes[0].offsetWidth && !second_pass)
+        this.layout(false, true);
+
+      if (this.layoutAfter) this.layoutAfter();
+    }
+  },
+  onresize: {
+    value: function()
+    {
+      this.layout();
     }
   }
 });
+
+var z = 0;
 
 cls.WebGLDrawCallView2 = function(id, name, container_class)
 {
@@ -932,7 +1008,7 @@ cls.WebGLDrawCallView2 = function(id, name, container_class)
     var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
 
     var buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
-    return {title: "Buffer", content: buffer_display};
+    return {title: "Buffer", content: buffer_display, class: "buffer-preview"};
   };
 
   this.getAdditionalPrimaryViews = function()
@@ -940,10 +1016,40 @@ cls.WebGLDrawCallView2 = function(id, name, container_class)
     return [this.getBufferView()];
   };
 
+  this.getAttributeView = function()
+  {
+    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+    var attribute_content = window.templates.webgl.attribute_table(this._call_index, draw_call.program);
+    return {title: "Attributes", content: attribute_content};
+  };
+
+  this.getUniformView = function()
+  {
+    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+    var uniform_content = window.templates.webgl.uniform_table(this._call_index, draw_call.program);
+    return {title: "Uniforms", content: uniform_content};
+  };
+
+  this.getSecondaryViews = function()
+  {
+    return [this.getAttributeView(), this.getUniformView()];
+  };
+
   this.renderAfter = function()
   {
     //render_preview();
     cls.WebGLSummaryTab.renderAfter.call(this);
+  };
+
+  this.layoutAfter = function()
+  {
+    var framebuffer = this._container.querySelector(".framebuffer").children[1];
+    var buffer_preview = this._container.querySelector(".buffer-preview").children[1];
+
+    var height = framebuffer.offsetHeight - buffer_preview.children[0].offsetHeight;
+    var width = framebuffer.offsetWidth;
+    buffer_preview.children[1].style.width = width + "px";
+    buffer_preview.children[1].style.height = height + "px";
   };
 
   this.init(id, name, container_class);

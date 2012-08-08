@@ -558,8 +558,7 @@ window.templates.webgl.image = function(level)
     image = [
       "div",
       img,
-      "class", "texture-container fit",
-      "style", "max-width: " + String(300) + "px"
+      "class", "texture-container fit"
     ];
   }
   else
@@ -954,16 +953,19 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
 window.templates.webgl.summary = function(primary, secondary)
 {
   return [
+      "div",
     [
-      "div",
-      primary.map(window.templates.webgl.summary_view),
-      "class", "primary-summary"
-    ],
-    secondary && secondary.length > 0 ? [
-      "div",
-      secondary.map(window.templates.webgl.summary_view),
-      "class", "secondary-summary"
-    ] : []
+      [
+        "div",
+        primary.map(window.templates.webgl.summary_view),
+        "class", "primary-summary"
+      ],
+      secondary && secondary.length > 0 ? [
+        "div",
+        secondary.map(window.templates.webgl.summary_view),
+        "class", "secondary-summary"
+      ] : []
+    ]
   ];
 };
 
@@ -974,13 +976,15 @@ window.templates.webgl.summary_view = function(item)
     item.title
   ];
 
+  var classes = "summary-item";
+  if (item.class) classes += " " + item.class;
   return [
     "div",
     [
       header,
       item.content
     ],
-    "class", "summary-item"
+    "class", classes
   ];
 };
 
