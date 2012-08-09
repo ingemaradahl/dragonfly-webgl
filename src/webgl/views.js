@@ -194,7 +194,7 @@ cls.WebGLPreviewView.create_ui_widgets = function()
  * @constructor
  * @extends ViewBase
  */
-cls.WebGLCallView = Object.create(ViewBase, {
+cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _container: {
     writable: true,
     value: null
@@ -666,11 +666,36 @@ cls.WebGLSideView.create_ui_widgets = function(id)
 
 
 
-cls.WebGLCallView2 = Object.create(ViewBase, {
+cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
+  active_tab: {
+    writable: true,
+    value: null
+  },
+  set_active_tab: {
+    value: function(tab)
+    {
+      if (this.active_tab !== tab)
+      {
+        if (this.active_tab !== null)
+          this.active_tab.ondestroy();
+        tab.createView(this._body);
+        this.active_tab = tab;
+      }
+    }
+  },
   tabs: {
+    writable: true,
     value: []
   },
-  _lookupTab: {
+  set_tabs: {
+    value: function (tabs)
+    {
+      this.tabs = tabs;
+      var template = window.templates.webgl.tabs(tabs);
+      this._render_tabbar(template);
+    }
+  },
+  _lookup_tab: {
     value: function(tab_name)
     {
       for (var i = 0; i < this.tabs.length; i++)
@@ -684,31 +709,94 @@ cls.WebGLCallView2 = Object.create(ViewBase, {
       return null;
     }
   },
-  showTab: {
+  show_tab: {
     value: function(tab_name)
     {
-      var tab = this._lookupTab(tab_name);
+      var tab = this._lookup_tab(tab_name);
       if (!tab) return;
 
-      // Set the tab active
+      this.set_active_tab(tab);
 
+      tab.render(this._snapshot, this._call_index);
+    }
+  },
+  _createView: {
+    value: function(header, body)
+    {
+      this._header = header;
+      this._body = body;
+      if (this.active_tab !== null)
+        this.active_tab.createView(this._body);
 
-      tab.render();
+      cls.WebGLCallView.active_view = this;
+
+      if (this._snapshot !== null && this._call_index !== null)
+        this.render(this._snapshot, this._call_index);
+    }
+  },
+  ondestroy: {
+    value: function()
+    {
+      cls.WebGLContentView.ondestroy.apply(this, arguments);
+      this._header = null;
+      this._body = null;
+
+      if (this.active_tab !== null)
+        this.active_tab.ondestroy();
+    }
+  },
+  display_call: {
+    value: function(snapshot, call_index)
+    {
+      this.set_active_tab(this.tabs[0]);
+      this.render.apply(this, arguments);
+    }
+  },
+  _snapshot: {
+    writable: true,
+    value: null
+  },
+  _call_index: {
+    writable: true,
+    value: null
+  },
+  render: {
+    value: function(snapshot, call_index)
+    {
+      this._snapshot = snapshot;
+      this._call_index = call_index;
+
+      var call = snapshot.trace[call_index];
+      var head = window.templates.webgl.call_header(call_index, call);
+      this._render_header(head);
+
+      this.active_tab.render(snapshot, call_index);
+    }
+  },
+  _onresize: {
+    value: function()
+    {
+      if (this._body && this.active_tab && this.active_tab.onresize)
+        this.active_tab.onresize();
     }
   }
 });
 
-cls.WebGLTab = Object.create(ViewBase, {
-  display_call: {
-    value: function(snapshot, call_index)
-    {
-      if (!this._container)
-      {
-        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-      }
+cls.WebGLCallView.initialize = function()
+{
+  var tab_handler = function(evt, target)
+  {
+    // TODO use an id or something other than the content?
+    var tab_name = target.textContent;
+    cls.WebGLCallView.active_view.show_tab(tab_name);
+  };
+  var eh = window.eventHandlers;
+  eh.click["webgl-tab-handler"] = tab_handler.bind(this);
+};
 
-      this.render.apply(this, arguments);
-    }
+cls.WebGLTab = Object.create(ViewBase, {
+  name: {
+    writable: true
   },
   _container: {
     writable: true,
@@ -747,6 +835,9 @@ cls.WebGLTab = Object.create(ViewBase, {
 });
 
 cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
+  name: {
+    value: "summary"
+  },
   _call: {
     writable: true,
     value: null
@@ -832,7 +923,11 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       cls.WebGLTab.render.call(this, snapshot, call_index);
       this._call = snapshot.trace[call_index];
 
-      this.renderTabs();
+      var primary = this.getPrimaryViews().concat(this.getAdditionalPrimaryViews());
+      var secondary = this.getSecondaryViews();
+      var template = window.templates.webgl.summary(primary, secondary);
+      this._container.clearAndRender(template);
+
       this.renderAfter();
     }
   },
@@ -841,15 +936,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       this.layout(true);
-    }
-  },
-  renderTabs: {
-    value: function()
-    {
-      var primary = this.getPrimaryViews().concat(this.getAdditionalPrimaryViews());
-      var secondary = this.getSecondaryViews();
-      var template = window.templates.webgl.summary(primary, secondary);
-      this._container.clearAndRender(template);
     }
   },
   layout: {
@@ -966,97 +1052,3 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     }
   }
 });
-
-cls.WebGLDrawCallView2 = function(id, name, container_class)
-{
-  this.createView = function(container)
-  {
-    cls.WebGLSummaryTab.createView.apply(this, arguments);
-
-    var preview_container = new Container(document.createElement("container"));
-    preview_container.setup("webgl_buffer_preview");
-    this._preview_container = preview_container.cell;
-  };
-
-  var add_canvas = function()
-  {
-    var canvas_holder = document.getElementById("webgl-canvas-holder");
-    canvas_holder.appendChild(window.webgl.gl.canvas);
-    canvas_holder.appendChild(this._preview_container);
-
-  }.bind(this);
-
-  var render_preview = function()
-  {
-    add_canvas();
-    var preview = window.webgl.preview;
-    var preview_help = document.getElementById("webgl-preview-help");
-
-    var select = document.getElementById("webgl-attribute-selector");
-    var pointer = select.options[select.selectedIndex].pointer;
-
-    preview.set_help_container(preview_help);
-    preview.set_info_container(this._preview_container);
-    preview.set_attribute(pointer, this._state, this._element_buffer);
-    preview.render();
-  }.bind(this);
-
-  this.getBufferView = function()
-  {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-
-    var buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
-    return {title: "Buffer", content: buffer_display, class: "buffer-preview"};
-  };
-
-  this.getAdditionalPrimaryViews = function()
-  {
-    return [this.getBufferView()];
-  };
-
-  this.getAttributeView = function()
-  {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-    var attribute_content = window.templates.webgl.attribute_table(this._call_index, draw_call.program);
-    return {title: "Attributes", content: attribute_content};
-  };
-
-  this.getUniformView = function()
-  {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-    var uniform_content = window.templates.webgl.uniform_table(this._call_index, draw_call.program);
-    return {title: "Uniforms", content: uniform_content};
-  };
-
-  this.getSecondaryViews = function()
-  {
-    return [this.getAttributeView(), this.getUniformView()];
-  };
-
-  this.renderAfter = function()
-  {
-    if (window.webgl.gl)
-    {
-      var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-      this._element_buffer = draw_call.element_buffer;
-      this._state = draw_call.parameters;
-      render_preview();
-    }
-    cls.WebGLSummaryTab.renderAfter.call(this);
-  };
-
-  this.layoutAfter = function()
-  {
-    var framebuffer = this._container.querySelector(".framebuffer").children[1];
-    var buffer_preview = this._container.querySelector(".buffer-preview").children[1];
-
-    var height = framebuffer.offsetHeight - buffer_preview.children[0].offsetHeight;
-    var width = framebuffer.offsetWidth;
-    buffer_preview.children[1].style.width = width + "px";
-    buffer_preview.children[1].style.height = height + "px";
-    window.webgl.preview.onresize();
-  };
-
-  this.init(id, name, container_class);
-};
-cls.WebGLDrawCallView2.prototype = cls.WebGLSummaryTab;

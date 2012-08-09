@@ -5,94 +5,94 @@ cls.WebGL || (cls.WebGL = {});
 
 /**
  * @constructor
- * @extends cls.WebGLCallView
+ * @extends ViewBase
  */
 
-cls.WebGLTestHeaderView = function(id, name, container_class)
-{
-  this._container;
-  this._header;
-  this._tabs = [];
-  this._content;
-
-  this.createView = function(container)
-  {
-    this._container = container;
-    this._render();
-  };
-
-  // Argument tabs is a list of strings which represents
-  // the views unique tabs.
-  this._set_tabs = function(tabs)
-  {
-    for (var i=0; i<tabs.length; i++)
+cls.WebGLContentView = Object.create(ViewBase, {
+  _container: {
+    writable: true,
+    value: null
+  },
+  _content_header: {
+    writable: true,
+    value: null
+  },
+  _content_tabs: {
+    writable: true,
+    value: null
+  },
+  _content_body: {
+    writable: true,
+    value: null
+  },
+  createView: {
+    writable: true,
+    value : function(container)
     {
-      this._tabs.push(["tab", tabs[i], "id", String(i), "handler", "webgl-tab-handler"]);
+      this._container = container;
+      this._render_base();
+
+      this._createView(container.children[0], container.children[2]);
     }
-    return this._tabs;
-  };
-
-  this.ondestroy = function()
-  {
-    cls.WebGLCallView.ondestroy.apply(this, arguments);
-  };
-
-
-  this._render = function()
-  {
-    var content_width =
-      this._container.offsetWidth-2; //TODO get real width   
-    var content_height = 
-      this._container.offsetHeight;
-    
-    var header = ["div", "Header", "class" ,"header"];
-    var tabbar = ["div", this._tabs,
-        ["div", "style", "clear:both;"],
-        "class", "tabs"
-      ];
-
-    var content = ["div", this._content, "class", "content", 
-      "style", "width:" + content_width + "px;" + "overflow:auto;"];
-    var template = ["div", header,tabbar, content];
-
-
-    this._container.clearAndRender(template);
-    
-    var header_height = this._container.querySelector(".header").offsetHeight;
-    var tabbar_height = this._container.querySelector(".tabs").offsetHeight;
-    content_height -= header_height + tabbar_height;
-  
-    this._container.querySelector(".content").style.height = content_height +"px";
- 
-  };
-
-  this.onresize = function()
-  {
-    this._render();
-  };
-
-  this._on_tab_click = function(evt, target)
-  {
-    this._content = target.textContent + this._long_text(1000); 
-    this._render();
-  };
-  
-  this._long_text = function(x)
-  {
-    var ret;
-    for (var i=0; i<x; i++)
+  },
+  ondestroy: {
+    writable: true,
+    value: function()
     {
-      ret = ret + "hej ";
+      this._container = null;
     }
-    return ret;
-  };
+  },
+  _render_base: {
+    value: function()
+    {
+      var header = ["div"];
+      var tabbar = ["div", this._content_tabs, ["div", "style", "clear:both;"], "class", "tabs"];
 
-  var eh = window.eventHandlers;
-  eh.click["webgl-tab-handler"] = this._on_tab_click.bind(this);
+      var content = ["div", [], "class", "scroll"];
+      var template = [header, tabbar, content];
 
-  this._content = this._long_text(1000);
-  this._tabs = this._set_tabs(["Choice 1", "Choice 2"]);
-  this.init(id, name, container_class);
-};
+      this._container.clearAndRender(template);
 
-cls.WebGLTestHeaderView.prototype = ViewBase;
+      this.onresize();
+    }
+  },
+  _render_header: {
+    value: function(template)
+    {
+      this._content_header = template;
+      if (this._container)
+      {
+        this._container.childNodes[0].clearAndRender(template);
+        this.onresize();
+      }
+    }
+  },
+  _render_tabbar: {
+    value: function(template)
+    {
+      this._content_tabs = template;
+      if (this._container)
+      {
+        this._container.childNodes[1].clearAndRender(template);
+        this.onresize();
+      }
+    }
+  },
+  onresize: {
+    writable: true, configurable: true,
+    value: function()
+    {
+      var content_height = this._container.offsetHeight;
+      var header_height = this._container.childNodes[0].offsetHeight;
+      var tabbar_height = this._container.childNodes[1].offsetHeight;
+      content_height -= header_height + tabbar_height;
+
+      var content_width = this._container.offsetWidth - 2; //TODO get real width
+
+      this._container.childNodes[2].style.height = content_height + "px";
+      this._container.childNodes[2].style.width = content_width + "px";
+
+      this._onresize();
+    }
+  }
+});

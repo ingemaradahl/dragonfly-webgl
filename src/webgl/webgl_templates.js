@@ -880,9 +880,17 @@ window.templates.webgl.info_with_header = function(template)
   return html;
 };
 
-window.templates.webgl.call_with_header = function(call, trace_call, state_parameters, primary, secondary)
+window.templates.webgl.tabs = function(tabs)
 {
-  var callnr = parseInt(call) + 1; // Start call count on 1.
+  return tabs.map(function(tab)
+  {
+    return ["div", tab.name];
+  });
+};
+
+window.templates.webgl.call_header = function(call, trace_call)
+{
+  var callnr = parseInt(call, 10) + 1; // Start call count on 1.
 
   // Makes a link to the webgl specification of the actual function.
   var spec_link = [
@@ -907,10 +915,6 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
   }
 
   window.templates.webgl.goto_script(trace_call.loc, function_name);
-
-  var state = window.templates.webgl.state_parameters(state_parameters);
-  //state = window.templates.webgl.summary_item({title: "State parameters", content: state});
-
   var header = [
     "div",
     [
@@ -932,22 +936,7 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
     "class", "call-header"
   ];
 
-  var res = [header];
-
-  var content = [];
-  if (trace_call.error_code !== cls.WebGLAPI.CONSTANTS.NO_ERROR)
-  {
-    content.push({title: "Error", content: window.templates.webgl.error_message(trace_call)});
-  }
-  content.push({title: "State parameters", content: state});
-  if (primary) content = content.concat((primary));
-  res.push([
-    "div",
-    window.templates.webgl.summary(content, secondary),
-    "class", "call-info"
-  ]);
-
-  return res;
+  return header;
 };
 
 window.templates.webgl.summary = function(primary, secondary)

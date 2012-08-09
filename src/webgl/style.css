@@ -16,6 +16,24 @@
 }
 
 
+.webgl-view .tabs
+{
+  background-color: rgba(0, 0, 0, 0.118);
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+}
+
+.webgl-view .tabs > div
+{
+  padding: 8px;
+  float: left;
+}
+.webgl-view .tabs > div:last-child
+{
+  float: none !important;
+  clear: both;
+}
+
+
 .js-dd-dir-path,
 .webgl_snapshot_menu cst-webgl-title
 {
@@ -44,7 +62,7 @@ img.flipped
 .webgl_view.draw-call > div
 {
   text-align: left;
-  padding: 10px;
+  /*padding: 10px;*/
 }
 
 .webgl_view .table-info table
@@ -182,7 +200,7 @@ img.flipped
 }
 
 /* Texture */
-.webgl_view div.loading-image
+.webgl-view div.loading-image
 {
   /* Should work, but doesn't */
   /* background: url(./ui-images/loading.png) no-repeat center center; */
@@ -310,7 +328,7 @@ img.flipped
 
 
 /* Draw Call */
-.webgl_view .webgl-holder
+.webgl-view .webgl-holder
 {
   border: 1px;
   border-style: solid;
