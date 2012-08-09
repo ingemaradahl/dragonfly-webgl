@@ -10,12 +10,18 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLGenericCallView = function(id, name, container_class)
 {
-  this._render = function(snapshot, call_index)
-  {
-    this.render_with_header(snapshot, call_index);
-  };
+  this.set_tabs([
+    new cls.WebGLGenericCallSummaryTab("summary", "Summary", "")
+  ]);
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLGenericCallView.prototype = cls.WebGLCallView;
+cls.WebGLGenericCallView.prototype = cls.WebGLCallView2;
+
+
+cls.WebGLGenericCallSummaryTab = function(id, name, container_class)
+{
+  this.init(id, name, container_class);
+};
+cls.WebGLGenericCallSummaryTab.prototype = cls.WebGLSummaryTab;

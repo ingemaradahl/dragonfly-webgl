@@ -318,65 +318,6 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 });
 
 
-// Add listeners and methods for call view events.
-cls.WebGLCallView.initialize = function()
-{
-  var tabledef = {
-    handler: "webgl-state-table",
-    column_order: ["parameter", "value"],
-    columns: {
-      parameter: {
-        label: "Parameter"
-      },
-      value: {
-        label: "Value"
-      }
-    },
-    groups: {
-      type: {
-        label: "Parameter type", // TODO
-        // TODO use the parameter groups
-        grouper : function (res) { return Math.round(Math.random() * 5); },
-      }
-    }
-  };
-
-  this._state_table = new SortableTable(tabledef, null, ["parameter", "value"], null, null, false, "state-table");
-
-  var on_goto_script_click = function(evt, target)
-  {
-    var line = parseInt(target.getAttribute("data-line"));
-    var script_id = parseInt(target.getAttribute("data-script-id"));
-
-    var sourceview = window.views.js_source;
-    window.runtimes.setSelectedScript(script_id);
-    UI.get_instance().show_view("js_mode");
-    if (sourceview)
-    {
-      sourceview.show_and_flash_line(script_id, line);
-    }
-  };
-
-  var on_speclink_click = function(evt, target)
-  {
-    window.open(target.getAttribute("function_name"));
-  };
-
-  var on_toggle_state_list = function(evt, target)
-  {
-    var view = cls.WebGLCallView.active_view;
-    if (view)
-    {
-      view.toggle_state_list();
-    }
-  };
-
-  var eh = window.eventHandlers;
-  eh.click["webgl-speclink-click"] = on_speclink_click;
-  eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
-  eh.click["webgl-toggle-state-list"] = on_toggle_state_list;
-};
-
 cls.WebGLSnapshotSelect = function(id)
 {
   this._snapshot_list = [{}];
@@ -696,12 +637,12 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
     }
   },
   _lookup_tab: {
-    value: function(tab_name)
+    value: function(tab_id)
     {
       for (var i = 0; i < this.tabs.length; i++)
       {
         var tab = this.tabs[i];
-        if (tab.name === tab_name)
+        if (tab.id === tab_id)
         {
           return tab;
         }
@@ -748,6 +689,13 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
   display_call: {
     value: function(snapshot, call_index)
     {
+      if (!this._container)
+      {
+        this._render_enabled = false;
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+        this._render_enabled = true;
+      }
+
       this.set_active_tab(this.tabs[0]);
       this.render.apply(this, arguments);
     }
@@ -782,22 +730,73 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
   }
 });
 
+// Add listeners and methods for call view events.
 cls.WebGLCallView.initialize = function()
 {
+  var tabledef = {
+    handler: "webgl-state-table",
+    column_order: ["parameter", "value"],
+    columns: {
+      parameter: {
+        label: "Parameter"
+      },
+      value: {
+        label: "Value"
+      }
+    },
+    groups: {
+      type: {
+        label: "Parameter type", // TODO
+        // TODO use the parameter groups
+        grouper : function (res) { return Math.round(Math.random() * 5); },
+      }
+    }
+  };
+
+  this._state_table = new SortableTable(tabledef, null, ["parameter", "value"], null, null, false, "state-table");
+
+  var on_goto_script_click = function(evt, target)
+  {
+    var line = parseInt(target.getAttribute("data-line"));
+    var script_id = parseInt(target.getAttribute("data-script-id"));
+
+    var sourceview = window.views.js_source;
+    window.runtimes.setSelectedScript(script_id);
+    UI.get_instance().show_view("js_mode");
+    if (sourceview)
+    {
+      sourceview.show_and_flash_line(script_id, line);
+    }
+  };
+
+  var on_speclink_click = function(evt, target)
+  {
+    window.open(target.getAttribute("function_name"));
+  };
+
+  var on_toggle_state_list = function(evt, target)
+  {
+    var view = cls.WebGLCallView.active_view;
+    if (view)
+    {
+      view.toggle_state_list();
+    }
+  };
+
   var tab_handler = function(evt, target)
   {
-    // TODO use an id or something other than the content?
-    var tab_name = target.textContent;
-    cls.WebGLCallView.active_view.show_tab(tab_name);
+    var tab_id = target.id;
+    cls.WebGLCallView.active_view.show_tab(tab_id);
   };
+
   var eh = window.eventHandlers;
-  eh.click["webgl-tab-handler"] = tab_handler.bind(this);
+  eh.click["webgl-speclink-click"] = on_speclink_click;
+  eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
+  eh.click["webgl-toggle-state-list"] = on_toggle_state_list;
+  eh.click["webgl-tab"] = tab_handler.bind(this);
 };
 
 cls.WebGLTab = Object.create(ViewBase, {
-  name: {
-    writable: true
-  },
   _container: {
     writable: true,
     value: null
@@ -826,6 +825,7 @@ cls.WebGLTab = Object.create(ViewBase, {
     value: null
   },
   render: {
+    writable: true, configurable: true,
     value: function(snapshot, call_index)
     {
       this._snapshot = snapshot;
@@ -835,9 +835,6 @@ cls.WebGLTab = Object.create(ViewBase, {
 });
 
 cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
-  name: {
-    value: "summary"
-  },
   _call: {
     writable: true,
     value: null

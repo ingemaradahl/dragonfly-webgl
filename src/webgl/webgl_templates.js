@@ -884,7 +884,11 @@ window.templates.webgl.tabs = function(tabs)
 {
   return tabs.map(function(tab)
   {
-    return ["div", tab.name];
+    return [
+      "div", tab.name,
+      "handler", "webgl-tab",
+      "id", tab.id
+    ];
   });
 };
 

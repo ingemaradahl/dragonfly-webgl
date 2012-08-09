@@ -9,32 +9,17 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
-  this._snapshot = null;
-  this._call_index = null;
+  this.set_tabs([
+    new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
+    new cls.WebGLFullTextureTab("full-texture", "Texture", "")
+  ]);
 
-  this._render = function(snapshot, call_index, texture)
-  {
-    if (call_index !== -1 && !texture)
-    {
-      texture = snapshot.trace[call_index].linked_object.texture;
-    }
-    this._snapshot = snapshot;
-    this._call_index = call_index;
-    this._texture = texture;
-
-    texture.request_data();
-
-    var template = window.templates.webgl.texture(texture);
-    this.render_with_header(snapshot, call_index, template);
-  };
-
-  this._on_texture_data = function(msg)
+  var on_texture_data = function(msg)
   {
     var texture = msg.texture;
     if (this._container && this._texture === texture)
     {
-      var template = window.templates.webgl.texture(msg.texture);
-      this.render_with_header(this._snapshot, this._call_index, template);
+      this.active_tab.render(this._snapshot, this._call_index);
     }
   };
 
@@ -76,12 +61,78 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   eh.mousedown["webgl-texture-image"] = on_texture_start_drag.bind(this);
   eh.mouseup["webgl-texture-image"] = on_texture_end_drag.bind(this);
 
-  messages.addListener('webgl-texture-data', this._on_texture_data.bind(this));
+  messages.addListener('webgl-texture-data', on_texture_data.bind(this));
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLTextureCallView.prototype = cls.WebGLCallView;
+cls.WebGLTextureCallView.prototype = cls.WebGLCallView2;
+
+cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
+{
+  this.getTextureView = function()
+  {
+    var texture = this._snapshot.trace[this._call_index].linked_object.texture;
+    texture.request_data();
+    var level0 = texture.levels[0];
+    var base_image;
+    if (!level0 || level0.img == null && !texture.mipmapped)
+    {
+      base_image = ["span", "No data."];
+    }
+    else
+    {
+      base_image = window.templates.webgl.image(level0);
+    }
+    return {title: "Texture", content: base_image, class: "texture-preview"};
+  };
+
+  this.getAdditionalPrimaryViews = function()
+  {
+    return [this.getTextureView()];
+  };
+
+  this.layoutAfter = function()
+  {
+    var framebuffer = this._container.querySelector(".framebuffer").children[1];
+    var texture = this._container.querySelector(".texture-preview").children[1];
+
+    var height = framebuffer.offsetHeight;
+    var width = framebuffer.offsetWidth;
+    texture.style.width = width + "px";
+    texture.style.height = height + "px";
+  };
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLTextureCallSummaryTab.prototype = cls.WebGLSummaryTab;
+
+cls.WebGLFullTextureTab = function(id, name, container_class)
+{
+  this.render = function(snapshot, call_index)
+  {
+    cls.WebGLTab.render.apply(this, arguments);
+
+    var texture = this._snapshot.trace[this._call_index].linked_object.texture;
+    texture.request_data();
+    var level0 = texture.levels[0];
+    var base_image;
+    if (!level0 || level0.img == null && !texture.mipmapped)
+    {
+      base_image = ["span", "No data."];
+    }
+    else
+    {
+      base_image = window.templates.webgl.image(level0);
+    }
+
+    this._container.clearAndRender(base_image);
+  };
+  this.init(id, name, container_class);
+};
+
+cls.WebGLFullTextureTab.prototype = cls.WebGLTab;
 
 // ----------------------------------------------------------------------------
 
