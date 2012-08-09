@@ -26,11 +26,23 @@
 {
   padding: 8px;
   float: left;
+  background-color: rgba(0, 0, 0, 0.5);
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
 }
+
+.webgl-view .tabs > div:hover,
+.webgl-view .tabs > div.active
+{
+  background-color: rgba(0, 0, 0, 0.3);
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+}
+
 .webgl-view .tabs > div:last-child
 {
+  background: none !important;
   float: none !important;
   clear: both;
+  padding: 0 !important;
 }
 
 

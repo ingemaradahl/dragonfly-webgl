@@ -880,16 +880,21 @@ window.templates.webgl.info_with_header = function(template)
   return html;
 };
 
-window.templates.webgl.tabs = function(tabs)
+window.templates.webgl.tabs = function(tabs, active_tab)
 {
-  return tabs.map(function(tab)
+  var html = tabs.map(function(tab)
   {
-    return [
+    var content = [
       "div", tab.name,
       "handler", "webgl-tab",
       "id", tab.id
     ];
+    if (tab === active_tab)
+      content.push("class", "active");
+    return content;
   });
+  html.push(["div"]);
+  return html;
 };
 
 window.templates.webgl.call_header = function(call, trace_call)
