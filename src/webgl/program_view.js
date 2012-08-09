@@ -52,41 +52,58 @@ cls.WebGLProgramCallView = function(id, name, container_class)
     }
   };
 
-  this._render = function(snapshot, call_index, program)
-  {
-    if (!program)
-    {
-      program = snapshot.trace[call_index].linked_object.program;
-    }
-    var template = window.templates.webgl.program(call_index, program);
-
-    // If called from the trace list we will render_with_header.
-    // Else this function is called from the program list, and 
-    // the we render only a simple view.
-    if (call_index !== null)
-    {
-      this.render_with_header(snapshot, call_index, template);
-    }
-    else
-    {
-      this._template = template;
-      this.render();
-    }
-    sh_highlightDocument();
-
-    // If render has been called from a trace call hilight eventual uniform/attribute 
-    if (call_index !== -1 && call_index !== null)
-    {
-      var call = snapshot.trace[call_index];
-      var uniattrib = call.linked_object.uniform || call.linked_object.attribute;
-      if (uniattrib) hilight_uniform(uniattrib);
-    }
-  };
+  this.set_tabs([
+    new cls.WebGLProgramSummaryTab("summary", "Summary", "")
+  ]);
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLProgramCallView.prototype = cls.WebGLCallView;
+cls.WebGLProgramCallView.prototype = cls.WebGLCallView2;
+
+cls.WebGLProgramSummaryTab = function(id, name, container_class)
+{
+  this.set_call = function(snapshot, call_index)
+  {
+    this._program = snapshot.trace[call_index].linked_object.program;
+    cls.WebGLSummaryTab.set_call.apply(this, arguments);
+  };
+
+  this.getAttributeView = function()
+  {
+    var attribute_content = window.templates.webgl.attribute_table(this._call_index, this._program);
+    return {title: "Attributes", content: attribute_content};
+  };
+
+  this.getUniformView = function()
+  {
+    var uniform_content = window.templates.webgl.uniform_table(this._call_index, this._program);
+    return {title: "Uniforms", content: uniform_content};
+  };
+
+  this.getSecondaryViews = function()
+  {
+    return [this.getAttributeView(), this.getUniformView()];
+  };
+
+  this.renderAfter = function()
+  {
+    var template = window.templates.webgl.program(this._call_index, this._program);
+
+    sh_highlightDocument();
+
+    // If render has been called from a trace call hilight eventual uniform/attribute
+    if (this._call_index !== -1 && this._call_index !== null)
+    {
+      var uniattrib = this._call.linked_object.uniform || this._call.linked_object.attribute;
+      //if (uniattrib) hilight_uniform(uniattrib);
+    }
+    cls.WebGLSummaryTab.renderAfter.call(this);
+  };
+
+  this.init(id, name, container_class);
+};
+cls.WebGLProgramSummaryTab.prototype = cls.WebGLSummaryTab;
 
 // ----------------------------------------------------------------------------
 
@@ -149,7 +166,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
   this._on_table_click = function(evt, target)
   {
     var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
-    var snapshot = 
+    var snapshot =
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var program = snapshot.programs[item_id];
 
@@ -185,4 +202,4 @@ cls.WebGLProgramSideView.create_ui_widgets = function()
 {
   cls.WebGLSideView.create_ui_widgets("program-side-panel");
 };
-  
+

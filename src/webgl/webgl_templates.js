@@ -954,7 +954,8 @@ window.templates.webgl.summary = function(primary, secondary)
         secondary.map(window.templates.webgl.summary_view),
         "class", "secondary-summary"
       ] : []
-    ]
+    ],
+    "class", "summary"
   ];
 };
 

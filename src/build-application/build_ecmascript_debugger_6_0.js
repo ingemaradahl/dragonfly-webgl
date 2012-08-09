@@ -266,11 +266,11 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     new cls.WebGLBufferCallView("webgl_buffer_call",
                                 "Buffer call",
-                                "scroll webgl_view buffer-call");
+                                "webgl-view buffer-call");
 
     new cls.WebGLProgramCallView("webgl_program_call",
                                  "Program call",
-                                 "scroll webgl_view program-call");
+                                 "webgl-view program-call");
 
     // Tabs to the right
 

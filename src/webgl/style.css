@@ -1,4 +1,9 @@
-﻿.summary-item
+﻿.summary
+{
+  padding: 3px;
+}
+
+.summary-item
 {
   margin: 5px;
   float: left;
@@ -113,19 +118,19 @@ img.flipped
   /*padding: 10px;*/
 }
 
-.webgl_view .table-info table
+.webgl-view .table-info table
 {
   border-collapse: collapse;
 }
 
-.webgl_view .table-info td,
-.webgl_view .table-info th
+.webgl-view .table-info td,
+.webgl-view .table-info th
 {
   vertical-align: top;
   word-wrap: break-word;
 }
 
-.webgl_view .table-info th
+.webgl-view .table-info th
 {
   text-align: left;
   padding-right: 30px;
@@ -247,12 +252,12 @@ img.flipped
   margin-top: 0px;
   margin-bottom: 15px;
 }
-.webgl_view .uniform-table .changed
+.webgl-view .uniform-table .changed
 {
   color: red;
 }
 
-.webgl_view .uniforms
+.webgl-view .uniforms
 {
   margin-bottom: 10px;
   border: 1px solid #999999;

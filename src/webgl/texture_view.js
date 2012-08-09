@@ -110,11 +110,15 @@ cls.WebGLTextureCallSummaryTab.prototype = cls.WebGLSummaryTab;
 
 cls.WebGLFullTextureTab = function(id, name, container_class)
 {
-  this.render = function(snapshot, call_index)
+  this.set_call = function(snapshot, call_index)
   {
-    cls.WebGLTab.render.apply(this, arguments);
+    this._texture = snapshot.trace[call_index].linked_object.texture;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
 
-    var texture = this._snapshot.trace[this._call_index].linked_object.texture;
+  this.render = function()
+  {
+    var texture = this._texture;
     texture.request_data();
     var level0 = texture.levels[0];
     var base_image;
@@ -129,6 +133,7 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
 
     this._container.clearAndRender(base_image);
   };
+
   this.init(id, name, container_class);
 };
 

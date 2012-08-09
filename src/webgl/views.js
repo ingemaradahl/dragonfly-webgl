@@ -191,7 +191,6 @@ cls.WebGLPreviewView.create_ui_widgets = function()
 
 /**
  * Base class for all call views.
- * @constructor
  * @extends ViewBase
  */
 cls.WebGLCallView = Object.create(ViewBase, {
@@ -607,7 +606,6 @@ cls.WebGLSideView.create_ui_widgets = function(id)
 // -----------------------------------------------------------------------------
 
 /**
- * @constructor
  * @extends ViewBase
  */
 cls.WebGLContentView = Object.create(ViewBase, {
@@ -700,7 +698,6 @@ cls.WebGLContentView = Object.create(ViewBase, {
 });
 
 /**
- * @constructor
  * @extends cls.WebGLContentView
  */
 cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
@@ -756,7 +753,7 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
 
       this.set_active_tab(tab);
 
-      tab.render(this._snapshot, this._call_index);
+      tab.set_call(this._snapshot, this._call_index);
     }
   },
   _createView: {
@@ -770,7 +767,7 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
       cls.WebGLCallView.active_view = this;
 
       if (this._snapshot !== null && this._call_index !== null)
-        this.render(this._snapshot, this._call_index);
+        this.render();
     }
   },
   ondestroy: {
@@ -784,21 +781,7 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
         this.active_tab.ondestroy();
     }
   },
-  display_call: {
-    value: function(snapshot, call_index)
-    {
-      if (!this._container)
-      {
-        this._render_enabled = false;
-        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
-      }
-
-      this.set_active_tab(this.tabs[0]);
-      this.render.apply(this, arguments);
-    }
-  },
-  _snapshot: {
+  _call: {
     writable: true,
     value: null
   },
@@ -806,17 +789,40 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
     writable: true,
     value: null
   },
-  render: {
+  _snapshot: {
+    writable: true,
+    value: null
+  },
+  display_call: {
     value: function(snapshot, call_index)
     {
       this._snapshot = snapshot;
       this._call_index = call_index;
+      this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
-      var call = snapshot.trace[call_index];
-      var head = window.templates.webgl.call_header(call_index, call);
+      this.set_active_tab(this.tabs[0]);
+      this.active_tab.set_call(snapshot, call_index);
+
+      if (!this._container)
+      {
+        this._render_enabled = false;
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+        this._render_enabled = true;
+      }
+
+      this.render();
+    }
+  },
+  render: {
+    value: function()
+    {
+      var head = window.templates.webgl.call_header(this._call_index, this._call);
       this._render_header(head);
 
-      this.active_tab.render(snapshot, call_index);
+      if (this.active_tab._container !== null)
+      {
+        this.active_tab.render();
+      }
     }
   },
   _onresize: {
@@ -895,7 +901,6 @@ cls.WebGLCallView.initialize = function()
 };
 
 /**
- * @constructor
  * @extends ViewBase
  */
 cls.WebGLTab = Object.create(ViewBase, {
@@ -916,6 +921,8 @@ cls.WebGLTab = Object.create(ViewBase, {
     value: function()
     {
       this._container = null;
+      this._snapshot = null;
+      this._call_index = null;
     }
   },
   _snapshot: {
@@ -926,18 +933,19 @@ cls.WebGLTab = Object.create(ViewBase, {
     writable: true,
     value: null
   },
-  render: {
+  set_call: {
     writable: true, configurable: true,
     value: function(snapshot, call_index)
     {
       this._snapshot = snapshot;
       this._call_index = call_index;
+      if (this._container != null)
+        this.render();
     }
   }
 });
 
 /**
- * @constructor
  * @extends cls.WebGLTab
  */
 cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
@@ -949,19 +957,12 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true,
     value: false
   },
-  createView: {
-    writable: true, configurable: true,
-    value: function(container)
-    {
-      this._container = container;
-      //this.render();
-    }
-  },
   ondestroy: {
     writable: true, configurable: true,
     value: function()
     {
       this._container = null;
+      this._call = null;
     }
   },
   getStateView: {
@@ -984,7 +985,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   getFrameBufferView: {
     value: function()
     {
-      var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+      var draw_call = this._draw_call;
 
       // Make sure the fbo image is downloading if isn't but exists
       if (draw_call.fbo.img && !draw_call.fbo.img.data && !draw_call.fbo.img.downloading)
@@ -1001,9 +1002,9 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       var primary = [];
-      if (this._call.have_error) primary.push(this.getErrorView());
-      primary.push(this.getStateView());
-      primary.push(this.getFrameBufferView());
+      if (this._call && this._call.have_error) primary.push(this.getErrorView());
+      if (this._call) primary.push(this.getStateView());
+      if (this._draw_call) primary.push(this.getFrameBufferView());
       return primary;
     }
   },
@@ -1021,12 +1022,19 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       return [];
     }
   },
-  render: {
+  set_call: {
+    writable: true,
     value: function(snapshot, call_index)
     {
-      cls.WebGLTab.render.call(this, snapshot, call_index);
-      this._call = snapshot.trace[call_index];
-
+      this._call = call_index === -1 ? null : snapshot.trace[call_index];
+      this._draw_call = call_index === -1 ? null :
+        snapshot.drawcalls.get_by_call(call_index);
+      cls.WebGLTab.set_call.apply(this, arguments);
+    }
+  },
+  render: {
+    value: function()
+    {
       var primary = this.getPrimaryViews().concat(this.getAdditionalPrimaryViews());
       var secondary = this.getSecondaryViews();
       var template = window.templates.webgl.summary(primary, secondary);

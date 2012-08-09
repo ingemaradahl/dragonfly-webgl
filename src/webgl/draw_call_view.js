@@ -19,6 +19,8 @@ cls.WebGLDrawCallView.prototype = cls.WebGLCallView2;
 
 cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 {
+  this._draw_call = null;
+
   this.createView = function(container)
   {
     cls.WebGLSummaryTab.createView.apply(this, arguments);
@@ -33,7 +35,6 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
     canvas_holder.appendChild(this._preview_container);
-
   }.bind(this);
 
   var render_preview = function()
@@ -53,9 +54,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 
   this.getBufferView = function()
   {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-
-    var buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
+    var buffer_display = window.templates.webgl.drawcall_buffer(this._draw_call);
     return {title: "Buffer", content: buffer_display, class: "buffer-preview"};
   };
 
@@ -66,15 +65,13 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 
   this.getAttributeView = function()
   {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-    var attribute_content = window.templates.webgl.attribute_table(this._call_index, draw_call.program);
+    var attribute_content = window.templates.webgl.attribute_table(this._call_index, this._draw_call.program);
     return {title: "Attributes", content: attribute_content};
   };
 
   this.getUniformView = function()
   {
-    var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-    var uniform_content = window.templates.webgl.uniform_table(this._call_index, draw_call.program);
+    var uniform_content = window.templates.webgl.uniform_table(this._call_index, this._draw_call.program);
     return {title: "Uniforms", content: uniform_content};
   };
 
