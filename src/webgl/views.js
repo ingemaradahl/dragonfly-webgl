@@ -13,7 +13,8 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 {
   var checkboxes =
   [
-    'fbo-readpixels'
+    'fbo-readpixels',
+    'stack-trace'
   ];
 
   new Settings
@@ -23,12 +24,14 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     // key-value map
     {
       'fbo-readpixels' : true,
+      'stack-trace' : false,
       'history_length' : 4
     },
     // key-label map
     {
       'history-length': "Object history length",
-      'fbo-readpixels': "Read pixels from framebuffer after draw calls"
+      'fbo-readpixels': "Read pixels from framebuffer after draw calls",
+      'stack-trace': "Get WebGL call reference"
 
     },
     // settings map

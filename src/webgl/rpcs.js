@@ -125,14 +125,17 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame || history_function)
         {
-          var loc;
-          try
+          var loc = null;
+          if (handler.settings['stack-trace'])
           {
-            cause_error += 1;
-          }
-          catch (e)
-          {
-            loc = analyse_stacktrace(e.stacktrace);
+            try
+            {
+              throw new Error();
+            }
+            catch (e)
+            {
+              loc = analyse_stacktrace(e.stacktrace);
+            }
           }
 
           if (handler.capturing_frame)
