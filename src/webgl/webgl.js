@@ -208,6 +208,9 @@ cls.WebGL.WebGLDebugger = function ()
           _action: cls.Scoper.ACTIONS.EXAMINE,
           context: {
             _action: cls.Scoper.ACTIONS.NOTHING
+          },
+          canvas: {
+            _action: cls.Scoper.ACTIONS.NOTHING
           }
         }
       });

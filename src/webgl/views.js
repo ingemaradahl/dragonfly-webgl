@@ -385,6 +385,7 @@ cls.WebGLSnapshotSelect = function(id)
   this.disabled = true;
   this._selected_snapshot_index = null;
   this._selected_context_id = null;
+  this._highlighting = null;
 
   this.getSelectedOptionText = function()
   {
@@ -440,7 +441,7 @@ cls.WebGLSnapshotSelect = function(id)
 
   this.templateOptionList = function(select_obj)
   {
-    var ret = [];
+    var ret = ["div"];
     var snapshots = select_obj._snapshot_list;
 
     var contexts = window.webgl.contexts;
@@ -452,6 +453,7 @@ cls.WebGLSnapshotSelect = function(id)
       ret.push([
         "cst-webgl-title",
         "WebGLContext #" + i,
+        "context-id", context_id,
         "class", "js-dd-dir-path"
       ]);
 
@@ -475,16 +477,17 @@ cls.WebGLSnapshotSelect = function(id)
         "cst-option",
         "Take snapshot",
         "context-id", context_id,
-        "take-snapshot", true
+        "take-snapshot", true,
       ]);
     }
+
+    ret.push("handler", "webgl-select-context");
 
     return ret;
   };
 
   this.checkChange = function(target_ele)
   {
-    // TODO The context should also be highlighted on the debuggee
     var context_id = target_ele['context-id'];
     var snapshot_index = target_ele['snapshot-index'];
     var take_snapshot = target_ele['take-snapshot'];
@@ -494,6 +497,7 @@ cls.WebGLSnapshotSelect = function(id)
       window.webgl.request_snapshot(context_id);
       this._selected_context_id = context_id;
       this._selected_snapshot_index = null;
+      clear_spotlight();
       return false;
     }
     else if (snapshot_index != null && this._selected_snapshot_index !== snapshot_index)
@@ -501,6 +505,7 @@ cls.WebGLSnapshotSelect = function(id)
       this._selected_context_id = context_id;
       this._selected_snapshot_index = snapshot_index;
       messages.post('webgl-changed-snapshot', window.webgl.snapshots[context_id][snapshot_index]);
+      clear_spotlight();
       return true;
     }
     return false;
@@ -544,6 +549,7 @@ cls.WebGLSnapshotSelect = function(id)
   {
     this._selected_snapshot_index = null;
     this._selected_context_id = null;
+    clear_spotlight();
 
     if (!this.disabled)
     {
@@ -551,6 +557,44 @@ cls.WebGLSnapshotSelect = function(id)
       refresh_tab();
     }
   };
+
+  var clear_spotlight = function()
+  {
+    if (this._highlighting)
+    {
+      window.hostspotlighter.soft_spotlight(0);
+      this._highlighting = null;
+    }
+  }.bind(this);
+
+
+
+
+  var on_mouseover = function(event, target)
+  {
+    var option = event.target.get_ancestor("cst-option") || event.target.get_ancestor("cst-webgl-title");
+
+    if (option)
+    {
+      var context_id = option['context-id'];
+      var canvas_id = window.webgl.interfaces[context_id].canvas.object_id;
+      if (canvas_id !== this._highlighting)
+      {
+        window.hostspotlighter.soft_spotlight(canvas_id);
+        this._highlighting = canvas_id;
+      }
+
+    }
+  };
+
+  var on_mouseout = function(event, target)
+  {
+    clear_spotlight();
+  };
+
+  var eh = window.eventHandlers;
+  eh.mouseover["webgl-select-context"] = on_mouseover.bind(this);
+  eh.mouseout["webgl-select-context"] = on_mouseout.bind(this);
 
   messages.addListener('webgl-new-context', on_new_context.bind(this));
   messages.addListener('webgl-new-snapshot', on_new_snapshot.bind(this));

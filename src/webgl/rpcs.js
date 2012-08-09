@@ -1014,6 +1014,7 @@ cls.WebGL.RPCs.injection = function () {
   function Handler(context, gl, canvas, settings)
   {
     this.gl = gl;
+    this.canvas = canvas;
     this.context = context;
     this.settings = settings;
 
@@ -1051,6 +1052,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_interface = function ()
     {
+      this._interface.canvas = this.canvas;
       return this._interface;
     };
 
