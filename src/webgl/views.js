@@ -604,14 +604,12 @@ cls.WebGLSideView.create_ui_widgets = function(id)
   );
 };
 
-
-
+// -----------------------------------------------------------------------------
 
 /**
  * @constructor
  * @extends ViewBase
  */
-
 cls.WebGLContentView = Object.create(ViewBase, {
   _container: {
     writable: true,
@@ -701,6 +699,10 @@ cls.WebGLContentView = Object.create(ViewBase, {
   }
 });
 
+/**
+ * @constructor
+ * @extends cls.WebGLContentView
+ */
 cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
   active_tab: {
     writable: true,
@@ -892,6 +894,10 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-tab"] = tab_handler.bind(this);
 };
 
+/**
+ * @constructor
+ * @extends ViewBase
+ */
 cls.WebGLTab = Object.create(ViewBase, {
   _container: {
     writable: true,
@@ -930,6 +936,10 @@ cls.WebGLTab = Object.create(ViewBase, {
   }
 });
 
+/**
+ * @constructor
+ * @extends cls.WebGLTab
+ */
 cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   _call: {
     writable: true,
@@ -967,7 +977,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       var error_content = window.templates.webgl.error_message(this._call);
-      return {title: "Error: ", content: error_content};
+      var error_code = window.webgl.api.constant_value_to_string(this._call.error_code);
+      return {title: "Error: " + error_code, content: error_content, class: "error-item"};
     }
   },
   getFrameBufferView: {

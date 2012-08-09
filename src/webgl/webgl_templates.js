@@ -811,21 +811,9 @@ window.templates.webgl.state_parameter_value = function(param, value)
 window.templates.webgl.error_message = function(call)
 {
   var error_code = window.webgl.api.constant_value_to_string(call.error_code);
-  var header = [
-    "h3", [
-      ["span", "Error: " + error_code],
-    ]
-  ];
-
-  var content = [header];
-
-  var result = [
-    "div", content,
-    "class", "error-message summary-item"
-  ];
 
   var fun_errors = window.webgl.api.functions[call.function_name].errors;
-  if (!fun_errors || !(error_code in fun_errors)) return result;
+  if (!fun_errors || !(error_code in fun_errors)) return [];
 
   var errors = fun_errors[error_code];
   errors = errors.map(function(error){return [
@@ -841,10 +829,13 @@ window.templates.webgl.error_message = function(call)
     ]
   ];});
 
-  content.push([
-    "div", "",
-    "class", "divider"
-  ]);
+
+  var content = [];
+  var result = [
+    "div", content,
+    "class", "error-message"
+  ];
+
   content.push([
     "div", "Possible cause" + (errors.length === 1 ? "" : "s") + ":",
     "class", "cause"
