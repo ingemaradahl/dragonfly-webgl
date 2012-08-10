@@ -111,14 +111,17 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame || history_function)
         {
-          var loc;
-          try
+          var loc = null;
+          if (handler.settings['stack-trace'])
           {
-            cause_error += 1;
-          }
-          catch (e)
-          {
-            loc = analyse_stacktrace(e.stacktrace);
+            try
+            {
+              throw new Error();
+            }
+            catch (e)
+            {
+              loc = analyse_stacktrace(e.stacktrace);
+            }
           }
 
           if (handler.capturing_frame)
@@ -967,6 +970,7 @@ cls.WebGL.RPCs.injection = function () {
   function Handler(context, gl, canvas, settings)
   {
     this.gl = gl;
+    this.canvas = canvas;
     this.context = context;
     this.settings = settings;
 
@@ -1004,6 +1008,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_interface = function ()
     {
+      this._interface.canvas = this.canvas;
       return this._interface;
     };
 
@@ -1026,6 +1031,12 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
+
+    this.set_settings = function(settings)
+    {
+      this.settings = settings;
+    };
+    this._interface.set_settings = this.set_settings.bind(this);
 
     var generic_lookup_index = function(list, subkey)
     {
