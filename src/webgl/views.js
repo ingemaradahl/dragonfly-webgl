@@ -23,21 +23,23 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     // key-value map
     {
       'fbo-readpixels' : true,
-      'history_length' : 4
+      'history_length' : 4,
+      'snapshot_delay' : 0
     },
     // key-label map
     {
       'history-length': "Object history length",
-      'fbo-readpixels': "Read pixels from framebuffer after draw calls"
-
+      'fbo-readpixels': "Read pixels from framebuffer after draw calls",
+      'snapshot-delay': "Set a timer for taking snapshots"
     },
     // settings map
     {
       checkboxes: checkboxes,
       customSettings:
       [
-        'history_length'
-      ]
+        'history_length',
+        'snapshot_delay'
+      ],
     },
     // template
     {
@@ -58,6 +60,24 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
             ]
           ]
         ] );
+      },
+      'snapshot_delay':
+      function(setting)
+      {
+        return (
+        [
+          'setting-composite',
+          ['label',
+            setting.label_map['snapshot-delay'] + ': ',
+            ['input',
+              'type', 'number',
+              'handler', 'set-snapshot-delay',
+              'max', '60',
+              'min', '0',
+              'value', setting.get('snapshot_delay')
+            ]
+          ]
+        ] );
       }
     },
     "webgl"
@@ -68,6 +88,11 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
   {
     var history_size = Number(event.target.value);
     settings.snapshot.set('history_length', history_size);
+  }
+  eh.change['set-snapshot-delay'] = function(event, target)
+  {
+    var snapshot_delay = Number(event.target.value);
+    settings.snapshot.set('snapshot_delay', snapshot_delay);
   }
 };
 
@@ -611,6 +636,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
     {
       var eh = window.eventHandlers;
       eh.click["webgl-" + this.id + "-take-snapshot"] = this.on_take_snapshot.bind(this);
+      eh.click["webgl-" + this.id + "-take-custom-snapshot"] = this.on_take_custom_snapshot.bind(this);
 
       messages.addListener('webgl-changed-snapshot', this.on_snapshot_change.bind(this));
       messages.addListener('webgl-taking-snapshot', this.render.bind(this));
@@ -620,15 +646,48 @@ cls.WebGLSideView = Object.create(ViewBase, {
     value: function()
     {
       if (!this._container) return;
-
       var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
       if (ctx_id != null)
       {
-        window.webgl.request_snapshot(ctx_id);
+          window.webgl.request_snapshot(ctx_id);
       }
 
       if (this._on_take_snapshot) this._on_take_snapshot(ctx_id);
       this.render();
+    }
+  },
+  // TODO Many improvments possible, for example run the timeout on the 
+  // debuggee, add multiple frames snapshot, and show a countdown.
+  on_take_custom_snapshot: {
+    value: function()
+    {
+      if (!this._container) return;
+      var ctx_id =
+        window['cst-selects']['snapshot-select'].get_selected_context();
+      if (ctx_id === null) return;
+
+      var func = function()
+      {
+        this.on_take_snapshot();
+      }.bind(this);
+      var delay = window.settings.snapshot.get('snapshot_delay')*1000;
+      var count = window.settings.snapshot.get('snapshot_delay')-1;
+      
+      
+      var render_func = function()
+      {
+        if (count > 0)
+        {
+          this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(count--));
+        }
+        else
+        {
+          clearInterval(window.snapshot_timer);
+        }
+      }.bind(this);
+      
+      var snapshot_timer = setInterval(render_func, 1000);  
+      setTimeout(func, delay);
     }
   },
   on_snapshot_change: {
@@ -648,6 +707,11 @@ cls.WebGLSideView.create_ui_widgets = function(id)
       {
         handler: 'webgl-' + id + '-take-snapshot',
         title: "Take snapshot",
+        icon: 'webgl-take-snapshot'
+      },
+      {
+        handler: 'webgl-' + id + '-take-custom-snapshot',
+        title: "Take custom snapshot",
         icon: 'webgl-take-snapshot'
       }
     ],
