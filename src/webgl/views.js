@@ -629,7 +629,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       this.set_active_tab(tab);
 
-      tab.set_call(this._snapshot, this._call_index);
+      tab.set_call(this._snapshot, this._call_index, this._object);
     }
   },
   _createView: {
@@ -670,14 +670,15 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: null
   },
   display_call: {
-    value: function(snapshot, call_index)
+    value: function(snapshot, call_index, object)
     {
       this._snapshot = snapshot;
       this._call_index = call_index;
+      this._object = object;
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
       this.set_active_tab(this.tabs[0]);
-      this.active_tab.set_call(snapshot, call_index);
+      this.active_tab.set_call(snapshot, call_index, object);
 
       if (!this._container)
       {
@@ -692,7 +693,10 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   render: {
     value: function()
     {
-      var head = window.templates.webgl.call_header(this._call_index, this._call);
+      var head = this._call_index === -1 ?
+        window.templates.webgl.start_of_frame_header() :
+        window.templates.webgl.call_header(this._call_index, this._call);
+
       this._render_header(head);
 
       if (this.active_tab._container !== null)
@@ -872,9 +876,10 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   },
   set_call: {
     writable: true,
-    value: function(snapshot, call_index)
+    value: function(snapshot, call_index, object)
     {
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
+      this._object = object;
       this._draw_call = call_index === -1 ? null :
         snapshot.drawcalls.get_by_call(call_index);
       cls.WebGLTab.set_call.apply(this, arguments);

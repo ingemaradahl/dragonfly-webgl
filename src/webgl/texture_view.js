@@ -76,7 +76,8 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 {
   this.getTextureView = function()
   {
-    var texture = this._snapshot.trace[this._call_index].linked_object.texture;
+    var texture = this._call_index === -1 ? this._object :
+      this._snapshot.trace[this._call_index].linked_object.texture;
     texture.request_data();
     var level0 = texture.levels[0];
     var base_image;
@@ -98,8 +99,12 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 
   this.layoutAfter = function()
   {
-    var framebuffer = this._container.querySelector(".framebuffer").children[1];
-    var texture = this._container.querySelector(".texture-preview").children[1];
+    var framebuffer_item = this._container.querySelector(".framebuffer");
+    var texture_item = this._container.querySelector(".texture-preview");
+    if (!framebuffer_item || !texture_item) return;
+
+    var framebuffer = framebuffer_item.children[1];
+    var texture = texture_item.children[1];
 
     var height = framebuffer.offsetHeight;
     var width = framebuffer.offsetWidth;
@@ -116,9 +121,10 @@ cls.WebGLTextureCallSummaryTab.prototype = cls.WebGLSummaryTab;
 
 cls.WebGLFullTextureTab = function(id, name, container_class)
 {
-  this.set_call = function(snapshot, call_index)
+  this.set_call = function(snapshot, call_index, object)
   {
-    this._texture = snapshot.trace[call_index].linked_object.texture;
+    this._texture = call_index === -1 ? object :
+      snapshot.trace[call_index].linked_object.texture;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 
@@ -149,9 +155,11 @@ cls.WebGLFullTextureTab.prototype = cls.WebGLTab;
 
 cls.WebGLTextureHistoryTab = function(id, name, container_class)
 {
-  this.set_call = function(snapshot, call_index)
+  this.set_call = function(snapshot, call_index, object)
   {
-    this._history = snapshot.trace[call_index].linked_object.texture.history;
+    if (call_index !== -1)
+      object = snapshot.trace[call_index].linked_object.texture;
+    this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 

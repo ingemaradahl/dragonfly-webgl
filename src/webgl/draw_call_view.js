@@ -95,8 +95,12 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 
   this.layoutAfter = function()
   {
-    var framebuffer = this._container.querySelector(".framebuffer").children[1];
-    var buffer_preview = this._container.querySelector(".buffer-preview").children[1];
+    var framebuffer_item = this._container.querySelector(".framebuffer");
+    var buffer_item = this._container.querySelector(".buffer-preview");
+    if (!framebuffer_item || !buffer_item) return;
+
+    var framebuffer = framebuffer_item.children[1];
+    var buffer_preview = buffer_item.children[1];
 
     var height = framebuffer.offsetHeight - buffer_preview.children[0].offsetHeight;
     var width = framebuffer.offsetWidth;

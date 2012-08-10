@@ -387,8 +387,8 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
   this.getBufferView = function()
   {
-    var buffer_display = window.templates.webgl.drawcall_buffer(this._draw_call);
-    return {title: "Buffer", content: buffer_display, class: "buffer-preview"};
+    // TODO set content
+    return {title: "Buffer", content: [], class: "buffer-preview"};
   };
 
   this.getAdditionalPrimaryViews = function()
@@ -396,22 +396,14 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     return [this.getBufferView()];
   };
 
-  this.renderAfter = function()
-  {
-    if (window.webgl.gl)
-    {
-      var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
-      this._element_buffer = draw_call.element_buffer;
-      this._state = draw_call.parameters;
-      //render_preview();
-    }
-    cls.WebGLSummaryTab.renderAfter.call(this);
-  };
-
   this.layoutAfter = function()
   {
-    var framebuffer = this._container.querySelector(".framebuffer").children[1];
-    var buffer_preview = this._container.querySelector(".buffer-preview").children[1];
+    var framebuffer_item = this._container.querySelector(".framebuffer");
+    var buffer_item = this._container.querySelector(".buffer-preview");
+    if (!framebuffer_item || !buffer_item) return;
+
+    var framebuffer = framebuffer_item.children[1];
+    var buffer_preview = buffer_item.children[1];
 
     var height = framebuffer.offsetHeight - buffer_preview.children[0].offsetHeight;
     var width = framebuffer.offsetWidth;
@@ -428,9 +420,11 @@ cls.WebGLBufferCallSummaryTab.prototype = cls.WebGLSummaryTab;
 
 cls.WebGLBufferHistoryTab = function(id, name, container_class)
 {
-  this.set_call = function(snapshot, call_index)
+  this.set_call = function(snapshot, call_index, object)
   {
-    this._history = snapshot.trace[call_index].linked_object.buffer.history;
+    if (call_index !== -1)
+      object = snapshot.trace[call_index].linked_object.buffer;
+    this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 

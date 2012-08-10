@@ -858,32 +858,6 @@ window.templates.webgl.error_message = function(call)
   return result;
 };
 
-/**
- * @param {Array} template optional, should contain a html structure of other
- *   content that should be shown below the header.
- */
-window.templates.webgl.info_with_header = function(template)
-{
-  var header = [
-    "div", [
-      [
-        "h2", [
-          ["span", "Start of frame"],
-        ]
-      ]
-    ],
-    "class", "draw-call-info"
-  ];
-
-  var html = [header];
-  if (template)
-  {
-    html.push(template);
-  }
-
-  return html;
-};
-
 window.templates.webgl.tabs = function(tabs, active_tab)
 {
   var html = tabs.map(function(tab)
@@ -899,6 +873,21 @@ window.templates.webgl.tabs = function(tabs, active_tab)
   });
   html.push(["div"]);
   return html;
+};
+
+window.templates.webgl.start_of_frame_header = function(call, trace_call)
+{
+  var header = [
+    "div",
+    [
+      [
+        "h2", "Start of frame"
+      ]
+    ],
+    "class", "call-header"
+  ];
+
+  return header;
 };
 
 window.templates.webgl.call_header = function(call, trace_call)

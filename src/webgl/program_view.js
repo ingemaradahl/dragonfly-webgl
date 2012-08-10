@@ -64,9 +64,10 @@ cls.WebGLProgramCallView.prototype = cls.WebGLCallView;
 
 cls.WebGLProgramSummaryTab = function(id, name, container_class)
 {
-  this.set_call = function(snapshot, call_index)
+  this.set_call = function(snapshot, call_index, object)
   {
-    this._program = snapshot.trace[call_index].linked_object.program;
+    this._program = call_index === -1 ? object :
+      snapshot.trace[call_index].linked_object.program;
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
@@ -85,21 +86,6 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   this.getSecondaryViews = function()
   {
     return [this.getAttributeView(), this.getUniformView()];
-  };
-
-  this.renderAfter = function()
-  {
-    var template = window.templates.webgl.program(this._call_index, this._program);
-
-    sh_highlightDocument();
-
-    // If render has been called from a trace call hilight eventual uniform/attribute
-    if (this._call_index !== -1 && this._call_index !== null)
-    {
-      var uniattrib = this._call.linked_object.uniform || this._call.linked_object.attribute;
-      //if (uniattrib) hilight_uniform(uniattrib);
-    }
-    cls.WebGLSummaryTab.renderAfter.call(this);
   };
 
   this.init(id, name, container_class);
@@ -171,7 +157,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var program = snapshot.programs[item_id];
 
-    window.views.webgl_program_call._render(snapshot, null, program);
+    window.views.webgl_program_call.display_call(snapshot, -1, program);
   };
 
   this.tabledef = {
