@@ -434,10 +434,14 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
         // If the script is not loaded in DF then step out of the call.
         // This is to prevent to step into the injected WebGL rpcs code.
         // TODO only step out of the call when the script is the WebGL rpcs.
+        // This code is also used to contine to run when the exception is thrown
+        // in rpcs to get a stacktrace and the user have set the setting
+        // "Break when an exception is thrown"
         var script = window.runtimes.getScript(stopAt.script_id);
         if (!script)
         {
-          this.__continue("step-out-of-call");
+          var action = stopAt.stopped_reason == 'exception' ? "run" : "step-out-of-call";
+          this.__continue(action);
           return;
         }
 
