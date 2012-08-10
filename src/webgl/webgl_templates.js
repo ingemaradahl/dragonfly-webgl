@@ -393,15 +393,15 @@ window.templates.webgl.linked_object = function(obj, handler, data_name)
   return html;
 };
 
-window.templates.webgl.history = function(object)
+window.templates.webgl.history = function(history)
 {
-  if (object.history == null || object.history.length === 0) return [];
+  if (history == null || history.length === 0) return [];
   var arg_func = function(arg)
   {
     return arg.text;
   };
 
-  var row_func = function(call)
+  var call_to_row = function(call)
   {
     var content = [["span",call.function_name]];
     content.push(["span", "("]);
@@ -427,30 +427,43 @@ window.templates.webgl.history = function(object)
   };
 
   var his_list = [];
-  his_list.push(["tr", [["td", "Frame"], ["td", "Call"]]]);
-  if (object.history.create) his_list.push(row_func(object.history.create));
+  his_list.push([
+    "tr",
+    [
+      ["th", "Frame"],
+      ["th", "Call"]
+    ],
+    "class", "header"
+  ]);
+  if (history.create) his_list.push(call_to_row(history.create));
 
-  if (object.history.number > object.history.length)
+  if (history.number > history.length)
   {
-    var num = object.history.number - object.history.length;
-    his_list.push(["tr", [["td"], ["td", num + " calls omitted."]]]);
+    var num = history.number - history.length;
+    his_list.push([
+      "tr",
+      [
+        ["td"],
+        ["td", num + " calls omitted."]
+      ]
+    ]);
   }
 
-  var number = object.history.number % object.history.length;
-  for (var i = number; i < object.history.length; i++)
+  var number = history.number % history.length;
+  for (var i = number; i < history.length; i++)
   {
-    his_list.push(row_func(object.history[i]));
+    his_list.push(call_to_row(history[i]));
   }
   for (i = 0; i < number; i++)
   {
-    his_list.push(row_func(object.history[i]));
+    his_list.push(call_to_row(history[i]));
   }
 
   return [
     "div",
     [
-      ["h3", "History"],
-      ["table", his_list]
+      "table", his_list,
+      "class", "sortable-table"
     ]
   ];
 };
@@ -1168,7 +1181,6 @@ window.templates.webgl.attribute_table = function(call_index, program)
   ];
 
   return table;
-
 };
 
 window.templates.webgl.uniform_table = function(call_index, program)

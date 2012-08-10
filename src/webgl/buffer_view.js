@@ -11,7 +11,8 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
   this.set_tabs([
-    new cls.WebGLBufferCallSummaryTab("summary", "General", "")
+    new cls.WebGLBufferCallSummaryTab("summary", "General", ""),
+    new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
 
   var clear = function()
@@ -424,6 +425,20 @@ cls.WebGLBufferCallSummaryTab.prototype = cls.WebGLSummaryTab;
 
 // -----------------------------------------------------------------------------
 
+cls.WebGLBufferHistoryTab = function(id, name, container_class)
+{
+  this.set_call = function(snapshot, call_index)
+  {
+    this._history = snapshot.trace[call_index].linked_object.buffer.history;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLBufferHistoryTab.prototype = cls.WebGLHistoryTab;
+
+// -----------------------------------------------------------------------------
 /**
  * @constructor
  * @extends cls.WebGLSideView

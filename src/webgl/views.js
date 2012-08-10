@@ -1164,3 +1164,17 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     }
   }
 });
+
+cls.WebGLHistoryTab = Object.create(cls.WebGLTab, {
+  _history: {
+    writable: true, configurable: true,
+    value: null
+  },
+  render: {
+    value: function ()
+    {
+      var content = window.templates.webgl.history(this._history);
+      this._container.clearAndRender(content);
+    }
+  }
+});

@@ -11,7 +11,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
-    new cls.WebGLFullTextureTab("full-texture", "Texture", "")
+    new cls.WebGLFullTextureTab("full-texture", "Texture", ""),
+    new cls.WebGLTextureHistoryTab("texture-history", "History", "")
   ]);
 
   var on_texture_data = function(msg)
@@ -68,6 +69,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
 cls.WebGLTextureCallView.prototype = cls.WebGLCallView2;
 
+// ----------------------------------------------------------------------------
+
 cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 {
   this.getTextureView = function()
@@ -108,6 +111,8 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 
 cls.WebGLTextureCallSummaryTab.prototype = cls.WebGLSummaryTab;
 
+// ----------------------------------------------------------------------------
+
 cls.WebGLFullTextureTab = function(id, name, container_class)
 {
   this.set_call = function(snapshot, call_index)
@@ -138,6 +143,21 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
 };
 
 cls.WebGLFullTextureTab.prototype = cls.WebGLTab;
+
+// ----------------------------------------------------------------------------
+
+cls.WebGLTextureHistoryTab = function(id, name, container_class)
+{
+  this.set_call = function(snapshot, call_index)
+  {
+    this._history = snapshot.trace[call_index].linked_object.texture.history;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLTextureHistoryTab.prototype = cls.WebGLHistoryTab;
 
 // ----------------------------------------------------------------------------
 
