@@ -12,6 +12,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLBufferCallSummaryTab("summary", "General", ""),
+    new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
 
@@ -35,7 +36,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     var preview_help = document.getElementById("webgl-preview-help");
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
-    canvas_holder.appendChild(this._preview_container)
+    canvas_holder.appendChild(this._preview_container);
 
     this.onresize = window.webgl.preview.onresize.bind(window.webgl.preview);
     window.webgl.preview.set_info_container(this._preview_container);
@@ -56,7 +57,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       for (var i=0; i<this._snapshot.buffers.length; i++)
       {
         var buffer = this._snapshot.buffers[i];
-        if (buffer.target == gl.ELEMENT_ARRAY_BUFFER)
+        if (buffer.target === gl.ELEMENT_ARRAY_BUFFER)
           element_buffers.push(buffer);
       }
       element_buffers.push(null);
@@ -66,7 +67,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         modes: [gl.TRIANGLES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.LINES, gl.LINE_STRIP, gl.LINE_LOOP],
         element_types: [gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT],
         element_buffers: element_buffers
-      }
+      };
     }.bind(this);
 
     if (this._buffer.target === gl.ELEMENT_ARRAY_BUFFER)
@@ -167,7 +168,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     }
     else
     {
-      state.first = settings.start
+      state.first = settings.start;
     }
 
     var pointer = { buffer: this._buffer, layout: layout };
@@ -338,7 +339,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLBufferCallView.prototype = cls.WebGLCallView2;
+cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 
 // -----------------------------------------------------------------------------
 

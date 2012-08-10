@@ -11,6 +11,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
+    new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLFullTextureTab("full-texture", "Texture", ""),
     new cls.WebGLTextureHistoryTab("texture-history", "History", "")
   ]);
@@ -67,7 +68,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 
-cls.WebGLTextureCallView.prototype = cls.WebGLCallView2;
+cls.WebGLTextureCallView.prototype = cls.WebGLCallView;
 
 // ----------------------------------------------------------------------------
 

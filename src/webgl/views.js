@@ -189,133 +189,7 @@ cls.WebGLPreviewView.create_ui_widgets = function()
   };
 };
 
-/**
- * Base class for all call views.
- * @extends ViewBase
- */
-cls.WebGLCallView = Object.create(ViewBase, {
-  _container: {
-    writable: true,
-    value: null
-  },
-  _render_enabled: {
-    writable: true,
-    value: true
-  },
-  createView: {
-    writable: true, configurable: true,
-    value: function(container)
-    {
-      this._container = container;
-      if (this._render_enabled) this.render();
-      cls.WebGLCallView.active_view = this;
-    }
-  },
-  ondestroy: {
-    writable: true, configurable: true,
-    value: function()
-    {
-      this._container = null;
-      cls.WebGLCallView.active_view = null;
-    }
-  },
-  render: {
-    value: function()
-    {
-      if (!this._container)
-      {
-        this._render_enabled = false;
-        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
-      }
-      if (this._template)
-      {
-        this._container.clearAndRender(this._template);
-      }
-      else
-      {
-        this._container.clearAndRender(["div", "Take a snapshot and then select a call, buffer or texture."]);
-      }
-    }
-  },
-  display_call: {
-    value: function(snapshot, call_index)
-    {
-      if (!this._container)
-      {
-        this._render_enabled = false;
-        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
-      }
-
-      this._snapshot = snapshot;
-      this._call_index = call_index;
-
-      this._render.apply(this, arguments);
-    }
-  },
-  render_with_header: {
-    value: function(snapshot, call_index, primary, secondary)
-    {
-      var template;
-      if (call_index === -1)
-      {
-        template = window.templates.webgl.info_with_header(primary, secondary);
-      }
-      else
-      {
-        var trace = snapshot.trace[call_index];
-        var state_parameters = snapshot.state.get_function_parameters(trace.function_name, call_index, true);
-        template = window.templates.webgl.call_with_header(call_index, trace, state_parameters, primary, secondary);
-      }
-      this._template = template;
-
-      this._container.clearAndRender(template);
-    }
-  },
-  show_full_state_table: {
-    value: function()
-    {
-      var parameters = this._snapshot.state.get_all_parameters(this._call_index, true);
-      var data = [];
-      for (var key in parameters)
-      {
-        if (!parameters.hasOwnProperty(key)) continue;
-        var param = parameters[key];
-        data.push({
-          parameter: String(key),
-          value: window.templates.webgl.state_parameter(key, param)
-        });
-      }
-      this._state_table.set_data(data);
-    }
-  },
-  toggle_state_list: {
-    value: function()
-    {
-      if (!this._container) return;
-      this._full_state = !this._full_state;
-
-      var state_container = document.getElementById("webgl-state-table-container");
-      if (this._full_state)
-      {
-        this.show_full_state_table();
-        state_container.clearAndRender(this._state_table.render());
-      }
-      else
-      {
-        var trace = this._snapshot.trace[this._call_index];
-        var state_parameters = this._snapshot.state.get_function_parameters(trace.function_name, this._call_index, true);
-        var state = window.templates.webgl.state_parameters(state_parameters);
-        state_container.clearAndRender(state);
-      }
-
-      var state_toggle = document.getElementById("webgl-state-table-text");
-      state_toggle.textContent = "Show " + (this._full_state ? "a selection of" : "all") + " parameters";
-    }
-  }
-});
-
+// ----------------------------------------------------------------------------
 
 cls.WebGLSnapshotSelect = function(id)
 {
@@ -499,7 +373,7 @@ cls.WebGLSnapshotSelect = function(id)
 
 cls.WebGLSnapshotSelect.prototype = new CstSelect();
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 cls.WebGLSideView = Object.create(ViewBase, {
   _container: {
@@ -603,7 +477,7 @@ cls.WebGLSideView.create_ui_widgets = function(id)
   );
 };
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 /**
  * @extends ViewBase
@@ -697,10 +571,12 @@ cls.WebGLContentView = Object.create(ViewBase, {
   }
 });
 
+// ----------------------------------------------------------------------------
+
 /**
  * @extends cls.WebGLContentView
  */
-cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
+cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   active_tab: {
     writable: true,
     value: null
@@ -837,28 +713,6 @@ cls.WebGLCallView2 = Object.create(cls.WebGLContentView, {
 // Add listeners and methods for call view events.
 cls.WebGLCallView.initialize = function()
 {
-  var tabledef = {
-    handler: "webgl-state-table",
-    column_order: ["parameter", "value"],
-    columns: {
-      parameter: {
-        label: "Parameter"
-      },
-      value: {
-        label: "Value"
-      }
-    },
-    groups: {
-      type: {
-        label: "Parameter type", // TODO
-        // TODO use the parameter groups
-        grouper : function (res) { return Math.round(Math.random() * 5); },
-      }
-    }
-  };
-
-  this._state_table = new SortableTable(tabledef, null, ["parameter", "value"], null, null, false, "state-table");
-
   var on_goto_script_click = function(evt, target)
   {
     var line = parseInt(target.getAttribute("data-line"));
@@ -878,15 +732,6 @@ cls.WebGLCallView.initialize = function()
     window.open(target.getAttribute("function_name"));
   };
 
-  var on_toggle_state_list = function(evt, target)
-  {
-    var view = cls.WebGLCallView.active_view;
-    if (view)
-    {
-      view.toggle_state_list();
-    }
-  };
-
   var tab_handler = function(evt, target)
   {
     var tab_id = target.id;
@@ -896,9 +741,10 @@ cls.WebGLCallView.initialize = function()
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
-  eh.click["webgl-toggle-state-list"] = on_toggle_state_list;
   eh.click["webgl-tab"] = tab_handler.bind(this);
 };
+
+// ----------------------------------------------------------------------------
 
 /**
  * @extends ViewBase
@@ -944,6 +790,8 @@ cls.WebGLTab = Object.create(ViewBase, {
     }
   }
 });
+
+// ----------------------------------------------------------------------------
 
 /**
  * @extends cls.WebGLTab
@@ -1165,6 +1013,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   }
 });
 
+// ----------------------------------------------------------------------------
+
 cls.WebGLHistoryTab = Object.create(cls.WebGLTab, {
   _history: {
     writable: true, configurable: true,
@@ -1178,3 +1028,57 @@ cls.WebGLHistoryTab = Object.create(cls.WebGLTab, {
     }
   }
 });
+
+// ----------------------------------------------------------------------------
+
+cls.WebGLStateTab = function (id, name, container_class)
+{
+  this.render = function ()
+  {
+    var parameters = this._snapshot.state.get_all_parameters(this._call_index, true);
+    var data = [];
+
+    for (var key in parameters)
+    {
+      if (!parameters.hasOwnProperty(key)) continue;
+      var param = parameters[key];
+      data.push({
+        parameter: String(key),
+        value: window.templates.webgl.state_parameter(key, param)
+      });
+    }
+
+    var table = cls.WebGLStateTab._state_table;
+    table.set_data(data);
+    this._container.clearAndRender(table.render());
+  };
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLStateTab.prototype = cls.WebGLTab;
+
+cls.WebGLStateTab.initialize = function ()
+{
+  var tabledef = {
+    handler: "webgl-state-table",
+    column_order: ["parameter", "value"],
+    columns: {
+      parameter: {
+        label: "Parameter"
+      },
+      value: {
+        label: "Value"
+      }
+    },
+    groups: {
+      type: {
+        label: "Parameter type", // TODO
+        // TODO use the parameter groups
+        grouper : function (res) { return Math.round(Math.random() * 5); },
+      }
+    }
+  };
+
+  this._state_table = new SortableTable(tabledef, null, ["parameter", "value"], null, null, false, "state-table");
+};

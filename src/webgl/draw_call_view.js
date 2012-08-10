@@ -10,12 +10,13 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLDrawCallView = function(id, name, container_class)
 {
   this.set_tabs([
-    new cls.WebGLDrawCallSummaryTab("summary", "Summary", "")
+    new cls.WebGLDrawCallSummaryTab("summary", "Summary", ""),
+    new cls.WebGLStateTab("state", "State", "")
   ]);
 
   this.init(id, name, container_class);
 };
-cls.WebGLDrawCallView.prototype = cls.WebGLCallView2;
+cls.WebGLDrawCallView.prototype = cls.WebGLCallView;
 
 cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 {

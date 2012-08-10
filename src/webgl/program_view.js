@@ -53,13 +53,14 @@ cls.WebGLProgramCallView = function(id, name, container_class)
   };
 
   this.set_tabs([
-    new cls.WebGLProgramSummaryTab("summary", "Summary", "")
+    new cls.WebGLProgramSummaryTab("summary", "Summary", ""),
+    new cls.WebGLStateTab("state", "State", "")
   ]);
 
   this.init(id, name, container_class);
 };
 
-cls.WebGLProgramCallView.prototype = cls.WebGLCallView2;
+cls.WebGLProgramCallView.prototype = cls.WebGLCallView;
 
 cls.WebGLProgramSummaryTab = function(id, name, container_class)
 {

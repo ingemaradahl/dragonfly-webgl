@@ -246,6 +246,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     // Initialize some listeners and corresponding methods for call views.
     cls.WebGLCallView.initialize();
+    cls.WebGLStateTab.initialize();
 
     cls.WebGLSnapshotSelect.prototype = new CstSelect();
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
