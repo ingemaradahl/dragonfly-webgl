@@ -17,10 +17,22 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     'stack-trace'
   ];
 
+  var on_change_stacktrace = function (enabled)
+  {
+    if (enabled)
+    {
+      /* When this option is enabled, there is no use in having the "break on
+       * exceptions" option set, as it will break for every call that webgl
+       * does..
+       */
+      window.settings['js_source'].set('error', false);
+    }
+  };
+
   new Settings
   (
     // id
-    'snapshot',
+    'webgl-snapshot',
     // key-value map
     {
       'fbo-readpixels' : true,
@@ -63,15 +75,18 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
         ] );
       }
     },
-    "webgl"
+    "webgl",
+    {
+      'stack-trace': on_change_stacktrace.bind(this)
+    }
   );
 
   var eh = window.eventHandlers;
   eh.change['set-history-size'] = function(event, target)
   {
     var history_size = Number(event.target.value);
-    settings.snapshot.set('history_length', history_size);
-  }
+    settings['webgl-snapshot'].set('history_length', history_size);
+  };
 };
 
 /* General settings view */

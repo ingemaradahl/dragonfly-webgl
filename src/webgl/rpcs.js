@@ -1079,6 +1079,12 @@ cls.WebGL.RPCs.injection = function () {
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
 
+    this.set_settings = function(settings)
+    {
+      this.settings = settings;
+    };
+    this._interface.set_settings = this.set_settings.bind(this);
+
     var generic_lookup_index = function(list, subkey)
     {
       return function(value)
