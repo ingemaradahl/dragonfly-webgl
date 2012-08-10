@@ -415,7 +415,8 @@ window.templates.webgl.history = function(object)
       content.push(html);
     }
     content.push(["span", ")"]);
-    window.templates.webgl.goto_script(call.loc, content[0]);
+    if (call.loc)
+      window.templates.webgl.goto_script(call.loc, content[0]);
 
     return [
       "tr",
@@ -932,7 +933,8 @@ window.templates.webgl.call_with_header = function(call, trace_call, state_param
     function_arguments.push(html);
   }
 
-  window.templates.webgl.goto_script(trace_call.loc, function_name);
+  if (trace_call.loc)
+    window.templates.webgl.goto_script(trace_call.loc, function_name);
 
   var state = window.templates.webgl.state_parameters(state_parameters);
   state = [
