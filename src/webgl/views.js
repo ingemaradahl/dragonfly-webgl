@@ -38,7 +38,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
       'fbo-readpixels' : true,
       'stack-trace' : false,
       'history_length' : 4,
-      'snapshot_delay' : 0
+      'snapshot_delay' : 4
     },
     // key-label map
     {
@@ -106,12 +106,13 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
   {
     var history_size = Number(event.target.value);
     settings['webgl-snapshot'].set('history_length', history_size);
-  };
+  }
+
   eh.change['set-snapshot-delay'] = function(event, target)
   {
     var snapshot_delay = Number(event.target.value);
     settings['webgl-snapshot'].set('snapshot_delay', snapshot_delay);
-  };
+  }
 };
 
 /* General settings view */
@@ -718,8 +719,8 @@ cls.WebGLSideView = Object.create(ViewBase, {
       this.render();
     }
   },
-  // TODO Many improvments possible, for example run the timeout on the 
-  // debuggee, add multiple frames snapshot, and show a countdown.
+   //TODO Many improvments possible, for example run the timeout on the 
+   // debuggee, add multiple frames snapshot, etc.
   on_take_custom_snapshot: {
     value: function()
     {
@@ -732,10 +733,13 @@ cls.WebGLSideView = Object.create(ViewBase, {
       {
         this.on_take_snapshot();
       }.bind(this);
-      var delay = window.settings.snapshot.get('snapshot_delay')*1000;
-      var count = window.settings.snapshot.get('snapshot_delay')-1;
-      
-      
+      var delay = window.settings['webgl-snapshot'].get('snapshot_delay')*1000;
+      var count = window.settings['webgl-snapshot'].get('snapshot_delay')-1;
+      if (count < 0)
+      {
+        count = 0;
+      }
+      var snapshot_timer; 
       var render_func = function()
       {
         if (count > 0)
@@ -744,11 +748,11 @@ cls.WebGLSideView = Object.create(ViewBase, {
         }
         else
         {
-          clearInterval(window.snapshot_timer);
+          clearInterval(snapshot_timer);
         }
       }.bind(this);
       
-      var snapshot_timer = setInterval(render_func, 1000);  
+      snapshot_timer = setInterval(render_func, 1000);  
       setTimeout(func, delay);
     }
   },
