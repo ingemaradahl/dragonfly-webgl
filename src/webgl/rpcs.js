@@ -1359,10 +1359,7 @@ cls.WebGL.RPCs.injection = function () {
             params[param] = gl.getParameter(gl[param]);
           }
         }
-
       }
-
-      // TODO possibly format the params, otherwise do it in DF
 
       return params;
     };

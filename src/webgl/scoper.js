@@ -6,7 +6,8 @@ window.cls || (window.cls = {});
  * Class that handles communication with Scope. Gives easy control of examination
  * of objects and takes care of the releasing of them as well. The default behavior
  * is to examine recursively until there is nothing more to examine or a certain depth have been found.
- * TODO if the same object is requested from multiple places only the last place will it be stored.
+ * TODO if the same object is requested from multiple levels of depth then the
+ * object can not be released until the last level.
  */
 cls.Scoper = function(callback, callback_that, callback_arguments)
 {
