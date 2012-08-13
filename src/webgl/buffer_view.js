@@ -12,6 +12,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLBufferCallSummaryTab("summary", "General", ""),
+    new cls.WebGLBufferPreviewTab("preview", "Visual", ""),
     new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
@@ -21,8 +22,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._buffer = null;
     this._buffer_layouts = {};
     this._inputbox_hidden = true;
-
-    this._buffer_settings = null;
   }.bind(this);
 
   clear();
@@ -282,34 +281,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     }
   };
 
-  var on_settings_change = function(event, target)
-  {
-    var setting = target.getAttribute('setting');
-    switch (setting)
-    {
-      case "offset":
-      case "stride":
-      case "size":
-      case "start":
-      case "count":
-        var value = Number(target.value);
-        this._buffer_settings[setting] = value;
-        break;
-      case "type":
-      case "mode":
-      case "element-type":
-        var value = Number(target.options[target.selectedIndex].value);
-        this._buffer_settings[setting] = value;
-        break;
-      case "element-array":
-        var buffer = target.options[target.selectedIndex].buffer;
-        this._buffer_settings['element-array'] = buffer;
-        break;
-    }
-
-    this.set_preview();
-  };
-
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   messages.addListener('webgl-clear', clear);
 
@@ -317,8 +288,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
-
-  eh.change["webgl-buffer-settings"] = on_settings_change.bind(this);
 
   this.init(id, name, container_class);
 };
@@ -367,7 +336,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
     var settings = buffer_call.build_settings(this._buffer, this._snapshot, this._call_index);
     buffer_call.set_preview(this._buffer, settings);
-    
+
     cls.WebGLSummaryTab.renderAfter.call(this);
   };
 
@@ -407,6 +376,69 @@ cls.WebGLBufferHistoryTab = function(id, name, container_class)
 };
 
 cls.WebGLBufferHistoryTab.prototype = cls.WebGLHistoryTab;
+
+// -----------------------------------------------------------------------------
+
+cls.WebGLBufferPreviewTab = function(id, name, container_class)
+{
+  this.set_call = function(snapshot, call_index)
+  {
+    var buffer_call = window.views.webgl_buffer_call;
+
+    this._buffer = snapshot.trace[call_index].linked_object.buffer;
+    this._settings = buffer_call.build_settings(this._buffer, snapshot, call_index);
+
+    this._buffer.request_data();
+
+    cls.WebGLSummaryTab.set_call.apply(this, arguments);
+  };
+
+  this.render = function()
+  {
+    var buffer_call = window.views.webgl_buffer_call;
+
+    var template = window.templates.webgl.buffer_preview(this._settings);
+    this._container.clearAndRender(template);
+
+    window.webgl.preview.add_canvas();
+    buffer_call.set_preview(this._buffer, this._settings);
+  };
+
+  var on_settings_change = function(event, target)
+  {
+    var setting = target.getAttribute('setting');
+    switch (setting)
+    {
+      case "offset":
+      case "stride":
+      case "size":
+      case "start":
+      case "count":
+        var value = Number(target.value);
+        this._settings[setting] = value;
+        break;
+      case "type":
+      case "mode":
+      case "element-type":
+        var value = Number(target.options[target.selectedIndex].value);
+        this._settings[setting] = value;
+        break;
+      case "element-array":
+        var buffer = target.options[target.selectedIndex].buffer;
+        this._settings['element-array'] = buffer;
+        break;
+    }
+
+    window.views.webgl_buffer_call.set_preview(this._buffer, this._settings);
+  };
+
+  var eh = window.eventHandlers;
+  eh.change["webgl-buffer-settings"] = on_settings_change.bind(this);
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLBufferPreviewTab.prototype = cls.WebGLTab;
 
 // -----------------------------------------------------------------------------
 /**
