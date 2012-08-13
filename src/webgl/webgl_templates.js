@@ -620,6 +620,14 @@ window.templates.webgl.texture_info = function(texture)
     name: "Border",
     value: String(level0.border)
   };
+  var url = !level0 || !level0.url ? null : {
+    name: "Source",
+    value: level0.url
+  };
+  var dimensions =  !level0 || !level0.height || !level0.width ? null : {
+    name: "Dimensions",
+    value: level0.width + "px * " + level0.height + "px",
+  };
   
   var build_info_row = function(info)
   {
@@ -639,6 +647,8 @@ window.templates.webgl.texture_info = function(texture)
   };
 
   var texture_info = [
+    url,
+    dimensions,
     {
       name: "Format",
       value: const_to_string(texture.format)
