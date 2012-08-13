@@ -19,9 +19,11 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   var on_texture_data = function(msg)
   {
     var texture = msg.texture;
-    if (this._container && this._texture === texture)
+    var call_texture = this._object == null ?
+      this._call.linked_object.texture : this._object;
+    if (this._body && call_texture === texture)
     {
-      this.active_tab.render(this._snapshot, this._call_index);
+      this.active_tab.render();
     }
   };
 
