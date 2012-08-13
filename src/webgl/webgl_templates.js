@@ -569,8 +569,16 @@ window.templates.webgl.framebuffer_image = function (framebuffer)
       ];
     case "draw":
       return window.templates.webgl.image(framebuffer.image);
-      break;
   }
+};
+
+window.templates.webgl.image_container = function(image)
+{
+  return [
+    "div",
+    image,
+    "class", "thumbnail"
+  ];
 };
 
 window.templates.webgl.image = function(level)
@@ -582,7 +590,7 @@ window.templates.webgl.image = function(level)
   }
   else if (level.img.data)
   {
-    var img = [
+    image = [
       "img",
       "src", level.img.data,
       "handler", "webgl-texture-image"
@@ -593,12 +601,7 @@ window.templates.webgl.image = function(level)
       classes.push("flipped");
     }
 
-    img.push("class", classes.join(" "));
-    image = [
-      "div",
-      img,
-      "class", "texture-container fit"
-    ];
+    image.push("class", classes.join(" "));
   }
   else
   {
@@ -620,7 +623,7 @@ window.templates.webgl.texture_info = function(texture)
     name: "Border",
     value: String(level0.border)
   };
-  
+
   var build_info_row = function(info)
   {
     return info == null ? [] : [
@@ -669,9 +672,9 @@ window.templates.webgl.texture_info = function(texture)
       value: const_to_string(texture.texture_mag_filter)
     }
   ];
-  
+
   var info_table_rows = texture_info.map(build_info_row);
-  
+
   var info_table = [
     "table",
     info_table_rows,
@@ -1062,6 +1065,7 @@ window.templates.webgl.summary = function(primary, secondary)
 
 window.templates.webgl.summary_view = function(item)
 {
+  if (item == null) return [];
   var header = [
     "h3",
     item.title
@@ -1402,7 +1406,7 @@ window.templates.webgl.uniform_tooltip = function(value)
   var cols = [];
   var table = ["table"];
   var dim = Math.sqrt(value.length);
-  
+
   for (var i=0; i<dim; i++)
   {
     row = ["tr"];
@@ -1418,7 +1422,7 @@ window.templates.webgl.uniform_tooltip = function(value)
   }
 
   html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
-  
+
   return html;
 };
 
