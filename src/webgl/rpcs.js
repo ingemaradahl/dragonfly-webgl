@@ -125,14 +125,17 @@ cls.WebGL.RPCs.injection = function () {
 
         if (handler.capturing_frame || history_function)
         {
-          var loc;
-          try
+          var loc = null;
+          if (handler.settings['stack-trace'])
           {
-            cause_error += 1;
-          }
-          catch (e)
-          {
-            loc = analyse_stacktrace(e.stacktrace);
+            try
+            {
+              throw new Error();
+            }
+            catch (e)
+            {
+              loc = analyse_stacktrace(e.stacktrace);
+            }
           }
 
           if (handler.capturing_frame)
@@ -140,7 +143,7 @@ cls.WebGL.RPCs.injection = function () {
             handler.snapshot.add_call(function_name, error, arguments, result, redundant, loc);
 
             var snapshot_function = snapshot_functions[function_name];
-            if (snapshot_function)
+            if (snapshot_function && error === gl.NO_ERROR)
             {
               snapshot_function.call(handler, result, arguments, redundant);
             }
@@ -171,6 +174,16 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     var innerFuns = {};
+    innerFuns.createFramebuffer = function(result, args)
+    {
+      var frame_buffer = { framebuffer : result };
+      frame_buffer.index = this.framebuffers.push(frame_buffer) - 1;
+    };
+    innerFuns.deleteFramebuffer = function(result, args)
+    {
+      var framebuffer = this.lookup_framebuffer(args[0]);
+      delete this.framebuffers[framebuffer.index];
+    };
     innerFuns.bindFramebuffer = function(result, args)
     {
       //var target = args[0];
@@ -726,7 +739,7 @@ cls.WebGL.RPCs.injection = function () {
         var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
         var program_index = this.lookup_program(program).index;
 
-        this.snapshot.add_drawcall(img, target, buffer.index, program_index);
+        this.snapshot.add_drawcall(img, target, buffer.index, program_index, this.lookup_framebuffer(fbo));
 
         // Check whether an color attachment texture have been drawn to
         if (fbo)
@@ -754,6 +767,20 @@ cls.WebGL.RPCs.injection = function () {
 
     snapshot_functions.drawArrays = draw_call("drawArrays");
     snapshot_functions.drawElements = draw_call("drawElements");
+
+    snapshot_functions.clear = function (result, args)
+    {
+      var gl = this.gl;
+
+      var fbo = this.lookup_framebuffer(gl.getParameter(gl.FRAMEBUFFER_BINDING));
+
+      var viewport = gl.getParameter(gl.VIEWPORT);
+
+      var clear_color = gl.getParameter(gl.COLOR_CLEAR_VALUE);
+      var framebuffer = { width: viewport[2], height: viewport[3], color: clear_color };
+
+      this.snapshot.add_framebuffer(fbo, framebuffer, "clear");
+    };
 
     snapshot_functions.createBuffer = function (result, args)
     {
@@ -990,6 +1017,7 @@ cls.WebGL.RPCs.injection = function () {
   function Handler(context, gl, canvas, settings)
   {
     this.gl = gl;
+    this.canvas = canvas;
     this.context = context;
     this.settings = settings;
 
@@ -1001,6 +1029,7 @@ cls.WebGL.RPCs.injection = function () {
     this.snapshot = null;
 
     this.framebuffer_binding = null;
+    this.framebuffers = [{ index: 0, framebuffer: null }];
 
     this.programs = [];
     this.shaders = [];
@@ -1011,6 +1040,7 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers.number_snapshot = 0;
     this.deleted_buffers = [];
     this.buffer_binding = {};
+
 
     this.textures = [];
     this.textures.number = 0;
@@ -1025,6 +1055,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.get_interface = function ()
     {
+      this._interface.canvas = this.canvas;
       return this._interface;
     };
 
@@ -1047,6 +1078,12 @@ cls.WebGL.RPCs.injection = function () {
       }
     };
     this._interface.debugger_ready = this.debugger_ready.bind(this);
+
+    this.set_settings = function(settings)
+    {
+      this.settings = settings;
+    };
+    this._interface.set_settings = this.set_settings.bind(this);
 
     var generic_lookup_index = function(list, subkey)
     {
@@ -1080,6 +1117,8 @@ cls.WebGL.RPCs.injection = function () {
     this.lookup_deleted_texture = generic_lookup(this.deleted_textures, "texture");
 
     this.lookup_program = generic_lookup(this.programs, "program");
+
+    this.lookup_framebuffer = generic_lookup(this.framebuffers, "framebuffer");
 
     this.lookup_shader = generic_lookup(this.shaders, "shader");
 
@@ -1320,10 +1359,7 @@ cls.WebGL.RPCs.injection = function () {
             params[param] = gl.getParameter(gl[param]);
           }
         }
-
       }
-
-      // TODO possibly format the params, otherwise do it in DF
 
       return params;
     };
@@ -1416,6 +1452,11 @@ cls.WebGL.RPCs.injection = function () {
         if (texture == null) return arg;
         arg.texture_index = texture.index;
       }
+      else if (obj instanceof WebGLFramebuffer)
+      {
+        var framebuffer = this.lookup_framebuffer(obj);
+        arg.framebuffer_index = framebuffer.index;
+      }
       return arg;
     };
   }
@@ -1474,6 +1515,7 @@ cls.WebGL.RPCs.injection = function () {
     this.buffers = [];
     this.programs = [];
     this.textures = [];
+    this.framebuffers = [];
 
     function clone_history(history)
     {
@@ -1522,9 +1564,19 @@ cls.WebGL.RPCs.injection = function () {
         }
       }.bind(this);
 
+      var init_framebuffers = function ()
+      {
+        for(var i=0; i<h.framebuffers.length; i++)
+        {
+          // Add initial content to framebuffers
+          this.add_framebuffer(h.framebuffers[i], {}, "init");
+        }
+      }.bind(this);
+
       init_buffers();
       init_programs();
       init_state();
+      init_framebuffers();
 
       // Init textures
       this.handler.textures.forEach(this.add_texture, this);
@@ -1594,25 +1646,37 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index = this.calls.push([function_name, error, res, Boolean(redundant)].concat(call_args).join("|")) - 1;
     };
 
-    this.add_drawcall = function (fbo, buffer_target, buffer_index, program_index)
+    this.add_drawcall = function (img, buffer_target, buffer_index, program_index, framebuffer)
     {
-      // Wrap up the image data in another object to make sure that scoper
-      // doesn't examine it.
-      var img = {
-        width : fbo.width,
-        height : fbo.height,
-      };
-
-      if (fbo.data)
-      {
-        img.img = { data: fbo.data, flipped: fbo.flipped }
-      }
-
       this.drawcalls.push({
         call_index : this.call_index,
-        fbo : img,
+        framebuffer_index : framebuffer.index,
         program_index : program_index,
         element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
+      });
+
+      // Wrap up the image data in another object to make sure that scoper
+      // doesn't examine it.
+      var image = {
+        width : img.width,
+        height : img.height,
+      };
+
+      if (img.data)
+      {
+        image.img = { data: img.data, flipped: img.flipped }
+      }
+
+      this.add_framebuffer(framebuffer, image, "draw");
+    };
+
+    this.add_framebuffer = function (framebuffer, image, type)
+    {
+      this.framebuffers.push({
+        call_index : this.call_index,
+        type : type,
+        index : framebuffer.index,
+        image : image
       });
     };
 
@@ -1858,7 +1922,8 @@ cls.WebGL.RPCs.injection = function () {
         buffers : this.buffers,
         programs : this.programs,
         textures : this.textures,
-        drawcalls : this.drawcalls
+        drawcalls : this.drawcalls,
+        framebuffers : this.framebuffers
       };
     };
 

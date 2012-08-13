@@ -13,31 +13,48 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 {
   var checkboxes =
   [
-    'fbo-readpixels'
+    'fbo-readpixels',
+    'stack-trace'
   ];
+
+  var on_change_stacktrace = function (enabled)
+  {
+    if (enabled)
+    {
+      /* When this option is enabled, there is no use in having the "break on
+       * exceptions" option set, as it will break for every call that webgl
+       * does..
+       */
+      window.settings['js_source'].set('error', false);
+    }
+  };
 
   new Settings
   (
     // id
-    'snapshot',
+    'webgl-snapshot',
     // key-value map
     {
       'fbo-readpixels' : true,
-      'history_length' : 4
+      'stack-trace' : false,
+      'history_length' : 4,
+      'snapshot_delay' : 4
     },
     // key-label map
     {
       'history-length': "Object history length",
-      'fbo-readpixels': "Read pixels from framebuffer after draw calls"
-
+      'fbo-readpixels': "Read pixels from framebuffer after draw calls",
+      'snapshot-delay': "Set a timer for taking snapshots",
+      'stack-trace': "Get WebGL call reference"
     },
     // settings map
     {
       checkboxes: checkboxes,
       customSettings:
       [
-        'history_length'
-      ]
+        'history_length',
+        'snapshot_delay'
+      ],
     },
     // template
     {
@@ -58,17 +75,44 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
             ]
           ]
         ] );
+      },
+      'snapshot_delay':
+      function(setting)
+      {
+        return (
+        [
+          'setting-composite',
+          ['label',
+            setting.label_map['snapshot-delay'] + ': ',
+            ['input',
+              'type', 'number',
+              'handler', 'set-snapshot-delay',
+              'max', '60',
+              'min', '0',
+              'value', setting.get('snapshot_delay')
+            ]
+          ]
+        ] );
       }
     },
-    "webgl"
+    "webgl",
+    {
+      'stack-trace': on_change_stacktrace.bind(this)
+    }
   );
 
   var eh = window.eventHandlers;
   eh.change['set-history-size'] = function(event, target)
   {
     var history_size = Number(event.target.value);
-    settings.snapshot.set('history_length', history_size);
+    settings['webgl-snapshot'].set('history_length', history_size);
   };
+
+  eh.change['set-snapshot-delay'] = function(event, target)
+  {
+    var snapshot_delay = Number(event.target.value);
+    settings['webgl-snapshot'].set('snapshot_delay', snapshot_delay);
+  }
 };
 
 /* General settings view */
@@ -197,6 +241,7 @@ cls.WebGLSnapshotSelect = function(id)
   this.disabled = true;
   this._selected_snapshot_index = null;
   this._selected_context_id = null;
+  this._highlighting = null;
 
   this.getSelectedOptionText = function()
   {
@@ -252,7 +297,7 @@ cls.WebGLSnapshotSelect = function(id)
 
   this.templateOptionList = function(select_obj)
   {
-    var ret = [];
+    var ret = ["div"];
     var snapshots = select_obj._snapshot_list;
 
     var contexts = window.webgl.contexts;
@@ -264,6 +309,7 @@ cls.WebGLSnapshotSelect = function(id)
       ret.push([
         "cst-webgl-title",
         "WebGLContext #" + i,
+        "context-id", context_id,
         "class", "js-dd-dir-path"
       ]);
 
@@ -287,16 +333,17 @@ cls.WebGLSnapshotSelect = function(id)
         "cst-option",
         "Take snapshot",
         "context-id", context_id,
-        "take-snapshot", true
+        "take-snapshot", true,
       ]);
     }
+
+    ret.push("handler", "webgl-select-context");
 
     return ret;
   };
 
   this.checkChange = function(target_ele)
   {
-    // TODO The context should also be highlighted on the debuggee
     var context_id = target_ele['context-id'];
     var snapshot_index = target_ele['snapshot-index'];
     var take_snapshot = target_ele['take-snapshot'];
@@ -306,6 +353,7 @@ cls.WebGLSnapshotSelect = function(id)
       window.webgl.request_snapshot(context_id);
       this._selected_context_id = context_id;
       this._selected_snapshot_index = null;
+      clear_spotlight();
       return false;
     }
     else if (snapshot_index != null && this._selected_snapshot_index !== snapshot_index)
@@ -313,6 +361,7 @@ cls.WebGLSnapshotSelect = function(id)
       this._selected_context_id = context_id;
       this._selected_snapshot_index = snapshot_index;
       messages.post('webgl-changed-snapshot', window.webgl.snapshots[context_id][snapshot_index]);
+      clear_spotlight();
       return true;
     }
     return false;
@@ -356,6 +405,7 @@ cls.WebGLSnapshotSelect = function(id)
   {
     this._selected_snapshot_index = null;
     this._selected_context_id = null;
+    clear_spotlight();
 
     if (!this.disabled)
     {
@@ -363,6 +413,44 @@ cls.WebGLSnapshotSelect = function(id)
       refresh_tab();
     }
   };
+
+  var clear_spotlight = function()
+  {
+    if (this._highlighting)
+    {
+      window.hostspotlighter.soft_spotlight(0);
+      this._highlighting = null;
+    }
+  }.bind(this);
+
+
+
+
+  var on_mouseover = function(event, target)
+  {
+    var option = event.target.get_ancestor("cst-option") || event.target.get_ancestor("cst-webgl-title");
+
+    if (option)
+    {
+      var context_id = option['context-id'];
+      var canvas_id = window.webgl.interfaces[context_id].canvas.object_id;
+      if (canvas_id !== this._highlighting)
+      {
+        window.hostspotlighter.soft_spotlight(canvas_id);
+        this._highlighting = canvas_id;
+      }
+
+    }
+  };
+
+  var on_mouseout = function(event, target)
+  {
+    clear_spotlight();
+  };
+
+  var eh = window.eventHandlers;
+  eh.mouseover["webgl-select-context"] = on_mouseover.bind(this);
+  eh.mouseout["webgl-select-context"] = on_mouseout.bind(this);
 
   messages.addListener('webgl-new-context', on_new_context.bind(this));
   messages.addListener('webgl-new-snapshot', on_new_snapshot.bind(this));
@@ -423,6 +511,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
     {
       var eh = window.eventHandlers;
       eh.click["webgl-" + this.id + "-take-snapshot"] = this.on_take_snapshot.bind(this);
+      eh.click["webgl-" + this.id + "-take-custom-snapshot"] = this.on_take_custom_snapshot.bind(this);
 
       messages.addListener('webgl-changed-snapshot', this.on_snapshot_change.bind(this));
       messages.addListener('webgl-taking-snapshot', this.render.bind(this));
@@ -432,15 +521,51 @@ cls.WebGLSideView = Object.create(ViewBase, {
     value: function()
     {
       if (!this._container) return;
-
       var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
       if (ctx_id != null)
       {
-        window.webgl.request_snapshot(ctx_id);
+          window.webgl.request_snapshot(ctx_id);
       }
 
       if (this._on_take_snapshot) this._on_take_snapshot(ctx_id);
       this.render();
+    }
+  },
+   //TODO Many improvments possible, for example run the timeout on the 
+   // debuggee, add multiple frames snapshot, etc.
+  on_take_custom_snapshot: {
+    value: function()
+    {
+      if (!this._container) return;
+      var ctx_id =
+        window['cst-selects']['snapshot-select'].get_selected_context();
+      if (ctx_id === null) return;
+
+      var func = function()
+      {
+        this.on_take_snapshot();
+      }.bind(this);
+      var delay = window.settings['webgl-snapshot'].get('snapshot_delay')*1000;
+      var count = window.settings['webgl-snapshot'].get('snapshot_delay')-1;
+      if (count < 0)
+      {
+        count = 0;
+      }
+      var snapshot_timer; 
+      var render_func = function()
+      {
+        if (count > 0)
+        {
+          this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(count--));
+        }
+        else
+        {
+          clearInterval(snapshot_timer);
+        }
+      }.bind(this);
+      
+      snapshot_timer = setInterval(render_func, 1000);  
+      setTimeout(func, delay);
     }
   },
   on_snapshot_change: {
@@ -460,6 +585,11 @@ cls.WebGLSideView.create_ui_widgets = function(id)
       {
         handler: 'webgl-' + id + '-take-snapshot',
         title: "Take snapshot",
+        icon: 'webgl-take-snapshot'
+      },
+      {
+        handler: 'webgl-' + id + '-take-custom-snapshot',
+        title: "Take custom snapshot",
         icon: 'webgl-take-snapshot'
       }
     ],
@@ -838,14 +968,16 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       var draw_call = this._draw_call;
+      // Default framebuffer for now..
+      var framebuffer = this._snapshot.framebuffers.lookup(0, this._call_index);
 
-      // Make sure the fbo image is downloading if isn't but exists
-      if (draw_call.fbo.img && !draw_call.fbo.img.data && !draw_call.fbo.img.downloading)
+      // Make sure the fbo image is downloading if isn't
+      if (!framebuffer.is_loaded())
       {
-        draw_call.fbo.request_data();
+        framebuffer.request_data();
       }
 
-      var img = window.templates.webgl.image(draw_call.fbo);
+      var img = window.templates.webgl.framebuffer_image(framebuffer);
       return {title: "Framebuffer", content: img, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
@@ -856,7 +988,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       var primary = [];
       if (this._call && this._call.have_error) primary.push(this.getErrorView());
       if (this._call) primary.push(this.getStateView());
-      if (this._draw_call) primary.push(this.getFrameBufferView());
+      /*if (this._draw_call)*/ primary.push(this.getFrameBufferView());
       return primary;
     }
   },

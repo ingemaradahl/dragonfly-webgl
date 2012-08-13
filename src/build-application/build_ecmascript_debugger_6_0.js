@@ -299,7 +299,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     /* WebGL */
     cls.WebGLSnapshotView.prototype = ViewBase;
-    new cls.WebGLSnapshotView('snapshot',
+    new cls.WebGLSnapshotView('webgl-snapshot',
                               "Snapshot", // TODO
                               'scroll');
     cls.WebGLSnapshotView.create_ui_widgets();

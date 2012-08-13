@@ -415,7 +415,8 @@ window.templates.webgl.history = function(history)
       content.push(html);
     }
     content.push(["span", ")"]);
-    window.templates.webgl.goto_script(call.loc, content[0]);
+    if (call.loc)
+      window.templates.webgl.goto_script(call.loc, content[0]);
 
     return [
       "tr",
@@ -543,8 +544,33 @@ window.templates.webgl.trace_table = function(calls, view_id)
 
   return [
     "table", content,
-    "class", "sortable-table trace-table", // TODO css
+    "class", "sortable-table trace-table" // TODO css
   ];
+};
+
+window.templates.webgl.framebuffer_image = function (framebuffer)
+{
+  switch (framebuffer.type)
+  {
+    case "init":
+      return [];
+    case "clear":
+      var color = framebuffer.image.color;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      return ["div",
+        "style",
+          "width:" + String(framebuffer.image.width) +
+          "px; height:" + String(framebuffer.image.height) +
+          "px; background: rgba(" + colors + ");",
+        "class", "checkerboard"
+      ];
+    case "draw":
+      return window.templates.webgl.image(framebuffer.image);
+      break;
+  }
 };
 
 window.templates.webgl.image = function(level)
@@ -985,7 +1011,9 @@ window.templates.webgl.call_header = function(call, trace_call)
     function_arguments.push(html);
   }
 
-  window.templates.webgl.goto_script(trace_call.loc, function_name);
+  if (trace_call.loc)
+    window.templates.webgl.goto_script(trace_call.loc, function_name);
+
   var header = [
     "div",
     [
@@ -1004,7 +1032,7 @@ window.templates.webgl.call_header = function(call, trace_call)
       ["h2", ")"],
       spec_link
     ],
-    "class", "call-header"
+    "class", "call-header",
   ];
 
   return header;
@@ -1049,9 +1077,9 @@ window.templates.webgl.summary_view = function(item)
   ];
 };
 
-window.templates.webgl.drawcall = function(draw_call, trace_call)
+window.templates.webgl.drawcall = function(draw_call, trace_call, framebuffer)
 {
-  var img = window.templates.webgl.image(draw_call.fbo);
+  var img = window.templates.webgl.framebuffer_image(framebuffer);
 
   var buffer_display = [];
   if (window.webgl.gl)
@@ -1146,7 +1174,7 @@ window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
     ['span',
       ['span', "Load buffer"],
       'handler', 'webgl-force-buffer',
-      'class', 'ui-button',
+      'class', 'ui-button'
     ]
   ];
 };
@@ -1289,6 +1317,46 @@ window.templates.webgl.uniform_table = function(call_index, program)
       value = values[last_index].value;
     }
 
+    // To make long matrices print out shorter strings.
+    var format_value = function(value)
+    {
+      var ret = "[";
+      var val;
+      for (var j=0; j<value.length && j < 4; j++)
+      {
+        val = value[j].toFixed(5);
+        ret += val + ", ";
+      }
+      ret.substr(0,ret.length-2);
+      if (j === value.length)
+      {
+        ret += "]";
+      }
+      else
+      {
+        ret += "...]";
+      }
+      return ret;
+    };
+
+    // Adding a tooltip to matrices and formating long matrices.
+    var data_tooltip = null;
+    var uniform_tooltip = null;
+    var type = window.webgl.api.constant_value_to_string(uniform.type)
+    switch (type)
+    {
+      case "FLOAT_MAT3": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip";
+                         value = format_value(value);
+                         break;
+      case "FLOAT_MAT4": data_tooltip = "data-tooltip";
+                         uniform_tooltip = "webgl-uniform-tooltip";
+                         value = format_value(value);
+                         break;
+      default: break;
+    }
+    // End
+
     rows.push([
       "tr",
       [
@@ -1302,8 +1370,10 @@ window.templates.webgl.uniform_table = function(call_index, program)
         ],
         [
           "td",
-          String(value).substring(0, 10),
-          "class", changed_this_call ? "changed" : ""
+          String(value),
+          "id", uniform.index,
+          "class", changed_this_call ? "changed" : "",
+          data_tooltip, uniform_tooltip
         ]
       ]
     ]);
@@ -1322,11 +1392,50 @@ window.templates.webgl.uniform_table = function(call_index, program)
   return table;
 };
 
+
+window.templates.webgl.uniform_tooltip = function(value)
+{
+  var html = [];
+  var row = [];
+  var cols = [];
+  var table = ["table"];
+  var dim = Math.sqrt(value.length);
+  
+  for (var i=0; i<dim; i++)
+  {
+    row = ["tr"];
+    cols = [];
+    for (var j=0; j<dim; j++)
+    {
+      var fixed_val = value[i+j].toFixed(5);
+      var val = fixed_val === "0.00000" ? "0" : fixed_val;
+      cols.push(["td", val]);
+    }
+    row.push(cols);
+    table.push(row);
+  }
+
+  html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
+  
+  return html;
+};
+
+
 window.templates.webgl.taking_snapshot = function()
 {
     var html = ["div",
                   ["p", ["img", "src", "./ui-images/loading.png"]],
                   ["p", "Taking snapshot..."],
+                  "class", "info-box"
+                ];
+    return html;
+};
+
+window.templates.webgl.taking_delayed_snapshot = function(count)
+{
+    var html = ["div",
+                  ["p", ["img", "src", "./ui-images/loading.png"]],
+                  ["p", "Taking snapshot in " + String(count) + " seconds"],
                   "class", "info-box"
                 ];
     return html;
