@@ -76,12 +76,12 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 {
   this.getTextureView = function()
   {
-    var texture = this._call_index === -1 ? this._object :
+    this._texture = this._call_index === -1 ? object :
       this._snapshot.trace[this._call_index].linked_object.texture;
-    texture.request_data();
-    var level0 = texture.levels[0];
+    this._texture.request_data();
+    var level0 = this._texture.levels[0];
     var base_image;
-    if (!level0 || level0.img == null && !texture.mipmapped)
+    if (!level0 || level0.img == null && !this._texture.mipmapped)
     {
       base_image = ["span", "No data."];
     }
@@ -92,9 +92,20 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
     return {title: "Texture", content: base_image, class: "texture-preview"};
   };
 
+  this.getTextureInfoView = function()
+  {
+    var info_content = window.templates.webgl.texture_info(this._texture);
+    return {title: "Texture info", content: info_content};
+  }
+
   this.getAdditionalPrimaryViews = function()
   {
     return [this.getTextureView()];
+  };
+
+  this.getSecondaryViews = function()
+  {
+    return [this.getTextureInfoView()];
   };
 
   this.layoutAfter = function()
@@ -104,12 +115,12 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
     if (!framebuffer_item || !texture_item) return;
 
     var framebuffer = framebuffer_item.children[1];
-    var texture = texture_item.children[1];
+    this._texture = texture_item.children[1];
 
     var height = framebuffer.offsetHeight;
     var width = framebuffer.offsetWidth;
-    texture.style.width = width + "px";
-    texture.style.height = height + "px";
+    this._texture.style.width = width + "px";
+    this._texture.style.height = height + "px";
   };
 
   this.init(id, name, container_class);
@@ -142,7 +153,6 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
     {
       base_image = window.templates.webgl.image(level0);
     }
-
     this._container.clearAndRender(base_image);
   };
 

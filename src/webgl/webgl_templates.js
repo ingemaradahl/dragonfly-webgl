@@ -586,6 +586,75 @@ window.templates.webgl.image = function(level)
   return image;
 };
 
+window.templates.webgl.texture_info = function(texture)
+{
+  var level0 = texture.levels[0];
+  var const_to_string = window.webgl.api.constant_value_to_string;
+  var border_info = !level0 || !level0.border ? null : {
+    name: "Border",
+    value: String(level0.border)
+  };
+  
+  var build_info_row = function(info)
+  {
+    return info == null ? [] : [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  };
+
+  var texture_info = [
+    {
+      name: "Format",
+      value: const_to_string(texture.format)
+    },
+    {
+      name: "Internal format",
+      value: const_to_string(texture.internalFormat)
+    },
+    {
+      name: "Type",
+      value: const_to_string(texture.type)
+    },
+    border_info,
+    {
+      name: "TEXTURE_WRAP_S",
+      value: const_to_string(texture.texture_wrap_s)
+    },
+    {
+      name: "TEXTURE_WRAP_T",
+      value: const_to_string(texture.texture_wrap_t)
+    },
+    {
+      name: "TEXTURE_MIN_FILTER",
+      value: const_to_string(texture.texture_min_filter)
+    },
+    {
+      name: "TEXTURE_MAG_FILTER",
+      value: const_to_string(texture.texture_mag_filter)
+    }
+  ];
+  
+  var info_table_rows = texture_info.map(build_info_row);
+  
+  var info_table = [
+    "table",
+    info_table_rows,
+    "class", "table-info"
+  ];
+
+  return info_table;
+};
+
 window.templates.webgl.texture = function(texture)
 {
   var build_info_row = function(info)
