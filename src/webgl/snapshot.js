@@ -125,6 +125,24 @@ cls.WebGLSnapshotArray = function(context_id)
     this.buffers.lookup = lookup.bind(this.buffers);
     this.textures.lookup = lookup.bind(this.textures);
     this.framebuffers.lookup = lookup.bind(this.framebuffers);
+    this.framebuffers.lookup_all = function (call_index)
+    {
+      var framebuffers = {};
+      for (var i=0; i<this.length; i++)
+      {
+        if (!(this[i].index in framebuffers))
+        {
+          framebuffers[this[i].index] = this[i];
+        }
+
+        if (this[i].call_index <= call_index && this[i].call_index >= framebuffers[this[i].index].call_index)
+        {
+          framebuffers[this[i].index] = this[i];
+        }
+      }
+
+      return framebuffers;
+    }.bind(this.framebuffers);
 
     /**
      * Tries to find a matching script id to the provided url.
