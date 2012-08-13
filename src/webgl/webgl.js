@@ -88,8 +88,16 @@ cls.WebGL.WebGLDebugger = function ()
   {
     context_id = context_id || this.contexts[0];
     var scoper = new cls.Scoper();
-    var settings = window.settings.snapshot.map;
+    var settings = window.settings['webgl-snapshot'].map;
     scoper.execute_remote_function(this.interfaces[context_id].set_settings, true, settings);
+  };
+
+  var on_setting = function(msg)
+  {
+    if (msg.id === "webgl-snapshot" && msg.key === "stack-trace")
+    {
+      this.contexts.forEach(function(context_id) { this.send_settings(context_id); }.bind(this));
+    }
   };
 
   /* Injects the host we want to debug with the wrapper script.
@@ -120,7 +128,7 @@ cls.WebGL.WebGLDebugger = function ()
 
     // First, create a reference to an object containing the initial settings to
     // be used..
-    var script = "(function(){return " + JSON.stringify(window.settings.snapshot.map) + ";})()";
+    var script = "(function(){return " + JSON.stringify(window.settings['webgl-snapshot'].map) + ";})()";
     var scoper = new cls.Scoper(settings_complete, this);
     scoper.set_reviver_tree({
       _depth: 0,
@@ -161,7 +169,7 @@ cls.WebGL.WebGLDebugger = function ()
     {
       return function ()
       {
-        var settings = window.settings.snapshot.map;
+        var settings = window.settings['webgl-snapshot'].map;
         var func = {object_id:function_id, runtime_id:runtime_id};
         var scoper = new cls.Scoper();
         scoper.execute_remote_function(func, true, settings);
@@ -207,6 +215,9 @@ cls.WebGL.WebGLDebugger = function ()
         _array_elements: {
           _action: cls.Scoper.ACTIONS.EXAMINE,
           context: {
+            _action: cls.Scoper.ACTIONS.NOTHING
+          },
+          canvas: {
             _action: cls.Scoper.ACTIONS.NOTHING
           }
         }
@@ -376,6 +387,7 @@ cls.WebGL.WebGLDebugger = function ()
   // ---------------------------------------------------------------------------
 
   messages.addListener('runtime-selected', this.clear.bind(this));
+  messages.addListener('setting-changed', on_setting.bind(this));
 
   window.host_tabs.activeTab.addEventListener("webgl-snapshot-completed",
       on_snapshots_complete.bind(this), false, false);

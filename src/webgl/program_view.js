@@ -10,6 +10,8 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLProgramCallView = function(id, name, container_class)
 {
+  this._program;
+  this._call_index;
   // Can be used to hilight attributes as well
   var hilight_uniform = function(uniform)
   {
@@ -87,6 +89,27 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   {
     return [this.getAttributeView(), this.getUniformView()];
   };
+  
+  this._on_tooltip = function(evt, target)
+  {
+    var uniform = this._program.uniforms[target.id];
+    var value = uniform.values[0].value;
+    var last_index = 0;
+    var values = uniform.values;
+
+    // We want the values related to this._call_index
+    for (var i=1; i<values.length && values[i].call_index <= this._call_index; i++)
+    {
+      last_index = i;
+      value = values[i].value;
+    }
+
+    var html = window.templates.webgl.uniform_tooltip(value);
+    this.tooltip.show(html, false);
+  };
+
+  this.tooltip = Tooltips.register("webgl-uniform-tooltip");
+  this.tooltip.ontooltip = this._on_tooltip.bind(this);
 
   this.init(id, name, container_class);
 };
