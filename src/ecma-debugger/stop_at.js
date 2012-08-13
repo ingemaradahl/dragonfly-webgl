@@ -440,8 +440,7 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
         var script = window.runtimes.getScript(stopAt.script_id);
         if (!script)
         {
-          var action = stopAt.stopped_reason == 'exception' ? "run" : "step-out-of-call";
-          this.__continue(action);
+          this.__continue("step-out-of-call");
           return;
         }
 
