@@ -548,29 +548,56 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.framebuffer_image = function (framebuffer)
+window.templates.webgl.framebuffer_image = function (framebuffers, binding)
 {
-  switch (framebuffer.type)
+  var select = ["select"];
+  var bound_framebuffer;
+  var image;
+
+  for (var f in framebuffers)
+  {
+    var framebuffer = framebuffers[f];
+    var option = ["option", String(framebuffer), "value", framebuffer, "framebuffer", framebuffer];
+
+    if (framebuffer.index === binding.index)
+    {
+      option.push("selected", "selected");
+      bound_framebuffer = framebuffer;
+    }
+
+    select.push(option);
+  }
+
+  select.push("handler", "webgl-select-framebuffer");
+
+  switch (bound_framebuffer.type)
   {
     case "init":
-      return [];
+      image = ["div", "TODO: inital framebuffer"];
+      break;
     case "clear":
-      var color = framebuffer.image.color;
+      var color = bound_framebuffer.image.color;
       var colors = Math.round(color[0] * 255) + ", " +
                    Math.round(color[1] * 255) + ", " +
                    Math.round(color[2] * 255) + ", " +
                    color[3];
-      return ["div",
+      image = ["div",
         "style",
-          "width:" + String(framebuffer.image.width) +
-          "px; height:" + String(framebuffer.image.height) +
+          "width:" + String(bound_framebuffer.image.width) +
+          "px; height:" + String(bound_framebuffer.image.height) +
           "px; background: rgba(" + colors + ");",
         "class", "checkerboard"
       ];
+      break;
     case "draw":
-      return window.templates.webgl.image(framebuffer.image);
+      image = window.templates.webgl.image(bound_framebuffer.image);
       break;
   }
+
+  return ["div",
+    select,
+    image
+  ];
 };
 
 window.templates.webgl.image = function(level)
@@ -1401,7 +1428,7 @@ window.templates.webgl.uniform_tooltip = function(value)
   var cols = [];
   var table = ["table"];
   var dim = Math.sqrt(value.length);
-  
+
   for (var i=0; i<dim; i++)
   {
     row = ["tr"];
@@ -1417,7 +1444,7 @@ window.templates.webgl.uniform_tooltip = function(value)
   }
 
   html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
-  
+
   return html;
 };
 
