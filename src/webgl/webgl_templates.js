@@ -553,6 +553,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
   var select = ["select"];
   var bound_framebuffer;
   var image;
+  var options = 0;
 
   for (var f in framebuffers)
   {
@@ -566,6 +567,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     }
 
     select.push(option);
+    options++;
   }
 
   select.push("handler", "webgl-select-framebuffer");
@@ -595,7 +597,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
   }
 
   return ["div",
-    select,
+    options > 1 ? select : [],
     image
   ];
 };
