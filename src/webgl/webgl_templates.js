@@ -593,12 +593,23 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
       break;
     case "draw":
       image = window.templates.webgl.image(bound_framebuffer.image);
+      image = window.templates.webgl.thumbnail_container(image);
       break;
   }
 
   return ["div",
     options > 1 ? select : [],
-    image
+    image,
+    "class", "framebuffer-thumbnail"
+  ];
+};
+
+window.templates.webgl.thumbnail_container = function(image)
+{
+  return [
+    "div",
+    image,
+    "class", "thumbnail"
   ];
 };
 
@@ -611,7 +622,7 @@ window.templates.webgl.image = function(level)
   }
   else if (level.img.data)
   {
-    var img = [
+    image = [
       "img",
       "src", level.img.data,
       "handler", "webgl-texture-image"
@@ -622,12 +633,7 @@ window.templates.webgl.image = function(level)
       classes.push("flipped");
     }
 
-    img.push("class", classes.join(" "));
-    image = [
-      "div",
-      img,
-      "class", "texture-container fit"
-    ];
+    image.push("class", classes.join(" "));
   }
   else
   {
@@ -655,9 +661,9 @@ window.templates.webgl.texture_info = function(texture)
   };
   var dimensions =  !level0 || !level0.height || !level0.width ? null : {
     name: "Dimensions",
-    value: level0.width + "px * " + level0.height + "px",
+    value: level0.width + "x" + level0.height + " px",
   };
-  
+
   var build_info_row = function(info)
   {
     return info == null ? [] : [
@@ -708,9 +714,9 @@ window.templates.webgl.texture_info = function(texture)
       value: const_to_string(texture.texture_mag_filter)
     }
   ];
-  
+
   var info_table_rows = texture_info.map(build_info_row);
-  
+
   var info_table = [
     "table",
     info_table_rows,
@@ -720,26 +726,6 @@ window.templates.webgl.texture_info = function(texture)
   return info_table;
 };
 
-//TODO delete, depricated.
-//window.templates.webgl.texture = function(texture)
-//{
-//  var build_info_row = function(info)
-//  {
-//    return info == null ? [] : [
-//      "tr",
-//      [
-//        [
-//          "th",
-//          info.name
-//        ],
-//        [
-//          "td",
-//          info.value
-//        ]
-//      ]
-//    ];
-//  };
-//
 //  var level0 = texture.levels[0];
 //
 //  var base_image;
@@ -752,40 +738,65 @@ window.templates.webgl.texture_info = function(texture)
 //    base_image = window.templates.webgl.image(level0);
 //  }
 //
-//  var mipmap_table = [];
-//  if (texture.mipmapped && texture.levels.length > 1)
-//  {
-//    var mipmap_levels = texture.levels.slice(1).map(function(level) {
-//      var image = window.templates.webgl.image(level);
-//      var image_source = null;
-//      if (level.url)
-//        image_source = { name: "Image source", value: level.url };
-//
-//      var level_info_rows = [
-//        { name: "Level", value: String(level.level) },
-//        { name: "Source", value: level.element_type },
-//        image_source,
-//        { name: "Dimensions", value: level.height + "x" + level.width + " px" },
-//      ].map(build_info_row);
-//
-//      var info_table = [
-//        "table",
-//        level_info_rows,
-//        "class", "table-info"
-//      ];
-//
-//      return [ "tr",
-//        [ "th", image ],
-//        [ "td", info_table ]
-//      ];
-//    });
-//
-//    mipmap_table = [ "div",
-//      [ "h3", "Custom mipmap levels" ],
-//      [ "table", mipmap_levels, "class", "sortable-table" ],
-//      "class", "mipmap-table"
-//    ];
-//  }
+
+window.templates.webgl.mipmap_table = function(texture)
+{
+  var ret = ["div", "No mipmaps"];
+
+  var build_info_row = function(info)
+  {
+    return info == null ? [] : [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  };
+  var mipmap_table = [];
+  if (texture.mipmapped && texture.levels.length > 1)
+  {
+    var mipmap_levels = texture.levels.slice(1).map(function(level) {
+      var image = window.templates.webgl.image(level);
+      var image_source = null;
+      if (level.url)
+        image_source = { name: "Image source", value: level.url };
+
+      var level_info_rows = [
+        { name: "Level", value: String(level.level) },
+        { name: "Source", value: level.element_type },
+        image_source,
+        { name: "Dimensions", value: level.height + "x" + level.width + " px" },
+      ].map(build_info_row);
+
+      var info_table = [
+        "table",
+        level_info_rows,
+        "class", "table-info"
+      ];
+
+      return [ "tr",
+        [ "th", image ],
+        [ "td", info_table ]
+        ];
+    });
+
+    mipmap_table = [ "div",
+      [ "h3", "Custom mipmap levels" ],
+      [ "table", mipmap_levels, "class", "sortable-table" ],
+      "class", "mipmap-table"
+    ];
+    ret = mipmap_table;
+  }
+
+  return ret;
+};
 //
 //  var const_to_string = window.webgl.api.constant_value_to_string;
 //
@@ -1101,6 +1112,7 @@ window.templates.webgl.summary = function(primary, secondary)
 
 window.templates.webgl.summary_view = function(item)
 {
+  if (item == null) return [];
   var header = [
     "h3",
     item.title
