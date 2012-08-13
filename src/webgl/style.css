@@ -51,12 +51,17 @@
   color: #000;
 }
 
-.summary-item.thumbnail > *:last-child
+.thumbnail > *
 {
   border: 1px solid #888888;
   max-height: 300px;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+.framebuffer-thumbnail
+{
+  max-height: 300px;
 }
 
 .clear

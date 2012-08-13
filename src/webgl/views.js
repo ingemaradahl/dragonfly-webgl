@@ -904,10 +904,17 @@ cls.WebGLCallView.initialize = function()
     cls.WebGLCallView.active_view.show_tab(tab_id);
   };
 
+  var on_framebuffer_select = function(event, target)
+  {
+    this.active_view.active_tab._framebuffer = target[target.selectedIndex].framebuffer;
+    this.active_view.active_tab.render();
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);
+  eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
 };
 
 // ----------------------------------------------------------------------------
@@ -975,6 +982,10 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true,
     value: false
   },
+  _framebuffer: {
+    writable: true,
+    value: null
+  },
   ondestroy: {
     writable: true, configurable: true,
     value: function()
@@ -1004,18 +1015,31 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     value: function()
     {
       var draw_call = this._draw_call;
-      // Default framebuffer for now..
-      var framebuffer = this._snapshot.framebuffers.lookup(0, this._call_index);
-      if (framebuffer.type === "init") return null;
+      var framebuffers = this._snapshot.framebuffers.lookup_all(this._call_index);
 
       // Make sure the fbo image is downloading if isn't
-      if (!framebuffer.is_loaded())
+      for(var f in framebuffers)
       {
-        framebuffer.request_data();
+        var framebuffer = framebuffers[f];
+        if (!framebuffer.is_loaded())
+        {
+          framebuffer.request_data();
+        }
       }
 
-      var content = window.templates.webgl.framebuffer_image(framebuffer);
-      return {title: "Framebuffer", content: content, class: "framebuffer thumbnail fit", onclick: "framebuffer"};
+      var framebuffer_binding;
+      if (this._framebuffer)
+      {
+        framebuffer_binding = this._framebuffer;
+      }
+      else
+      {
+        framebuffer_binding = this._snapshot.state.get_parameter("FRAMEBUFFER_BINDING", this._call_index);
+        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0]; // Framebuffer null => default framebuffer (0)
+      }
+
+      var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);
+      return {title: "Framebuffer", content: content, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
   getPrimaryViews: {
@@ -1051,6 +1075,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       this._object = object;
       this._draw_call = call_index === -1 ? null :
         snapshot.drawcalls.get_by_call(call_index);
+      this._framebuffer = null;
       cls.WebGLTab.set_call.apply(this, arguments);
     }
   },
