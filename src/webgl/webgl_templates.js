@@ -862,6 +862,7 @@ window.templates.webgl.tabs = function(tabs, active_tab)
 {
   var html = tabs.map(function(tab)
   {
+    if (!tab.enabled) return [];
     var content = [
       "div", tab.name,
       "handler", "webgl-tab",

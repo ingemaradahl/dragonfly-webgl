@@ -590,7 +590,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
           this.active_tab.ondestroy();
         tab.createView(this._body);
         this.active_tab = tab;
-        this.set_tabs(this.tabs);
+        this._render_tabbar();
       }
     }
   },
@@ -598,13 +598,38 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     writable: true,
     value: []
   },
+  set_tab_enabled: {
+    value: function (tab, enabled)
+    {
+      if (tab.enabled === enabled) return;
+      tab.enabled = enabled;
+
+      if (!enabled && this.active_tab === tab)
+      {
+        for (var i = 0; i < this.tabs.length; i++)
+        {
+          tab = this.tabs[i];
+          if (!tab.enabled) continue;
+          this.set_active_tab(tab);
+          return;
+        }
+      }
+      this._render_tabbar();
+    }
+  },
   set_tabs: {
     value: function (tabs)
     {
       this.tabs = tabs;
       if (this.active_tab == null) this.active_tab = tabs[0];
-      var template = window.templates.webgl.tabs(tabs, this.active_tab);
-      this._render_tabbar(template);
+      this._render_tabbar();
+    }
+  },
+  _render_tabbar: {
+    value: function()
+    {
+      var template = window.templates.webgl.tabs(this.tabs, this.active_tab);
+      cls.WebGLContentView._render_tabbar.call(this, template);
     }
   },
   _lookup_tab: {
@@ -653,6 +678,11 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       this._header = null;
       this._body = null;
 
+      this._snapshot = null;
+      this._call_index = null;
+      this._object = null;
+      this._call = null;
+
       if (this.active_tab !== null)
         this.active_tab.ondestroy();
     }
@@ -677,7 +707,9 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       this._object = object;
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
+      this.set_tab_enabled(this._lookup_tab("state"), call_index !== -1);
       this.set_active_tab(this.tabs[0]);
+
       this.active_tab.set_call(snapshot, call_index, object);
 
       if (!this._container)
@@ -757,6 +789,10 @@ cls.WebGLTab = Object.create(ViewBase, {
   _container: {
     writable: true,
     value: null
+  },
+  enabled: {
+    writable: true,
+    value: true
   },
   createView: {
     writable: true, configurable: true,
