@@ -78,8 +78,6 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 {
   this.getTextureView = function()
   {
-    this._texture = this._call_index === -1 ? object :
-      this._snapshot.trace[this._call_index].linked_object.texture;
     this._texture.request_data();
     var level0 = this._texture.levels[0];
     var base_image;
@@ -98,7 +96,13 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
   {
     var info_content = window.templates.webgl.texture_info(this._texture);
     return {title: "Texture info", content: info_content};
-  }
+  };
+
+  this.getTextureHistoryView = function()
+  {
+    var history_content = window.templates.webgl.history(this._texture.history);
+    return {title: "History", content: history_content};
+  };
 
   this.getAdditionalPrimaryViews = function()
   {
@@ -107,7 +111,7 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 
   this.getSecondaryViews = function()
   {
-    return [this.getTextureInfoView()];
+    return [this.getTextureInfoView(), this.getTextureHistoryView()];
   };
 
   this.layoutAfter = function()
@@ -117,12 +121,19 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
     if (!framebuffer_item || !texture_item) return;
 
     var framebuffer = framebuffer_item.children[1];
-    this._texture = texture_item.children[1];
+    var texture = texture_item.children[1];
 
     var height = framebuffer.offsetHeight;
     var width = framebuffer.offsetWidth;
-    this._texture.style.width = width + "px";
-    this._texture.style.height = height + "px";
+    texture.style.width = width + "px";
+    texture.style.height = height + "px";
+  };
+
+  this.set_call = function(snapshot, call_index, object)
+  {
+    this._texture = call_index === -1 ? object :
+      snapshot.trace[call_index].linked_object.texture;
+    cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
   this.init(id, name, container_class);
