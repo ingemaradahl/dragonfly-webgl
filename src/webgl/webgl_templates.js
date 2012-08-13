@@ -1328,11 +1328,22 @@ window.templates.webgl.uniform_tooltip = function(value)
   return html;
 };
 
+
 window.templates.webgl.taking_snapshot = function()
 {
     var html = ["div",
                   ["p", ["img", "src", "./ui-images/loading.png"]],
                   ["p", "Taking snapshot..."],
+                  "class", "info-box"
+                ];
+    return html;
+};
+
+window.templates.webgl.taking_delayed_snapshot = function(count)
+{
+    var html = ["div",
+                  ["p", ["img", "src", "./ui-images/loading.png"]],
+                  ["p", "Taking snapshot in " + String(count) + " seconds"],
                   "class", "info-box"
                 ];
     return html;
