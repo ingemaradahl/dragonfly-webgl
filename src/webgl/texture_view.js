@@ -13,7 +13,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
     new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLFullTextureTab("full-texture", "Texture", ""),
-    new cls.WebGLTextureHistoryTab("texture-history", "History", "")
+    new cls.WebGLTextureHistoryTab("texture-history", "History", ""),
+    new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "")
   ]);
 
   var on_texture_data = function(msg)
@@ -185,12 +186,34 @@ cls.WebGLTextureHistoryTab = function(id, name, container_class)
     this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
-
+  
   this.init(id, name, container_class);
 };
 
 cls.WebGLTextureHistoryTab.prototype = cls.WebGLHistoryTab;
 
+// ----------------------------------------------------------------------------
+
+cls.WebGLTextureMipmapTab = function(id, name, container_class)
+{
+  this.set_call = function(snapshot, call_index, object)
+  {
+    if (call_index !== -1)
+      object = snapshot.trace[call_index].linked_object.texture;
+    this._texture = object;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
+
+  this.render = function()
+  {
+    var template = window.templates.webgl.mipmap_table(this._texture);
+    this._container.clearAndRender(template);
+  };
+
+  this.init(id, name, container_class);
+};
+
+cls.WebGLTextureMipmapTab.prototype = cls.WebGLTab;
 // ----------------------------------------------------------------------------
 
 /**
