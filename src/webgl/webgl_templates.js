@@ -580,9 +580,6 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
 
   switch (bound_framebuffer.type)
   {
-    case "init":
-      image = ["div", "TODO: inital framebuffer"];
-      break;
     case "clear":
       var color = bound_framebuffer.image.color;
       var colors = Math.round(color[0] * 255) + ", " +
@@ -597,6 +594,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
         "class", "checkerboard"
       ];
       break;
+    case "init":
     case "draw":
       image = window.templates.webgl.image(bound_framebuffer.image);
       image = window.templates.webgl.thumbnail_container(image);
@@ -960,7 +958,7 @@ window.templates.webgl.state_parameter_value = function(param, value)
     }
     else
     {
-      param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
+      param_content = window.templates.webgl.linked_object(value, "webgl-state-argument", "argument");
     }
   }
   else

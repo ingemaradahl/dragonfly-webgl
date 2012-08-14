@@ -923,11 +923,17 @@ cls.WebGLCallView.initialize = function()
     this.active_view.active_tab.render();
   };
 
+  var on_state_parameter_click = function(event, target)
+  {
+    target.argument.action();
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
+  eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
 };
 
 // ----------------------------------------------------------------------------
@@ -1048,7 +1054,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       else
       {
         framebuffer_binding = this._snapshot.state.get_parameter("FRAMEBUFFER_BINDING", this._call_index);
-        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0]; // Framebuffer null => default framebuffer (0)
+        // Framebuffer === null => default framebuffer (framebuffers[0])
+        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
       }
 
       var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);

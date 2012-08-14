@@ -673,92 +673,49 @@ cls.WebGL.RPCs.injection = function () {
       return function(result, args)
       {
         var gl = this.gl;
-        var fbo = null;
-        var width, height, fbo;
-        if (fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING))
+
+        var image;
+        if (this.settings['fbo-readpixels'])
         {
-          width = fbo.width;
-          height = fbo.height;
+          image = this.read_pixels();
         }
         else
         {
-          // The default FBO is being used, assume it has the same dimensions as
-          // the viewport.. TODO: Consider better heuristic for finding dimension.
           var viewport = gl.getParameter(gl.VIEWPORT);
-          width = viewport[2];
-          height = viewport[3];
-        }
-
-        var img = {
-          width : width,
-          height : height,
-          data : null,
-          flipped : false
-        };
-
-        if (this.settings['fbo-readpixels'])
-        {
-          // TODO temporary until improved dimension finding is in place.
-          // http://glge.org/demos/cardemo/
-          if (!width || !height) return;
-
-          // Image data will be stored as RGBA - 4 bytes per pixel
-          var size = width * height * 4;
-          var arr = new ArrayBuffer(size);
-          var pixels = new Uint8Array(arr);
-
-          gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-          // Encode to PNG
-          var canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          var ctx = canvas.getContext("2d");
-
-          var img_data = ctx.createImageData(width, height);
-
-          // TODO this is so slooooow.
-          for (var i=0; i<size; i+=4)
-          {
-            img_data.data[i] = pixels[i];
-            img_data.data[i+1] = pixels[i+1];
-            img_data.data[i+2] = pixels[i+2];
-            img_data.data[i+3] = pixels[i+3];
+          image = {
+            width : viewport[2],
+            height : viewport[3]
           }
-
-          ctx.putImageData(img_data, 0, 0);
-
-          img.data = canvas.toDataURL("image/png");
-          img.flipped = true;
         }
 
-        // Figure out buffer binding, which buffer we are drawing
+        // Figure out buffer binding, i.e. which buffer we are drawing
         var target = function_name === "drawArrays" ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
         var buffer = this.buffer_binding[target];
 
         var program = this.bound_program || gl.getParameter(gl.CURRENT_PROGRAM);
         var program_index = this.lookup_program(program).index;
 
-        this.snapshot.add_drawcall(img, target, buffer.index, program_index, this.lookup_framebuffer(fbo));
+        var framebuffer = this.lookup_framebuffer(this.framebuffer_binding);
+
+        this.snapshot.add_drawcall(target, buffer.index, program_index, framebuffer);
+        this.snapshot.add_framebuffer(framebuffer, image, "draw");
 
         // Check whether an color attachment texture have been drawn to
-        if (fbo)
+        if (this.framebuffer_binding)
         {
           var tex = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
           var texture = this.lookup_texture(tex);
-          if (texture && texture.width === width && texture.height === texture.height)
+          if (texture && texture.levels[0].width === image.width && texture.levels[0].height === image.height)
           {
-            this.snapshot.add_texture(texture, {data: img.data, flipped : img.flipped});
+            this.snapshot.add_texture(texture, {data: image.data ? image.img.data : null, flipped : image.data ? image.img.flipped : null});
           }
           else if (texture)
           {
-            //this.add_texture(texture);
-
             // The only difference between the texture calculated by readpixels
             // above and the true texture is scale/aspect ratio. To find out the
             // _true_ texture, it has to be drawn to a framebuffer, so for now
             // ignore this..
-            this.snapshot.add_texture(texture, {data: img.data, flipped : img.flipped});
+            this.snapshot.add_texture(texture, {data: image.data ? image.img.data : null, flipped : image.data ? image.img.flipped : null});
           }
         }
 
@@ -1155,6 +1112,102 @@ cls.WebGL.RPCs.injection = function () {
         attributes: program_info.attributes.map(function (a) { return {index:a.index, loc:a.loc, name:a.name, size:a.size, type:a.type, pointers:[{call_index: -1, buffer_index: a.pointer.buffer_index, layout: a.pointer.layout}] }}),
         uniforms: program_info.uniforms.map(function (u) { return {index:u.index, name:u.name, size:u.size, type:u.type, values:[{call_index: -1, value:u.value}]}; })
       };
+    };
+
+    /* Reads the pixels from the currently bound framebuffer into an object
+     * described below.
+     * @param {WebGLFramebuffer} framebuffer optional Which framebuffer to read from.
+     * @returns {Object} containing image and dimensions
+     *
+     * The actual image data is wrapped up in another layer, making it possible
+     * to download it separately through scope
+     * {
+     *   width : Number,
+     *   height : Number,
+     *   img {
+     *     data : String,
+     *     flipped : Boolean
+     *    }
+     * }
+     */
+    this.read_pixels = function (framebuffer)
+    {
+      var gl = this.gl;
+
+      var rebind = false;
+      var bound_framebuffer = this.framebuffer_binding;
+
+      if (framebuffer && framebuffer !== this.framebuffer_binding)
+      {
+        // Rebind the framebuffer
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        rebind = true;
+      }
+
+      var viewport = gl.getParameter(gl.VIEWPORT);
+      var width = viewport[2];
+      var height = viewport[3];
+
+      var image = {
+        width : width,
+        height : height,
+        img : {
+          data : null,
+          flipped : false
+        }
+      }
+
+      // Encode to PNG
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext("2d");
+
+      var img_data = ctx.createImageData(width, height);
+      var pixels = img_data.data;
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      ctx.putImageData(img_data, 0, 0);
+
+      image.img.data = canvas.toDataURL("image/png");
+      image.img.flipped = true;
+
+      /* TODO: delete this; old method of retrieving framebuffer data
+      // Image data will be stored as RGBA - 4 bytes per pixel
+      var size = width * height * 4;
+      var arr = new ArrayBuffer(size);
+      var pixels = new Uint8Array(arr);
+
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+      // Encode to PNG
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext("2d");
+
+      var img_data = ctx.createImageData(width, height);
+
+      // TODO this is so slooooow.
+      for (var i=0; i<size; i+=4)
+      {
+        img_data.data[i] = pixels[i];
+        img_data.data[i+1] = pixels[i+1];
+        img_data.data[i+2] = pixels[i+2];
+        img_data.data[i+3] = pixels[i+3];
+      }
+      */
+
+      ctx.putImageData(img_data, 0, 0);
+
+      image.img.data = canvas.toDataURL("image/png");
+      image.img.flipped = true;
+
+      if (rebind)
+      {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer_binding);
+      }
+
+      return image;
     };
 
     /**
@@ -1569,18 +1622,32 @@ cls.WebGL.RPCs.injection = function () {
         for(var i=0; i<h.framebuffers.length; i++)
         {
           // Add initial content to framebuffers
-          this.add_framebuffer(h.framebuffers[i], {}, "init");
+          var image;
+          if (this.handler.settings['fbo-readpixels'])
+          {
+            image = this.handler.read_pixels(h.framebuffers[i].framebuffer);
+          }
+          else
+          {
+            var viewport = this.handler.gl.getParameter(this.handler.gl.VIEWPORT);
+            image = {
+              width : viewport[2],
+              height : viewport[3]
+            }
+          }
+          this.add_framebuffer(h.framebuffers[i], image, "init");
         }
       }.bind(this);
 
       init_buffers();
       init_programs();
       init_state();
-      init_framebuffers();
 
       // Init textures
       this.handler.textures.forEach(this.add_texture, this);
-      //init_fbos();
+
+      // Framebuffers needs to be initialized after textures
+      init_framebuffers();
     }.bind(this);
 
     /* Adds a WebGL function call to the snapshot */
@@ -1646,7 +1713,7 @@ cls.WebGL.RPCs.injection = function () {
       this.call_index = this.calls.push([function_name, error, res, Boolean(redundant)].concat(call_args).join("|")) - 1;
     };
 
-    this.add_drawcall = function (img, buffer_target, buffer_index, program_index, framebuffer)
+    this.add_drawcall = function (buffer_target, buffer_index, program_index, framebuffer)
     {
       this.drawcalls.push({
         call_index : this.call_index,
@@ -1654,20 +1721,6 @@ cls.WebGL.RPCs.injection = function () {
         program_index : program_index,
         element_buffer : buffer_target === this.handler.gl.ELEMENT_ARRAY_BUFFER ? buffer_index : undefined
       });
-
-      // Wrap up the image data in another object to make sure that scoper
-      // doesn't examine it.
-      var image = {
-        width : img.width,
-        height : img.height,
-      };
-
-      if (img.data)
-      {
-        image.img = { data: img.data, flipped: img.flipped }
-      }
-
-      this.add_framebuffer(framebuffer, image, "draw");
     };
 
     this.add_framebuffer = function (framebuffer, image, type)
