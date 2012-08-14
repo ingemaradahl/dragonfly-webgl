@@ -653,13 +653,13 @@ cls.WebGLContentView = Object.create(ViewBase, {
       var tabbar = ["div", this._content_tabs, "class", "tabs"];
 
       var content = ["div", [], "class", "scroll"];
-      var template = [["div", [header, tabbar], "class", "head-grad"], content];
+      var template = [header, tabbar, content];
 
       this._container.clearAndRender(template);
 
-      this._header = this._container.childNodes[0].childNodes[0];
-      this._tabbar = this._container.childNodes[0].childNodes[1];
-      this._body = this._container.childNodes[1];
+      this._header = this._container.childNodes[0];
+      this._tabbar = this._container.childNodes[1];
+      this._body = this._container.childNodes[2];
 
       this.onresize();
     }
