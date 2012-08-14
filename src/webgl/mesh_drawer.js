@@ -16,8 +16,21 @@ cls.WebGLMeshDrawer = function(gl)
   this.rot = {x:0, y:0};
   this.distance = 0;
 
-  var info_container = null;
+  var container = new Container(document.createElement("container"));
+  container.setup("webgl-mesh-drawer");
+  var info_container = container.cell;
+
   var help_container = null;
+
+  this.add_canvas = function ()
+  {
+    var preview_help = document.getElementById("webgl-preview-help");
+    var canvas_holder = document.getElementById("webgl-canvas-holder");
+    canvas_holder.appendChild(window.webgl.gl.canvas);
+    canvas_holder.appendChild(info_container);
+
+    this.set_help_container(preview_help);
+  };
 
   var on_mousemove = function(event)
   {
@@ -84,11 +97,6 @@ cls.WebGLMeshDrawer = function(gl)
 
     this.gl.viewport(0, 0, canvas.width, canvas.height);
     this.render();
-  };
-
-  this.set_info_container = function(container)
-  {
-    info_container = container;
   };
 
   this.set_help_container = function(container)
