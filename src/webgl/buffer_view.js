@@ -10,9 +10,11 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
+  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "General", "");
+  var preview_tab = new cls.WebGLBufferPreviewTab("preview", "Visual", "");
   this.set_tabs([
-    new cls.WebGLBufferCallSummaryTab("summary", "General", ""),
-    new cls.WebGLBufferPreviewTab("preview", "Visual", ""),
+    summary_tab,
+    preview_tab,
     new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
@@ -25,6 +27,16 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   }.bind(this);
 
   clear();
+
+  this.set_preview_enabled = function (enabled)
+  {
+    this.set_tab_enabled(preview_tab, enabled)
+  };
+
+  this.set_summary_tab = function()
+  {
+    this.set_active_tab(summary_tab);
+  };
 
   /**
    * Constructs a buffer setting object, describing the layout, mode and so on
@@ -296,6 +308,8 @@ cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+
 cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 {
   this._buffer = null;
@@ -312,11 +326,16 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
   this.set_call = function(snapshot, call_index)
   {
     this._buffer = snapshot.trace[call_index].linked_object.buffer;
+    var buffer_call = window.views.webgl_buffer_call;
+    buffer_call.set_preview_enabled(this._buffer.target !== window.webgl.gl.ELEMENT_ARRAY_BUFFER);
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
   this.getBufferView = function()
   {
+    if (this._buffer.target === window.webgl.gl.ELEMENT_ARRAY_BUFFER)
+      return null;
+
     return {
       title: "Buffer",
       content: window.templates.webgl.preview_canvas(),
@@ -331,12 +350,14 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
   this.renderAfter = function()
   {
-    var buffer_call = window.views.webgl_buffer_call;
-    window.webgl.preview.add_canvas();
+    if (this._buffer.target === window.webgl.gl.ARRAY_BUFFER)
+    {
+      var buffer_call = window.views.webgl_buffer_call;
+      window.webgl.preview.add_canvas();
 
-    var settings = buffer_call.build_settings(this._buffer, this._snapshot, this._call_index);
-    buffer_call.set_preview(this._buffer, settings);
-
+      var settings = buffer_call.build_settings(this._buffer, this._snapshot, this._call_index);
+      buffer_call.set_preview(this._buffer, settings);
+    }
     cls.WebGLSummaryTab.renderAfter.call(this);
   };
 
@@ -386,6 +407,14 @@ cls.WebGLBufferPreviewTab = function(id, name, container_class)
     var buffer_call = window.views.webgl_buffer_call;
 
     this._buffer = snapshot.trace[call_index].linked_object.buffer;
+    if (this._buffer.target === window.webgl.gl.ELEMENT_ARRAY_BUFFER)
+    {
+      // Failsafe for when tab pins are in place
+      buffer_call.set_tab_enabled(this, false);
+      buffer_call.set_summary_tab();
+      return;
+    }
+
     this._settings = buffer_call.build_settings(this._buffer, snapshot, call_index);
 
     this._buffer.request_data();
