@@ -402,6 +402,58 @@ cls.WebGLBufferPreviewTab = function(id, name, container_class)
 
     window.webgl.preview.add_canvas();
     buffer_call.set_preview(this._buffer, this._settings);
+    this.layout();
+    window.webgl.preview.onresize();
+  };
+
+  this.layout = function()
+  {
+    var MAX_PREVIEW_HEIGHT = 450;
+    var MIN_SETTINGS_WIDTH = 260;
+
+    var container_offset_width = this._container.childNodes[0].offsetWidth;
+    var container_width = container_offset_width -
+      parseInt(this._container.childNodes[0].currentStyle.paddingLeft, 10) -
+      parseInt(this._container.childNodes[0].currentStyle.paddingRight, 10);
+
+    var holder = this._container.querySelector(".webgl-holder");
+    holder.style.width = String(container_width-15) + "px";
+    holder.style.height = String(container_width > MAX_PREVIEW_HEIGHT ? MAX_PREVIEW_HEIGHT : container_width) + "px";
+    holder.style.marginTop = "5px";
+    holder.style.marginLeft = "5px";
+    holder.style.marginBottom = "5px";
+
+    var settings = this._container.querySelectorAll(".buffer-settings > div");
+    var columns = container_width / 2 < MIN_SETTINGS_WIDTH;
+
+    if (columns)
+    {
+      for (var i=0; i<settings.length; i++)
+      {
+        settings[i].style.margin = "5px";
+        settings[i].style.width = String(container_width-15) + "px";
+      }
+
+      if (settings.length > 0)
+      {
+        settings[1].style.cssText += "; float: left";
+        settings[1].style.width = String(container_width-15) + "px";
+      }
+    }
+    else
+    {
+      for (var i=0; i<settings.length; i++)
+      {
+        settings[i].style.margin = "";
+        settings[i].style.width = "";
+      }
+    }
+  };
+
+  this.onresize = function()
+  {
+    this.layout();
+    window.webgl.preview.onresize();
   };
 
   var on_settings_change = function(event, target)
