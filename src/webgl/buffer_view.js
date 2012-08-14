@@ -373,12 +373,19 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     if (!framebuffer_item || !buffer_item) return;
 
     var framebuffer = framebuffer_item.children[1];
-    var buffer_preview = buffer_item.children[1];
+    var buffer_preview = buffer_item;
 
-    var height = framebuffer.offsetHeight - buffer_preview.children[0].offsetHeight;
-    var width = framebuffer.offsetWidth;
-    buffer_preview.style.width = width + "px";
-    buffer_preview.style.height = height + "px";
+    var buffer_holder = buffer_item.querySelector(".webgl-holder");
+    
+    var height = framebuffer.offsetHeight;
+    if (height < 200)
+      height = 200;
+    if (height > 300)
+      height = 300;
+    
+    buffer_holder.style.height = height + "px";
+    buffer_holder.style.width =
+      parseInt(buffer_preview.offsetWidth) + "px";
     window.webgl.preview.onresize();
   };
 
@@ -446,6 +453,8 @@ cls.WebGLBufferPreviewTab = function(id, name, container_class)
 
   this.layout = function()
   {
+    if (!this._container)
+      return;
     var MAX_PREVIEW_HEIGHT = 450;
     var MIN_SETTINGS_WIDTH = 260;
 
@@ -455,12 +464,8 @@ cls.WebGLBufferPreviewTab = function(id, name, container_class)
       parseInt(this._container.childNodes[0].currentStyle.paddingRight, 10);
 
     var holder = this._container.querySelector(".webgl-holder");
-    holder.style.width = String(container_width-15) + "px";
+    holder.style.width = String(container_width-10) + "px";
     holder.style.height = String(container_width > MAX_PREVIEW_HEIGHT ? MAX_PREVIEW_HEIGHT : container_width) + "px";
-    holder.style.marginTop = "5px";
-    holder.style.marginLeft = "5px";
-    holder.style.marginBottom = "5px";
-    holder.style.marginRight = "5px";
 
     var settings = this._container.querySelectorAll(".buffer-settings > div");
     var columns = container_width / 2 < MIN_SETTINGS_WIDTH;

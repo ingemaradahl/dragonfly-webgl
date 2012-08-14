@@ -294,6 +294,11 @@ img.flipped
 
 /* Buffer */
 
+.buffer-visual .webgl-holder
+{
+  margin: 5px;
+}
+
 .buffer-data-table
 {
   margin-top: 10px;

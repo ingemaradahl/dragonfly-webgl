@@ -373,7 +373,8 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
       ["div", position],
       ["div", parameters],
       "class", "buffer-settings"
-    ]
+    ],
+    "class" , "buffer-visual"
   ];
 };
 
