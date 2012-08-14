@@ -1,4 +1,10 @@
-﻿.summary
+﻿.clear
+{
+  clear: both;
+}
+
+/* Summary view */
+.summary
 {
   padding: 3px;
 }
@@ -51,6 +57,24 @@
   color: #000;
 }
 
+/* Floating select */
+.summary-item .select-float
+{
+  display: none;
+  position: relative;
+}
+.summary-item .select-float select
+{
+  position: absolute;
+}
+
+.summary-item:hover .select-float
+{
+  display: block;
+  z-index: 10;
+}
+
+
 .thumbnail > *
 {
   border: 1px solid #888888;
@@ -59,36 +83,33 @@
   box-sizing: border-box;
 }
 
-.framebuffer-thumbnail
-{
-  max-height: 300px;
-}
-
-.clear
-{
-  clear: both;
-}
-
-
+/* Tabs */
 .webgl-view .tabs
 {
-  background-color: rgba(0, 0, 0, 0.118);
+  background-color: rgba(0, 0, 0, 0.1);
   background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.196);
 }
 
 .webgl-view .tabs > div
 {
   padding: 8px;
   float: left;
-  background-color: rgba(0, 0, 0, 0.5);
-  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  border-bottom: 0px solid transparent;
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+  border-top: 0px solid transparent;
 }
 
-.webgl-view .tabs > div:hover,
 .webgl-view .tabs > div.active
 {
-  background-color: rgba(0, 0, 0, 0.3);
   background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  background-color: #CECECE;
+  border-bottom-color: rgba(0, 0, 0, 0.196);
+  border-left-color: rgba(0, 0, 0, 0.196);
+  border-right-color: rgba(0, 0, 0, 0.196);
+  border-top-color: rgba(0, 0, 0, 0.196);
+  box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.102);
 }
 
 .webgl-view .tabs > div:last-child
@@ -227,27 +248,6 @@ img.flipped
   border: 1px solid #ccc;
 }
 
-/* Texture */
-.webgl-view div.loading-image
-{
-  /* Should work, but doesn't */
-  /* background: url(./ui-images/loading.png) no-repeat center center; */
-
-  border: 1px;
-  border-style: solid;
-  border-color: gray;
-  position: relative;
-}
-
-.loading-image > img
-{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: -8px;
-  margin-left: -8px;
-}
-
 /* Program */
 .program-call div.js-resource-content
 {
@@ -358,10 +358,8 @@ img.flipped
 /* Draw Call */
 .webgl-view .webgl-holder
 {
-  border: 1px;
-  border-style: solid;
-  border-color: gray;
-
+  border: 1px solid gray;
+  box-sizing: border-box;
 
   width: 300px;
   height: 300px;
@@ -440,6 +438,26 @@ img.flipped
 }
 
 /* Texture */
+
+.webgl-view div.loading-image
+{
+  /* Should work, but doesn't */
+  /* background: url(./ui-images/loading.png) no-repeat center center; */
+
+  border: 1px;
+  border-style: solid;
+  border-color: gray;
+  position: relative;
+}
+
+.loading-image > img
+{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
+}
 
 div.mipmap-table
 {
