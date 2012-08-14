@@ -59,15 +59,27 @@
   box-sizing: border-box;
 }
 
-.framebuffer-thumbnail
-{
-  max-height: 300px;
-}
-
 .clear
 {
   clear: both;
 }
+
+.summary-item .select-float
+{
+  display: none;
+  position: relative;
+}
+.summary-item .select-float select
+{
+  position: absolute;
+}
+
+.summary-item:hover .select-float
+{
+  display: block;
+  z-index: 10;
+}
+
 
 
 .webgl-view .tabs
@@ -358,9 +370,8 @@ img.flipped
 /* Draw Call */
 .webgl-view .webgl-holder
 {
-  border: 1px;
-  border-style: solid;
-  border-color: gray;
+  border: 1px solid gray;
+  box-sizing: border-box;
 
 
   width: 300px;

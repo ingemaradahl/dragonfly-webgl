@@ -571,6 +571,11 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
   }
 
   select.push("handler", "webgl-select-framebuffer");
+  // To get it floating properly it needs to be put in a div
+  select = [
+    "div", select,
+    "class", "select-float"
+  ];
 
   switch (bound_framebuffer.type)
   {
@@ -1167,28 +1172,32 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
 {
   var call_index = draw_call.call_index;
   var attributes = draw_call.program.attributes;
+  var select = [
+    "select",
+    attributes.map(function(attribute) {
+      var pointer = attribute.pointers.lookup(call_index);
+      var option = [ "option",
+        attribute.name + " (" + pointer.buffer + ")",
+        "value", attribute,
+        "pointer", pointer
+      ];
+      if (!pointer.buffer)
+      {
+        option.push("disabled");
+        option.push("true");
+      }
+      return option;
+    }),
+    "handler", "webgl-select-attribute",
+    "id", "webgl-attribute-selector"
+  ];
+  // To get it floating properly it needs to be put in a div
+  select = [
+    "div", select,
+    "class", "select-float"
+  ];
   return ["div",
-    [
-      "select",
-      [
-        attributes.map(function(attribute) {
-          var pointer = attribute.pointers.lookup(call_index);
-          var option = [ "option",
-            attribute.name + " (" + pointer.buffer + ")",
-            "value", attribute,
-            "pointer", pointer
-          ];
-          if (!pointer.buffer)
-          {
-            option.push("disabled");
-            option.push("true");
-          }
-          return option;
-        })
-      ],
-      "handler", "webgl-select-attribute",
-      "id", "webgl-attribute-selector"
-    ],
+    select,
     window.templates.webgl.preview_canvas()
   ];
 };
