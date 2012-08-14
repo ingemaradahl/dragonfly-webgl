@@ -636,7 +636,7 @@ cls.WebGLContentView = Object.create(ViewBase, {
       this._container = container;
       this._render_base();
 
-      this._createView(container.children[0], container.children[2]);
+      this._createView(this._header, this._body);
     }
   },
   ondestroy: {
@@ -657,6 +657,10 @@ cls.WebGLContentView = Object.create(ViewBase, {
 
       this._container.clearAndRender(template);
 
+      this._header = this._container.childNodes[0];
+      this._tabbar = this._container.childNodes[1];
+      this._body = this._container.childNodes[2];
+
       this.onresize();
     }
   },
@@ -666,7 +670,7 @@ cls.WebGLContentView = Object.create(ViewBase, {
       this._content_header = template;
       if (this._container)
       {
-        this._container.childNodes[0].clearAndRender(template);
+        this._header.clearAndRender(template);
         this.onresize();
       }
     }
@@ -677,7 +681,7 @@ cls.WebGLContentView = Object.create(ViewBase, {
       this._content_tabs = template;
       if (this._container)
       {
-        this._container.childNodes[1].clearAndRender(template);
+        this._tabbar.clearAndRender(template);
         this.onresize();
       }
     }
@@ -687,14 +691,14 @@ cls.WebGLContentView = Object.create(ViewBase, {
     value: function()
     {
       var content_height = this._container.offsetHeight;
-      var header_height = this._container.childNodes[0].offsetHeight;
-      var tabbar_height = this._container.childNodes[1].offsetHeight;
+      var header_height = this._header.offsetHeight;
+      var tabbar_height = this._tabbar.offsetHeight;
       content_height -= header_height + tabbar_height;
 
       var content_width = this._container.offsetWidth - 2; //TODO get real width
 
-      this._container.childNodes[2].style.height = content_height + "px";
-      this._container.childNodes[2].style.width = content_width + "px";
+      this._body.style.height = content_height + "px";
+      this._body.style.width = content_width + "px";
 
       this._onresize();
     }
@@ -707,6 +711,10 @@ cls.WebGLContentView = Object.create(ViewBase, {
  * @extends cls.WebGLContentView
  */
 cls.WebGLCallView = Object.create(cls.WebGLContentView, {
+  _created: {
+    writable: true,
+    value: false
+  },
   active_tab: {
     writable: true,
     value: null
@@ -790,6 +798,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _createView: {
     value: function(header, body)
     {
+      this._created = true;
       this._header = header;
       this._body = body;
       if (this.active_tab !== null)
@@ -805,6 +814,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: function()
     {
       cls.WebGLContentView.ondestroy.apply(this, arguments);
+      this._created = false;
       this._header = null;
       this._body = null;
 
@@ -872,7 +882,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _onresize: {
     value: function()
     {
-      if (this._body && this.active_tab && this.active_tab.onresize)
+      if (this._created && this.active_tab && this.active_tab.onresize)
         this.active_tab.onresize();
     }
   }
@@ -897,7 +907,8 @@ cls.WebGLCallView.initialize = function()
 
   var on_speclink_click = function(evt, target)
   {
-    window.open(target.getAttribute("function_name"));
+    var url = target.getAttribute("specification_url");
+    window.open(url);
   };
 
   var tab_handler = function(evt, target)

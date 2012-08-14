@@ -20,16 +20,11 @@ cls.WebGLMeshDrawer = function(gl)
   container.setup("webgl-mesh-drawer");
   var info_container = container.cell;
 
-  var help_container = null;
-
   this.add_canvas = function ()
   {
-    var preview_help = document.getElementById("webgl-preview-help");
     var canvas_holder = document.getElementById("webgl-canvas-holder");
     canvas_holder.appendChild(window.webgl.gl.canvas);
     canvas_holder.appendChild(info_container);
-
-    this.set_help_container(preview_help);
   };
 
   var on_mousemove = function(event)
@@ -71,20 +66,6 @@ cls.WebGLMeshDrawer = function(gl)
     this.init_buffer(true)
   };
 
-  var on_help = function(event, target)
-  {
-    switch (help_container.style.visibility)
-    {
-      case "":
-      case "hidden":
-        help_container.style.visibility = "visible";
-        break;
-      case "visible":
-        help_container.style.visibility = "hidden";
-        break;
-    }
-  };
-
   this.onresize = function()
   {
     var canvas = this.gl.canvas;
@@ -97,11 +78,6 @@ cls.WebGLMeshDrawer = function(gl)
 
     this.gl.viewport(0, 0, canvas.width, canvas.height);
     this.render();
-  };
-
-  this.set_help_container = function(container)
-  {
-    help_container = container;
   };
 
   this.on_buffer_download = function()
@@ -133,7 +109,6 @@ cls.WebGLMeshDrawer = function(gl)
   var eh = window.eventHandlers;
   eh.mousedown["webgl-canvas"] = on_mousedown.bind(this);
   eh.mousewheel["webgl-canvas"] = on_mousewheel.bind(this);
-  eh.click["webgl-preview-help"] = on_help.bind(this);
   eh.click["webgl-force-buffer"] = on_force_buffer.bind(this);
 
   this.cache = new (function()
@@ -162,7 +137,7 @@ cls.WebGLMeshDrawer = function(gl)
         element_buffer : element_buffer,
         gl_buffer : gl_buffer
       });
-      
+
       cache_arr.splice(0, cache_arr.length-MAX_SIZE)
     };
 
@@ -197,7 +172,7 @@ cls.WebGLMeshDrawer = function(gl)
  * ArrayBufferView */
 cls.WebGLMeshDrawer.prototype.buffers_ready = function()
 {
-  return this.element_buffer 
+  return this.element_buffer
     ? !(this.element_buffer.data instanceof Array || this.element_buffer.data.downloading) && !(this.buffer.data instanceof Array || this.buffer.data.downloading)
     : !(this.buffer.data instanceof Array || this.buffer.data.downloading);
 };
@@ -246,7 +221,7 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(force)
 
     if (buffer.target === this.gl.ELEMENT_ARRAY_BUFFER)
     {
-      buffer.type = constructor === Uint8Array 
+      buffer.type = constructor === Uint8Array
         ? this.gl.UNSIGNED_BYTE
         : this.gl.UNSIGNED_SHORT;
     }
@@ -379,7 +354,7 @@ cls.WebGLMeshDrawer.prototype.build_triangles = function()
       if (state.indexed)
       {
         triangles.push([indices[start], indices[start + 1], indices[start + 2]]);
-        for (var i = start+2; i<end; i++) 
+        for (var i = start+2; i<end; i++)
         {
           triangles.push([indices[start], indices[i], indices[i+1]]);
         }
