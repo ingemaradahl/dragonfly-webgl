@@ -123,6 +123,11 @@
   box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.102);
 }
 
+.webgl-view .tabs > div.disabled
+{
+  opacity: 0.45;
+}
+
 .webgl-view .tabs > div:last-child
 {
   background: none !important;
@@ -290,6 +295,11 @@ img.flipped
 {
   margin-bottom: 10px;
   border: 1px solid #999999;
+}
+
+.webgl-view .uniforms td
+{
+  white-space: nowrap;
 }
 
 /* Buffer */

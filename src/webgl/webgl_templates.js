@@ -1011,14 +1011,18 @@ window.templates.webgl.tabs = function(tabs, active_tab)
 {
   var html = tabs.map(function(tab)
   {
-    if (!tab.enabled) return [];
     var content = [
       "div", tab.name,
-      "handler", "webgl-tab",
       "id", tab.id
     ];
+
     if (tab === active_tab)
-      content.push("class", "active");
+      content.push("class", "active", "handler", "webgl-tab");
+    else if (!tab.enabled)
+      content.push("class", "disabled");
+    else
+      content.push("handler", "webgl-tab");
+
     return content;
   });
   html.push(["div"]);
