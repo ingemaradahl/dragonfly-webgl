@@ -1532,20 +1532,21 @@ window.templates.webgl.program = function(call_index, program)
     programs
   ];
 
+  // TODO do we want to show the tables in the program view?
   // If the program is related to a call, attribute and uniforms tables
   // will be created and attached to the template.
-  if (call_index !== -1 && call_index !== null)
-  {
-    attribute_table = window.templates.webgl.attribute_table(call_index, program);
-    uniform_table = window.templates.webgl.uniform_table(call_index, program);
-    html =
-    [
-      "div",
-      attribute_table,
-      uniform_table,
-      programs
-    ];
-  }
+  //if (call_index !== -1 && call_index !== null)
+  //{
+  //  attribute_table = window.templates.webgl.attribute_table(call_index, program);
+  //  uniform_table = window.templates.webgl.uniform_table(call_index, program);
+  //  html =
+  //  [
+  //    "div",
+  //    attribute_table,
+  //    uniform_table,
+  //    programs
+  //  ];
+  //}
   return html;
 };
 
