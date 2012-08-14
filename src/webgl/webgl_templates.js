@@ -957,7 +957,7 @@ window.templates.webgl.state_parameter_value = function(param, value)
     }
     else
     {
-      param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
+      param_content = window.templates.webgl.linked_object(value, "webgl-state-argument", "argument");
     }
   }
   else
