@@ -11,10 +11,10 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
-    new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLFullTextureTab("full-texture", "Texture", ""),
-    new cls.WebGLTextureHistoryTab("texture-history", "History", ""),
-    new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "")
+    new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", ""),
+    new cls.WebGLStateTab("state", "State", ""),
+    new cls.WebGLTextureHistoryTab("texture-history", "History", "")
   ]);
 
   this.display_call = function(snapshot, call_index, object)
@@ -53,8 +53,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     var x_start = evt.clientX + parent.scrollLeft;
     var y_start = evt.clientY + parent.scrollTop;
 
-    var max_top = Math.max(0, evt.target.offsetHeight - parent.clientHeight);
-    var max_left = Math.max(0, evt.target.offsetWidth - parent.clientWidth);
+    var max_top = Math.max(0, evt.target.offsetHeight + evt.target.offsetTop * 2 - parent.clientHeight);
+    var max_left = Math.max(0, evt.target.offsetWidth + evt.target.offsetLeft * 2 - parent.clientWidth);
     this._target = target;
 
     window.onmousemove = function(e)
@@ -160,7 +160,7 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
     }
     else
     {
-      base_image = window.templates.webgl.image(level0);
+      base_image = window.templates.webgl.image(level0, ["full-texture"]);
     }
     this._container.clearAndRender(base_image);
   };

@@ -616,8 +616,9 @@ window.templates.webgl.thumbnail_container = function(image)
   ];
 };
 
-window.templates.webgl.image = function(level)
+window.templates.webgl.image = function(level, additional_classes)
 {
+  additional_classes = additional_classes || [];
   var image;
   if (level.img == null)
   {
@@ -630,7 +631,7 @@ window.templates.webgl.image = function(level)
       "src", level.img.data,
       "handler", "webgl-texture-image"
     ];
-    var classes = ["checkerboard"];
+    var classes = ["checkerboard"].concat(additional_classes);
     if (level.img.flipped)
     {
       classes.push("flipped");
@@ -642,7 +643,7 @@ window.templates.webgl.image = function(level)
   {
     image = ["div",
       ["img", "src", "./ui-images/loading.png"],
-      "class", "loading-image",
+      "class", (["loading-image"].concat(additional_classes)).join(" "),
       "style", "width: " + String(level.width ? level.width : 128) + "px; height: " + String(level.height ? level.height : 128) + "px;"
     ];
   }
@@ -728,19 +729,6 @@ window.templates.webgl.texture_info = function(texture)
 
   return info_table;
 };
-
-//  var level0 = texture.levels[0];
-//
-//  var base_image;
-//  if (!level0 || level0.img == null && !texture.mipmapped)
-//  {
-//    base_image = ["span", "No data."];
-//  }
-//  else
-//  {
-//    base_image = window.templates.webgl.image(level0);
-//  }
-//
 
 window.templates.webgl.mipmap_table = function(texture)
 {

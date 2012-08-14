@@ -928,12 +928,19 @@ cls.WebGLCallView.initialize = function()
     target.argument.action();
   };
 
+  var on_framebuffer_data = function(message)
+  {
+    this.active_view.active_tab.render();
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
   eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
+
+  messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
 };
 
 // ----------------------------------------------------------------------------

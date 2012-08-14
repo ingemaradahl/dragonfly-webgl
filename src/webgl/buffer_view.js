@@ -337,7 +337,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
       return null;
 
     return {
-      title: "Buffer",
+      title: this._buffer.toString(),
       content: window.templates.webgl.preview_canvas(),
       class: "buffer-preview"
     };
