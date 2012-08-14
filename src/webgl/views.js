@@ -724,11 +724,11 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     {
       if (this.active_tab !== tab)
       {
+        this.active_tab = tab;
         if (this.active_tab !== null)
           this.active_tab.ondestroy();
-        tab.createView(this._body);
-        this.active_tab = tab;
         this._render_tabbar();
+        tab.createView(this._body);
       }
     }
   },
@@ -882,7 +882,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _onresize: {
     value: function()
     {
-      if (this._created && this.active_tab && this.active_tab.onresize)
+      if (this._created && this.active_tab && this.active_tab._container && this.active_tab.onresize)
         this.active_tab.onresize();
     }
   }
