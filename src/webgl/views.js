@@ -1037,7 +1037,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       else
       {
         framebuffer_binding = this._snapshot.state.get_parameter("FRAMEBUFFER_BINDING", this._call_index);
-        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0]; // Framebuffer null => default framebuffer (0)
+        // Framebuffer === null => default framebuffer (framebuffers[0])
+        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
       }
 
       var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);

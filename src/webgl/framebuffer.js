@@ -9,9 +9,7 @@ cls.WebGLFramebuffer = function ()
 
 cls.WebGLFramebuffer.prototype.is_loaded = function()
 {
-  return this.type === "draw" 
-    ? Boolean(this.image.img.data)
-    : true;
+  return this.type === "clear" || Boolean(this.image.img ? this.image.img.data : true);
 };
 
 cls.WebGLFramebuffer.prototype.request_data = function()
