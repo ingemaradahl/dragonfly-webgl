@@ -17,6 +17,15 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "")
   ]);
 
+  this.display_call = function(snapshot, call_index, object)
+  {
+    var texture = call_index === -1 ? object :
+      snapshot.trace[call_index].linked_object.texture;
+    this.set_tab_enabled(this._lookup_tab("texture-mipmap"), texture.mipmapped &&
+      texture.levels.length > 1)
+    cls.WebGLCallView.display_call.apply(this, arguments);
+  };
+  
   var on_texture_data = function(msg)
   {
     var texture = msg.texture;

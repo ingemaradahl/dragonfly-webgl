@@ -830,6 +830,8 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: null
   },
   display_call: {
+    writable: true,
+    configurable: true,
     value: function(snapshot, call_index, object)
     {
       this._snapshot = snapshot;
