@@ -571,6 +571,11 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
   }
 
   select.push("handler", "webgl-select-framebuffer");
+  // To get it floating properly it needs to be put in a div
+  select = [
+    "div", select,
+    "class", "select-float"
+  ];
 
   switch (bound_framebuffer.type)
   {
@@ -1167,28 +1172,32 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
 {
   var call_index = draw_call.call_index;
   var attributes = draw_call.program.attributes;
+  var select = [
+    "select",
+    attributes.map(function(attribute) {
+      var pointer = attribute.pointers.lookup(call_index);
+      var option = [ "option",
+        attribute.name + " (" + pointer.buffer + ")",
+        "value", attribute,
+        "pointer", pointer
+      ];
+      if (!pointer.buffer)
+      {
+        option.push("disabled");
+        option.push("true");
+      }
+      return option;
+    }),
+    "handler", "webgl-select-attribute",
+    "id", "webgl-attribute-selector"
+  ];
+  // To get it floating properly it needs to be put in a div
+  select = [
+    "div", select,
+    "class", "select-float"
+  ];
   return ["div",
-    [
-      "select",
-      [
-        attributes.map(function(attribute) {
-          var pointer = attribute.pointers.lookup(call_index);
-          var option = [ "option",
-            attribute.name + " (" + pointer.buffer + ")",
-            "value", attribute,
-            "pointer", pointer
-          ];
-          if (!pointer.buffer)
-          {
-            option.push("disabled");
-            option.push("true");
-          }
-          return option;
-        })
-      ],
-      "handler", "webgl-select-attribute",
-      "id", "webgl-attribute-selector"
-    ],
+    select,
     window.templates.webgl.preview_canvas()
   ];
 };
@@ -1526,20 +1535,21 @@ window.templates.webgl.program = function(call_index, program)
     programs
   ];
 
+  // TODO do we want to show the tables in the program view?
   // If the program is related to a call, attribute and uniforms tables
   // will be created and attached to the template.
-  if (call_index !== -1 && call_index !== null)
-  {
-    attribute_table = window.templates.webgl.attribute_table(call_index, program);
-    uniform_table = window.templates.webgl.uniform_table(call_index, program);
-    html =
-    [
-      "div",
-      attribute_table,
-      uniform_table,
-      programs
-    ];
-  }
+  //if (call_index !== -1 && call_index !== null)
+  //{
+  //  attribute_table = window.templates.webgl.attribute_table(call_index, program);
+  //  uniform_table = window.templates.webgl.uniform_table(call_index, program);
+  //  html =
+  //  [
+  //    "div",
+  //    attribute_table,
+  //    uniform_table,
+  //    programs
+  //  ];
+  //}
   return html;
 };
 
