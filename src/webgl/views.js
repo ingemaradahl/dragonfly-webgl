@@ -531,7 +531,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
       this.render();
     }
   },
-   //TODO Many improvments possible, for example run the timeout on the 
+   //TODO Many improvments possible, for example run the timeout on the
    // debuggee, add multiple frames snapshot, etc.
   on_take_custom_snapshot: {
     value: function()
@@ -551,7 +551,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
       {
         count = 0;
       }
-      var snapshot_timer; 
+      var snapshot_timer;
       var render_func = function()
       {
         if (count > 0)
@@ -563,8 +563,8 @@ cls.WebGLSideView = Object.create(ViewBase, {
           clearInterval(snapshot_timer);
         }
       }.bind(this);
-      
-      snapshot_timer = setInterval(render_func, 1000);  
+
+      snapshot_timer = setInterval(render_func, 1000);
       setTimeout(func, delay);
     }
   },
@@ -1040,8 +1040,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0]; // Framebuffer null => default framebuffer (0)
       }
 
-      var img = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);
-      return {title: "Framebuffer", content: img, class: "framebuffer fit", onclick: "framebuffer"};
+      var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);
+      return {title: "Framebuffer", content: content, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
   getPrimaryViews: {
@@ -1146,9 +1146,10 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       if (max_child_width < MIN_CHILD_WIDTH + child_margin)
         max_child_width = MIN_CHILD_WIDTH + child_margin;
       var max_columns = Math.floor(container_width / max_child_width);
-      var column_width = Math.floor(container_width / max_columns) - child_margin;
-      if (max_columns === 1) column_width = container_width;
-      if (column_width > container_width) column_width = container_width;
+      var column_width = max_columns === 1 ? container_width :
+        Math.floor(container_width / max_columns);
+      column_width -= child_margin;
+      if (column_width > container_width) column_width = container_width - child_margin;
       if (column_width > MAX_CHILD_WIDTH) column_width = MAX_CHILD_WIDTH;
 
       // Set the width on all children

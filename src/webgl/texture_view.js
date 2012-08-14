@@ -90,16 +90,17 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
   {
     this._texture.request_data();
     var level0 = this._texture.levels[0];
-    var base_image;
+    var content;
     if (!level0 || level0.img == null && !this._texture.mipmapped)
     {
-      base_image = ["span", "No data."];
+      content = ["span", "No data."];
     }
     else
     {
-      base_image = window.templates.webgl.image(level0);
+      var image = window.templates.webgl.image(level0);
+      content = window.templates.webgl.thumbnail_container(image);
     }
-    return {title: "Texture", content: base_image, class: "texture-preview"};
+    return {title: "Texture", content: content, class: "texture fit"};
   };
 
   this.getTextureInfoView = function()
@@ -122,21 +123,6 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
   this.getSecondaryViews = function()
   {
     return [this.getTextureInfoView(), this.getTextureHistoryView()];
-  };
-
-  this.layoutAfter = function()
-  {
-    var framebuffer_item = this._container.querySelector(".framebuffer");
-    var texture_item = this._container.querySelector(".texture-preview");
-    if (!framebuffer_item || !texture_item) return;
-
-    var framebuffer = framebuffer_item.children[1];
-    var texture = texture_item.children[1];
-
-    var height = framebuffer.offsetHeight;
-    var width = framebuffer.offsetWidth;
-    texture.style.width = width + "px";
-    texture.style.height = height + "px";
   };
 
   this.set_call = function(snapshot, call_index, object)
@@ -195,7 +181,7 @@ cls.WebGLTextureHistoryTab = function(id, name, container_class)
     this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
-  
+
   this.init(id, name, container_class);
 };
 

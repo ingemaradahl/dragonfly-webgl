@@ -51,6 +51,19 @@
   color: #000;
 }
 
+.thumbnail > *
+{
+  border: 1px solid #888888;
+  max-height: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.framebuffer-thumbnail
+{
+  max-height: 300px;
+}
+
 .clear
 {
   clear: both;
@@ -459,7 +472,7 @@ div.mipmap-table
   font-size: 0px;
 }
 
-.texture-container.fit img
+.texture-container.fit > *
 {
   max-height: 100%;
   max-width: 100%;
