@@ -1047,12 +1047,12 @@ window.templates.webgl.call_header = function(call, trace_call)
   var callnr = parseInt(call, 10) + 1; // Start call count on 1.
 
   // Makes a link to the webgl specification of the actual function.
-  var spec_link = [
-    "span", "spec",
+  var spec_url = window.webgl.api.function_to_speclink(trace_call.function_name);
+  var spec_link = spec_url == null ? [] : [
+    "span", "Specification",
     "handler", "webgl-speclink-click",
-    "class", "specification",
-    "function_name",
-    window.webgl.api.function_to_speclink(trace_call.function_name)
+    "class", "ui-button ui-control specification",
+    "specification_url", spec_url
   ];
 
   var function_name = ["span", trace_call.function_name];
@@ -1183,8 +1183,7 @@ window.templates.webgl.drawcall_buffer = function (draw_call)
       ];
       if (!pointer.buffer)
       {
-        option.push("disabled");
-        option.push("true");
+        option.push("disabled", "true");
       }
       return option;
     }),
@@ -1218,10 +1217,8 @@ window.templates.webgl.preview_canvas = function()
         ["span", "Front facing: " + front_face],
         ["br"],
         ["span", "Back facing: " + back_face],
-        "id", "webgl-preview-help",
-        "handler", "webgl-preview-help",
-      ],
-      "handler", "webgl-preview-help",
+        "id", "webgl-preview-help"
+      ]
     ],
     "handler", "webgl-canvas",
     "id", "webgl-canvas-holder",

@@ -658,7 +658,7 @@ ui_framework.layouts.webgl_rough_layout =
               'webgl_draw_call', 'webgl_texture_call', 'webgl_generic_call',
               'webgl_buffer_call', 'webgl_program_call'
             ],
-            is_hidden: false
+            is_hidden: true
           }
         }
       ]

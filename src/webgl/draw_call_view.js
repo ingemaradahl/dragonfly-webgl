@@ -42,12 +42,10 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   {
     add_canvas();
     var preview = window.webgl.preview;
-    var preview_help = document.getElementById("webgl-preview-help");
 
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
-    preview.set_help_container(preview_help);
     preview.set_info_container(this._preview_container);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();

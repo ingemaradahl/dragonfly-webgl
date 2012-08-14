@@ -86,8 +86,19 @@
 /* Tabs */
 .webgl-view .tabs
 {
-  background-color: rgba(0, 0, 0, 0.1);
-  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  /* copy of styles from panel-toolbar */
+  background-color: #E9E9E9;
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.553) 0px, rgba(255, 255, 255, 0.251) 100%);
+  border-bottom-color: #BFBFBF;
+  border-bottom-width: 1px;
+  border-left-color: #BFBFBF;
+  border-left-width: 0px;
+  border-right-color: #BFBFBF;
+  border-right-width: 0px;
+  border-top-color: #BFBFBF;
+  border-top-width: 0px;
+  box-shadow: inset 0px 0px 0px 1px rgba(255, 255, 255, 0.345), inset 0px 1px 1px 0px rgba(255, 255, 255, 0.898);
+
   border-bottom: 1px solid rgba(0, 0, 0, 0.196);
 }
 
@@ -176,21 +187,25 @@ img.flipped
 .call-header
 {
   padding: 5px !important;
-  background-color: rgba(0, 0, 0, 0.118);
-  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.149);
   font-weight: 400;
+  line-height: 20px;
+
+  border-bottom-color: #D7D7D7;
+  background-color: #E9E9E9;
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.447) 100%);
+  border-bottom: 1px solid #CCCCCC;
 }
 
 .call-header h2
 {
+  vertical-align: middle;
   display: inline;
 }
 
 .call-header .arguments
 {
   display: inline;
-  vertical-align: 10%;
+  vertical-align: -5%;
 }
 
 .state-table
@@ -234,13 +249,13 @@ img.flipped
 
 .specification
 {
-  cursor: pointer;
-  margin: 6px;
-  padding: 2px;
-  font-size: 9px;
-  color: #000;
-  background-color: #ccc;
-  border: 1px solid #666;
+  /*cursor: pointer;*/
+  /*margin: 6px;*/
+  /*padding: 2px;*/
+  /*font-size: 9px;*/
+  /*color: #000;*/
+  /*background-color: #ccc;*/
+  /*border: 1px solid #666;*/
 }
 
 #webgl-state-table-container .sortable-table
@@ -354,6 +369,11 @@ img.flipped
   background: rgba(0,255,0, 0.4);
 }
 
+.trace-table tr > td:first-child
+{
+  text-align: right;
+}
+
 
 /* Draw Call */
 .webgl-view .webgl-holder
@@ -395,12 +415,12 @@ img.flipped
 /* Preview help toggle div */
 .webgl-holder > div
 {
-  position:absolute;
-  top:2px;
-  right:3px;
+  position: absolute;
+  right: 1px;
   text-shadow: 0px 0px 4px #888;
   font-weight: 700;
   z-index: 2;
+  padding: 4px;
 }
 
 .webgl-holder > div:hover
@@ -416,11 +436,12 @@ img.flipped
 }
 
 /* Preview help container */
-.webgl-holder > div > div {
+.webgl-holder > div > div
+{
   position: absolute;
   visibility: hidden;
   right: 15px;
-  top: 15px;
+  top: 20px;
   width: 200px;
 
   color: #ffffff;
@@ -428,13 +449,18 @@ img.flipped
   font-weight: normal;
   text-align: left;
 
-  padding:5px;
+  padding: 5px;
   border: 2px solid #b1b1b1;
   box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.64), 0px 1px 6px rgba(0, 0, 0, 0.300);
   background: rgba(16, 16, 16, 0.8);
   border-radius: 5px;
 
-  z-index:2;
+  z-index: 2;
+}
+
+.webgl-holder > div:hover > div
+{
+  visibility: visible;
 }
 
 /* Texture */
