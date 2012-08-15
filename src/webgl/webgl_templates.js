@@ -1555,3 +1555,19 @@ window.templates.webgl.settings = function(settings)
     ];
 
 };
+
+window.templates.webgl.start_view = function()
+{
+  var button = [];
+  if (window.webgl.runtime_id === -1)
+  {
+    button = window.templates.webgl.reload_info();
+  }
+  return ["div",
+    ["h2", "How to use the Dragonfly WebGL Debugger"],
+    ["div", "1", "class", "number-circle"],
+    "^ en ring gjord i css :)",
+    button,
+    "class", "webgl-start"
+  ];
+};
