@@ -32,6 +32,7 @@ cls.WebGLFramebuffer.prototype.request_data = function()
 
 cls.WebGLFramebuffer.prototype.toString = function()
 {
-  return "Framebuffer " + String(this.index);
+  // TODO add setting to control if the index_snapshot or index should be used.
+  return "Framebuffer " + String(this.index_snapshot + 1);
 };
 

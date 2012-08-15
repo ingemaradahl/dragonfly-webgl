@@ -177,12 +177,16 @@ cls.WebGL.RPCs.injection = function () {
     innerFuns.createFramebuffer = function(result, args)
     {
       var frame_buffer = { framebuffer : result };
-      frame_buffer.index = this.framebuffers.push(frame_buffer) - 1;
+      this.framebuffers.push(frame_buffer);
+      frame_buffer.index = this.framebuffers.number++;
     };
     innerFuns.deleteFramebuffer = function(result, args)
     {
-      var framebuffer = this.lookup_framebuffer(args[0]);
-      delete this.framebuffers[framebuffer.index];
+      var framebuffer_index = this.lookup_framebuffer_index(args[0]);
+      if (framebuffer_index == null) return;
+      if (this.capturing_frame)
+        this.deleted_framebuffers.push(this.framebuffers[framebuffer_index]);
+      this.framebuffers.splice(framebuffer_index, 1);
     };
     innerFuns.bindFramebuffer = function(result, args)
     {
@@ -685,7 +689,7 @@ cls.WebGL.RPCs.injection = function () {
           image = {
             width : viewport[2],
             height : viewport[3]
-          }
+          };
         }
 
         // Figure out buffer binding, i.e. which buffer we are drawing
@@ -737,6 +741,11 @@ cls.WebGL.RPCs.injection = function () {
       var framebuffer = { width: viewport[2], height: viewport[3], color: clear_color };
 
       this.snapshot.add_framebuffer(fbo, framebuffer, "clear");
+    };
+    snapshot_functions.createFramebuffer = function (result, args)
+    {
+      var framebuffer = this.lookup_framebuffer(result);
+      this.snapshot.init_framebuffer(framebuffer);
     };
 
     snapshot_functions.createBuffer = function (result, args)
@@ -920,6 +929,7 @@ cls.WebGL.RPCs.injection = function () {
         handler.snapshot = null;
         handler.deleted_textures.length = 0;
         handler.deleted_buffers.length = 0;
+        handler.deleted_framebuffers.length = 0;
       }
 
       if (handler.capture_next_frame)
@@ -985,8 +995,11 @@ cls.WebGL.RPCs.injection = function () {
 
     this.snapshot = null;
 
-    this.framebuffer_binding = null;
     this.framebuffers = [{ index: 0, framebuffer: null }];
+    this.framebuffers.number = 1;
+    this.framebuffers.number_snapshot = 0;
+    this.deleted_framebuffers = [];
+    this.framebuffer_binding = null;
 
     this.programs = [];
     this.shaders = [];
@@ -1076,6 +1089,8 @@ cls.WebGL.RPCs.injection = function () {
     this.lookup_program = generic_lookup(this.programs, "program");
 
     this.lookup_framebuffer = generic_lookup(this.framebuffers, "framebuffer");
+    this.lookup_framebuffer_index = generic_lookup_index(this.framebuffers, "framebuffer");
+    this.lookup_deleted_framebuffer = generic_lookup(this.deleted_framebuffers, "framebuffer");
 
     this.lookup_shader = generic_lookup(this.shaders, "shader");
 
@@ -1508,6 +1523,7 @@ cls.WebGL.RPCs.injection = function () {
       else if (obj instanceof WebGLFramebuffer)
       {
         var framebuffer = this.lookup_framebuffer(obj);
+        if (framebuffer == null) framebuffer = this.lookup_deleted_framebuffer(obj);
         arg.framebuffer_index = framebuffer.index;
       }
       return arg;
@@ -1619,23 +1635,10 @@ cls.WebGL.RPCs.injection = function () {
 
       var init_framebuffers = function ()
       {
-        for(var i=0; i<h.framebuffers.length; i++)
+        for (var i = 0; i < h.framebuffers.length; i++)
         {
           // Add initial content to framebuffers
-          var image;
-          if (this.handler.settings['fbo-readpixels'])
-          {
-            image = this.handler.read_pixels(h.framebuffers[i].framebuffer);
-          }
-          else
-          {
-            var viewport = this.handler.gl.getParameter(this.handler.gl.VIEWPORT);
-            image = {
-              width : viewport[2],
-              height : viewport[3]
-            }
-          }
-          this.add_framebuffer(h.framebuffers[i], image, "init");
+          this.init_framebuffer(h.framebuffers[i]);
         }
       }.bind(this);
 
@@ -1649,6 +1652,24 @@ cls.WebGL.RPCs.injection = function () {
       // Framebuffers needs to be initialized after textures
       init_framebuffers();
     }.bind(this);
+
+    this.init_framebuffer = function(framebuffer)
+    {
+      var image;
+      if (this.handler.settings['fbo-readpixels'])
+      {
+        image = this.handler.read_pixels(framebuffer.framebuffer);
+      }
+      else
+      {
+        var viewport = this.handler.gl.getParameter(this.handler.gl.VIEWPORT);
+        image = {
+          width : viewport[2],
+          height : viewport[3]
+        };
+      }
+      this.add_framebuffer(framebuffer, image, "init");
+    };
 
     /* Adds a WebGL function call to the snapshot */
     this.add_call = function (function_name, error, args, result, redundant, loc)
@@ -1665,7 +1686,7 @@ cls.WebGL.RPCs.injection = function () {
           type: "WebGLVertexLocation",
           program_index: program.index,
           loc_index: args[0]
-        }
+        };
         var trace_ref_index = this.call_refs.push(trace_ref) - 1;
         call_args.push("@" + String(trace_ref_index));
 
@@ -1725,10 +1746,16 @@ cls.WebGL.RPCs.injection = function () {
 
     this.add_framebuffer = function (framebuffer, image, type)
     {
+      if (framebuffer.index_snapshot == null)
+      {
+        framebuffer.index_snapshot = this.handler.framebuffers.number_snapshot++;
+      }
+
       this.framebuffers.push({
         call_index : this.call_index,
         type : type,
         index : framebuffer.index,
+        index_snapshot: framebuffer.index_snapshot,
         image : image
       });
     };
@@ -1736,7 +1763,7 @@ cls.WebGL.RPCs.injection = function () {
     /* Adds a buffer state to the snapshot */
     this.add_buffer = function (buffer)
     {
-      if (!buffer.index_snapshot)
+      if (buffer.index_snapshot == null)
       {
         buffer.index_snapshot = this.handler.buffers.number_snapshot++;
       }
@@ -1768,7 +1795,7 @@ cls.WebGL.RPCs.injection = function () {
 
       var gl = this.handler.gl;
 
-      if (!texture.index_snapshot)
+      if (texture.index_snapshot == null)
       {
         texture.index_snapshot = this.handler.textures.number_snapshot++;
       }

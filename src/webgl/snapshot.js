@@ -103,6 +103,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.programs = snapshot.programs;
     this.textures = snapshot.textures;
     this.state = snapshot.state;
+    this.state.snapshot = this; // This reference is needed to resolve objects after initiation
     this.framebuffers = snapshot.framebuffers;
     this.drawcalls = [];
     this.trace = [];
@@ -194,27 +195,69 @@ cls.WebGLSnapshotArray = function(context_id)
       return null;
     }.bind(this.programs);
 
-    var init_state = function (state)
+    var init_textures = function(textures)
     {
-      for (var key in state)
+      // TODO perhaps this should be cross-snapshot so that the same texture always have same name. Even if one with the same filename is added.
+      var texture_names = {};
+
+      var update_names = function()
       {
-        if (!state.hasOwnProperty(key)) continue;
-        var param = state[key];
-        for (var call in param)
+        for (var filename in texture_names)
         {
-          if (!param.hasOwnProperty(call) ||
-              typeof(param[call]) !== "object" ||
-              param[call] == null) continue;
-          param[call] = new cls.WebGLLinkedObject(param[call], call, this);
-          if (window.webgl.api.has_state_parameter_type(key))
+          var extensions = texture_names[filename];
+          var number = 0;
+          var textures;
+          for (var fileext in extensions)
           {
-            param[call].text = window.webgl.api.state_parameter_to_string(key, param[call].data);
+            textures = extensions[fileext];
+            number += textures.length;
+            if (textures.length === 1)
+            {
+              textures[0].name = filename + "." + fileext;
+            }
+            else
+            {
+              for (var i = 0; i < textures.length; i++)
+              {
+                var texture = textures[i];
+                // TODO add setting to control if the index_snapshot or index should be used.
+                texture.name = filename + "." + fileext + " (" + texture.index_snapshot + ")";
+              }
+            }
+          }
+
+          if (number === 1)
+          {
+            textures[0].name = filename;
           }
         }
-      }
-    }.bind(this);
+      };
 
-    init_state(this.state);
+      var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
+      var add_texture_name = function(tex)
+      {
+        var lvl0 = tex.levels[0];
+        if (lvl0 && lvl0.element_type === "HTMLImageElement" && lvl0.url != null)
+        {
+          var file = file_regexp.exec(lvl0.url);
+          var filename = file[1];
+          var fileext = file[2];
+
+          if (!(filename in texture_names))
+          {
+            texture_names[filename] = {};
+          }
+          if (!(fileext in texture_names[filename]))
+          {
+            texture_names[filename][fileext] = [];
+          }
+          texture_names[filename][fileext].push(tex);
+        }
+      };
+      textures.forEach(add_texture_name);
+      update_names();
+    };
+    init_textures(snapshot.textures);
 
     var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
 
@@ -382,7 +425,7 @@ cls.WebGLSnapshotArray = function(context_id)
                 break;
               default:
                 linked_object = null;
-                greup = "generic";
+                group = "generic";
                 break;
             }
             break;
@@ -397,7 +440,7 @@ cls.WebGLSnapshotArray = function(context_id)
                 break;
               default:
                 linked_object = null;
-                greup = "generic";
+                group = "generic";
                 break;
             }
         }
@@ -409,7 +452,6 @@ cls.WebGLSnapshotArray = function(context_id)
 
       this.trace = trace_list;
     }.bind(this);
-
     init_trace(snapshot.calls, snapshot.call_locs, snapshot.call_refs);
 
     // Init draw calls
@@ -498,70 +540,6 @@ cls.WebGLSnapshotArray = function(context_id)
       return result;
     }.bind(this.drawcalls);
 
-    var init_textures = function(textures)
-    {
-      // TODO perhaps this should be cross-snapshot so that the same texture always have same name. Even if one with the same filename is added.
-      var texture_names = {};
-
-      var update_names = function()
-      {
-        for (var filename in texture_names)
-        {
-          var extensions = texture_names[filename];
-          var number = 0;
-          var textures;
-          for (var fileext in extensions)
-          {
-            textures = extensions[fileext];
-            number += textures.length;
-            if (textures.length === 1)
-            {
-              textures[0].name = filename + "." + fileext;
-            }
-            else
-            {
-              for (var i = 0; i < textures.length; i++)
-              {
-                var texture = textures[i];
-                // TODO add setting to control if the index_snapshot or index should be used.
-                texture.name = filename + "." + fileext + " (" + texture.index_snapshot + ")";
-              }
-            }
-          }
-
-          if (number === 1)
-          {
-            textures[0].name = filename;
-          }
-        }
-      };
-
-      var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
-      var add_texture_name = function(tex)
-      {
-        var lvl0 = tex.levels[0];
-        if (lvl0 && lvl0.element_type === "HTMLImageElement" && lvl0.url != null)
-        {
-          var file = file_regexp.exec(lvl0.url);
-          var filename = file[1];
-          var fileext = file[2];
-
-          if (!(filename in texture_names))
-          {
-            texture_names[filename] = {};
-          }
-          if (!(fileext in texture_names[filename]))
-          {
-            texture_names[filename][fileext] = [];
-          }
-          texture_names[filename][fileext].push(tex);
-        }
-      };
-      textures.forEach(add_texture_name);
-      update_names();
-    };
-    init_textures(snapshot.textures);
-
     var init_history = function(textures, buffers)
     {
       var types = [textures, buffers];
@@ -617,18 +595,19 @@ cls.WebGLSnapshotArray.prototype.constructor = cls.WebGLSnapshotArray;
    */
 cls.WebGLLinkedObject = function(object, call_index, snapshot)
 {
+  call_index = Number(call_index);
+
   for (var key in object)
   {
     if (object.hasOwnProperty(key)) this[key] = object[key];
   }
 
-  var call_index = Number(call_index);
   var matched = true;
   switch (this.type)
   {
     case "WebGLBuffer":
       if (this.buffer_index == null) return;
-      this.buffer = snapshot.buffers[this.buffer_index];
+      this.buffer = snapshot.buffers.lookup(this.buffer_index, call_index);
       this.text = String(this.buffer);
       this.action = function ()
       {
