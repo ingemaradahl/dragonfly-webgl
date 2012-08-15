@@ -804,8 +804,8 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       cls.WebGLCallView.active_view = this;
 
-      if (this._snapshot !== null && this._call_index !== null)
-        this.render();
+      if (this._snapshot != null && this._call_index != null)
+        this.display_call(this._snapshot, this._call_index, this._object);
     }
   },
   ondestroy: {
@@ -815,11 +815,6 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       this._created = false;
       this._header = null;
       this._body = null;
-
-      this._snapshot = null;
-      this._call_index = null;
-      this._object = null;
-      this._call = null;
 
       if (this.active_tab !== null)
         this.active_tab.ondestroy();

@@ -193,7 +193,6 @@ img.flipped
 {
   padding: 5px !important;
   font-weight: 400;
-  line-height: 20px;
 
   border-bottom-color: #D7D7D7;
   background-color: #E9E9E9;
@@ -210,7 +209,7 @@ img.flipped
 .call-header .arguments
 {
   display: inline;
-  vertical-align: -5%;
+  vertical-align: -10%;
 }
 
 .state-table
@@ -297,10 +296,11 @@ img.flipped
   border: 1px solid #999999;
 }
 
-.webgl-view .uniforms td
-{
-  white-space: nowrap;
-}
+/* TODO: does not work, looks very bad currently. Looks like the cell needs to have a width specified */
+/*.webgl-view .uniforms td*/
+/*{*/
+  /*white-space: nowrap;*/
+/*}*/
 
 /* Buffer */
 
@@ -520,9 +520,6 @@ div.mipmap-table
 img.full-texture
 {
   display: block;
-  margin-top: 15px;
-  margin-left: auto;
-  margin-right: auto;
   box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.300);
   cursor: move;
 }

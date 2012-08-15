@@ -630,13 +630,11 @@ window.templates.webgl.image = function(level, additional_classes)
     image = [
       "img",
       "src", level.img.data,
-      "handler", "webgl-texture-image"
+      "handler", "webgl-scroll-image"
     ];
     var classes = ["checkerboard"].concat(additional_classes);
     if (level.img.flipped)
-    {
       classes.push("flipped");
-    }
 
     image.push("class", classes.join(" "));
   }
@@ -660,14 +658,6 @@ window.templates.webgl.texture_info = function(texture)
     name: "Border",
     value: String(level0.border)
   };
-  var url = !level0 || !level0.url ? null : {
-    name: "Source",
-    value: level0.url
-  };
-  var dimensions =  !level0 || !level0.height || !level0.width ? null : {
-    name: "Dimensions",
-    value: level0.width + "x" + level0.height + " px",
-  };
 
   var build_info_row = function(info)
   {
@@ -687,8 +677,6 @@ window.templates.webgl.texture_info = function(texture)
   };
 
   var texture_info = [
-    url,
-    dimensions,
     {
       name: "Format",
       value: const_to_string(texture.format)
@@ -719,6 +707,27 @@ window.templates.webgl.texture_info = function(texture)
       value: const_to_string(texture.texture_mag_filter)
     }
   ];
+
+  if (level0)
+  {
+    texture_info.unshift({
+      name: "Dimensions",
+      value: level0.height + "×" + level0.width + " px"
+    });
+
+    if (level0.url)
+    {
+      texture_info.unshift({
+        name: "Image source",
+        value: level0.url
+      });
+    }
+
+    texture_info.unshift({
+      name: "Source",
+      value: level0.element_type
+    });
+  }
 
   var info_table_rows = texture_info.map(build_info_row);
 
@@ -789,85 +798,6 @@ window.templates.webgl.mipmap_table = function(texture)
 
   return ret;
 };
-//
-//  var const_to_string = window.webgl.api.constant_value_to_string;
-//
-//  var border_info = !level0 || !level0.border ? null : {
-//    name: "Border",
-//    value: String(level0.border)
-//  };
-//
-//  var texture_info = [
-//    {
-//      name: "Format",
-//      value: const_to_string(texture.format)
-//    },
-//    {
-//      name: "Internal format",
-//      value: const_to_string(texture.internalFormat)
-//    },
-//    {
-//      name: "Type",
-//      value: const_to_string(texture.type)
-//    },
-//    border_info,
-//    {
-//      name: "TEXTURE_WRAP_S",
-//      value: const_to_string(texture.texture_wrap_s)
-//    },
-//    {
-//      name: "TEXTURE_WRAP_T",
-//      value: const_to_string(texture.texture_wrap_t)
-//    },
-//    {
-//      name: "TEXTURE_MIN_FILTER",
-//      value: const_to_string(texture.texture_min_filter)
-//    },
-//    {
-//      name: "TEXTURE_MAG_FILTER",
-//      value: const_to_string(texture.texture_mag_filter)
-//    }
-//  ];
-//
-//  if (level0)
-//  {
-//    texture_info.unshift({
-//      name: "Dimensions",
-//      value: level0.height + "x" + level0.width + " px"
-//    });
-//
-//    if (level0.url)
-//    {
-//      texture_info.unshift({
-//        name: "Image source",
-//        value: level0.url
-//      });
-//    }
-//
-//    texture_info.unshift({
-//      name: "Source",
-//      value: level0.element_type
-//    });
-//  }
-//
-//  var info_table_rows = texture_info.map(build_info_row);
-//
-//  var info_table = [
-//    "table",
-//    info_table_rows,
-//    "class", "table-info"
-//  ];
-//
-//  var history = window.templates.webgl.history(texture);
-//
-//  return [ "div",
-//    ["h2", texture.toString()],
-//    base_image,
-//    info_table,
-//    mipmap_table,
-//	  history
-//  ];
-//};
 
 /**
  * Makes a link to the script tag to show where the call was made on, adds it to an existing tag.

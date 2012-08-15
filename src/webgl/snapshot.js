@@ -103,6 +103,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.programs = snapshot.programs;
     this.textures = snapshot.textures;
     this.state = snapshot.state;
+    this.state.snapshot = this; // This reference is needed to resolve objects after initiation
     this.framebuffers = snapshot.framebuffers;
     this.drawcalls = [];
     this.trace = [];
@@ -193,27 +194,6 @@ cls.WebGLSnapshotArray = function(context_id)
 
       return null;
     }.bind(this.programs);
-
-    var init_state = function (state)
-    {
-      for (var key in state)
-      {
-        if (!state.hasOwnProperty(key)) continue;
-        var param = state[key];
-        for (var call in param)
-        {
-          if (!param.hasOwnProperty(call) ||
-              typeof(param[call]) !== "object" ||
-              param[call] == null) continue;
-          param[call] = new cls.WebGLLinkedObject(param[call], call, this);
-          if (window.webgl.api.has_state_parameter_type(key))
-          {
-            param[call].text = window.webgl.api.state_parameter_to_string(key, param[call].data);
-          }
-        }
-      }
-    }.bind(this);
-    init_state(this.state);
 
     var init_textures = function(textures)
     {
@@ -445,7 +425,7 @@ cls.WebGLSnapshotArray = function(context_id)
                 break;
               default:
                 linked_object = null;
-                greup = "generic";
+                group = "generic";
                 break;
             }
             break;
@@ -460,7 +440,7 @@ cls.WebGLSnapshotArray = function(context_id)
                 break;
               default:
                 linked_object = null;
-                greup = "generic";
+                group = "generic";
                 break;
             }
         }
@@ -615,18 +595,19 @@ cls.WebGLSnapshotArray.prototype.constructor = cls.WebGLSnapshotArray;
    */
 cls.WebGLLinkedObject = function(object, call_index, snapshot)
 {
+  call_index = Number(call_index);
+
   for (var key in object)
   {
     if (object.hasOwnProperty(key)) this[key] = object[key];
   }
 
-  var call_index = Number(call_index);
   var matched = true;
   switch (this.type)
   {
     case "WebGLBuffer":
       if (this.buffer_index == null) return;
-      this.buffer = snapshot.buffers[this.buffer_index];
+      this.buffer = snapshot.buffers.lookup(this.buffer_index, call_index);
       this.text = String(this.buffer);
       this.action = function ()
       {
