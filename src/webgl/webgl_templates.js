@@ -1042,6 +1042,7 @@ window.templates.webgl.call_header = function(call, trace_call)
   var spec_link = spec_url == null ? [] : [
     "span", "Specification",
     "handler", "webgl-speclink-click",
+    "title", "Open " + trace_call.function_name + " specification in a new tab",
     "class", "ui-button ui-control specification",
     "specification_url", spec_url
   ];

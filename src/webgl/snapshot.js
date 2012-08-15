@@ -213,8 +213,71 @@ cls.WebGLSnapshotArray = function(context_id)
         }
       }
     }.bind(this);
-
     init_state(this.state);
+
+    var init_textures = function(textures)
+    {
+      // TODO perhaps this should be cross-snapshot so that the same texture always have same name. Even if one with the same filename is added.
+      var texture_names = {};
+
+      var update_names = function()
+      {
+        for (var filename in texture_names)
+        {
+          var extensions = texture_names[filename];
+          var number = 0;
+          var textures;
+          for (var fileext in extensions)
+          {
+            textures = extensions[fileext];
+            number += textures.length;
+            if (textures.length === 1)
+            {
+              textures[0].name = filename + "." + fileext;
+            }
+            else
+            {
+              for (var i = 0; i < textures.length; i++)
+              {
+                var texture = textures[i];
+                // TODO add setting to control if the index_snapshot or index should be used.
+                texture.name = filename + "." + fileext + " (" + texture.index_snapshot + ")";
+              }
+            }
+          }
+
+          if (number === 1)
+          {
+            textures[0].name = filename;
+          }
+        }
+      };
+
+      var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
+      var add_texture_name = function(tex)
+      {
+        var lvl0 = tex.levels[0];
+        if (lvl0 && lvl0.element_type === "HTMLImageElement" && lvl0.url != null)
+        {
+          var file = file_regexp.exec(lvl0.url);
+          var filename = file[1];
+          var fileext = file[2];
+
+          if (!(filename in texture_names))
+          {
+            texture_names[filename] = {};
+          }
+          if (!(fileext in texture_names[filename]))
+          {
+            texture_names[filename][fileext] = [];
+          }
+          texture_names[filename][fileext].push(tex);
+        }
+      };
+      textures.forEach(add_texture_name);
+      update_names();
+    };
+    init_textures(snapshot.textures);
 
     var runtime = window.runtimes.getRuntime(window.webgl.runtime_id);
 
@@ -409,7 +472,6 @@ cls.WebGLSnapshotArray = function(context_id)
 
       this.trace = trace_list;
     }.bind(this);
-
     init_trace(snapshot.calls, snapshot.call_locs, snapshot.call_refs);
 
     // Init draw calls
@@ -497,70 +559,6 @@ cls.WebGLSnapshotArray = function(context_id)
 
       return result;
     }.bind(this.drawcalls);
-
-    var init_textures = function(textures)
-    {
-      // TODO perhaps this should be cross-snapshot so that the same texture always have same name. Even if one with the same filename is added.
-      var texture_names = {};
-
-      var update_names = function()
-      {
-        for (var filename in texture_names)
-        {
-          var extensions = texture_names[filename];
-          var number = 0;
-          var textures;
-          for (var fileext in extensions)
-          {
-            textures = extensions[fileext];
-            number += textures.length;
-            if (textures.length === 1)
-            {
-              textures[0].name = filename + "." + fileext;
-            }
-            else
-            {
-              for (var i = 0; i < textures.length; i++)
-              {
-                var texture = textures[i];
-                // TODO add setting to control if the index_snapshot or index should be used.
-                texture.name = filename + "." + fileext + " (" + texture.index_snapshot + ")";
-              }
-            }
-          }
-
-          if (number === 1)
-          {
-            textures[0].name = filename;
-          }
-        }
-      };
-
-      var file_regexp = new RegExp("^.*/(.*)\\.([^.]*)$");
-      var add_texture_name = function(tex)
-      {
-        var lvl0 = tex.levels[0];
-        if (lvl0 && lvl0.element_type === "HTMLImageElement" && lvl0.url != null)
-        {
-          var file = file_regexp.exec(lvl0.url);
-          var filename = file[1];
-          var fileext = file[2];
-
-          if (!(filename in texture_names))
-          {
-            texture_names[filename] = {};
-          }
-          if (!(fileext in texture_names[filename]))
-          {
-            texture_names[filename][fileext] = [];
-          }
-          texture_names[filename][fileext].push(tex);
-        }
-      };
-      textures.forEach(add_texture_name);
-      update_names();
-    };
-    init_textures(snapshot.textures);
 
     var init_history = function(textures, buffers)
     {
