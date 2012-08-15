@@ -22,10 +22,10 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     var texture = call_index === -1 ? object :
       snapshot.trace[call_index].linked_object.texture;
     this.set_tab_enabled(this._lookup_tab("texture-mipmap"), texture.mipmapped &&
-      texture.levels.length > 1)
+      texture.levels.length > 1);
     cls.WebGLCallView.display_call.apply(this, arguments);
   };
-  
+
   var on_texture_data = function(msg)
   {
     var texture = msg.texture;
@@ -49,7 +49,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   {
     evt.stopPropagation();
     evt.preventDefault();
-    var parent = target.parentElement;
+    var parent = target.parentElement.parentElement;
     var x_start = evt.clientX + parent.scrollLeft;
     var y_start = evt.clientY + parent.scrollTop;
 
@@ -72,8 +72,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
   };
 
   var eh = window.eventHandlers;
-  eh.mousedown["webgl-texture-image"] = on_texture_start_drag.bind(this);
-  eh.mouseup["webgl-texture-image"] = on_texture_end_drag.bind(this);
+  eh.mousedown["webgl-scroll-image"] = on_texture_start_drag.bind(this);
+  eh.mouseup["webgl-scroll-image"] = on_texture_end_drag.bind(this);
 
   messages.addListener('webgl-texture-data', on_texture_data.bind(this));
 
@@ -100,11 +100,13 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
       var image = window.templates.webgl.image(level0);
       content = window.templates.webgl.thumbnail_container(image);
     }
-    return {title: "Texture", content: content, class: "texture fit"};
+    // TODO use the right index based on setting
+    return {title: "Texture " + String(this._texture.index + 1), content: content, class: "texture fit"};
   };
 
   this.getTextureInfoView = function()
   {
+    // TODO show the texture name somewhere
     var info_content = window.templates.webgl.texture_info(this._texture);
     return {title: "Texture info", content: info_content};
   };
@@ -153,16 +155,40 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
     var texture = this._texture;
     texture.request_data();
     var level0 = texture.levels[0];
-    var base_image;
+    var image;
     if (!level0 || level0.img == null && !texture.mipmapped)
     {
-      base_image = ["span", "No data."];
+      image = ["span", "No data."];
     }
     else
     {
-      base_image = window.templates.webgl.image(level0);
+      image = window.templates.webgl.image(level0);
+      image = [
+        "div", image,
+        "style", "position: relative;"
+      ];
     }
-    this._container.clearAndRender(base_image);
+    this._container.clearAndRender(image);
+    this.layout();
+  };
+
+  this.layout = function()
+  {
+    var content_height = this._container.offsetHeight;
+    var content_width = this._container.offsetWidth;
+
+    var img_container = this._container.childNodes[0];
+    var img = img_container.childNodes[0];
+    var top = Math.max(0, (content_height - img.offsetHeight) / 2);
+    img_container.style.top = String(top) + "px";
+    var left = Math.max(0, (content_width - img.offsetWidth) / 2);
+    img_container.style.left = String(left) + "px";
+    img_container.style.width = String(img.offsetWidth) + "px";
+  };
+
+  this.onresize = function()
+  {
+    this.layout();
   };
 
   this.init(id, name, container_class);
