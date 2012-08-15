@@ -675,7 +675,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       this.text = String(this.program);
       this.action = function ()
       {
-        window.views.webgl_program_call._render(snapshot, null, this.program);
+        window.views.webgl_program_call.display_call(snapshot, -1, this.program);
       }.bind(this);
       break;
     case "WebGLFramebuffer":

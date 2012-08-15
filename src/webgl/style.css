@@ -123,6 +123,11 @@
   box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.102);
 }
 
+.webgl-view .tabs > div.disabled
+{
+  opacity: 0.45;
+}
+
 .webgl-view .tabs > div:last-child
 {
   background: none !important;
@@ -292,7 +297,17 @@ img.flipped
   border: 1px solid #999999;
 }
 
+.webgl-view .uniforms td
+{
+  white-space: nowrap;
+}
+
 /* Buffer */
+
+.buffer-visual .webgl-holder
+{
+  margin: 5px;
+}
 
 .buffer-data-table
 {
@@ -395,6 +410,7 @@ img.flipped
   width: 100%;
   height: 100%;
   position: absolute;
+  cursor: move;
 }
 
 .webgl-holder > container
@@ -499,6 +515,16 @@ div.mipmap-table
 .mipmap-table > .sortable-table
 {
   border: 1px solid #ccc;
+}
+
+img.full-texture
+{
+  display: block;
+  margin-top: 15px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.300);
+  cursor: move;
 }
 
 .checkerboard

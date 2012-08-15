@@ -724,11 +724,11 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     {
       if (this.active_tab !== tab)
       {
+        this.active_tab = tab;
         if (this.active_tab !== null)
           this.active_tab.ondestroy();
-        tab.createView(this._body);
-        this.active_tab = tab;
         this._render_tabbar();
+        tab.createView(this._body);
       }
     }
   },
@@ -882,7 +882,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _onresize: {
     value: function()
     {
-      if (this._created && this.active_tab && this.active_tab.onresize)
+      if (this._created && this.active_tab && this.active_tab._container && this.active_tab.onresize)
         this.active_tab.onresize();
     }
   }
@@ -923,11 +923,24 @@ cls.WebGLCallView.initialize = function()
     this.active_view.active_tab.render();
   };
 
+  var on_state_parameter_click = function(event, target)
+  {
+    target.argument.action();
+  };
+
+  var on_framebuffer_data = function(message)
+  {
+    this.active_view.active_tab.render();
+  };
+
   var eh = window.eventHandlers;
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
+  eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
+
+  messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
 };
 
 // ----------------------------------------------------------------------------
@@ -1048,7 +1061,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       else
       {
         framebuffer_binding = this._snapshot.state.get_parameter("FRAMEBUFFER_BINDING", this._call_index);
-        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0]; // Framebuffer null => default framebuffer (0)
+        // Framebuffer === null => default framebuffer (framebuffers[0])
+        framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
       }
 
       var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);

@@ -373,7 +373,8 @@ window.templates.webgl.buffer_preview = function (buffer_settings)
       ["div", position],
       ["div", parameters],
       "class", "buffer-settings"
-    ]
+    ],
+    "class" , "buffer-visual"
   ];
 };
 
@@ -579,9 +580,6 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
 
   switch (bound_framebuffer.type)
   {
-    case "init":
-      image = ["div", "TODO: inital framebuffer"];
-      break;
     case "clear":
       var color = bound_framebuffer.image.color;
       var colors = Math.round(color[0] * 255) + ", " +
@@ -596,6 +594,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
         "class", "checkerboard"
       ];
       break;
+    case "init":
     case "draw":
       image = window.templates.webgl.image(bound_framebuffer.image);
       image = window.templates.webgl.thumbnail_container(image);
@@ -618,8 +617,9 @@ window.templates.webgl.thumbnail_container = function(image)
   ];
 };
 
-window.templates.webgl.image = function(level)
+window.templates.webgl.image = function(level, additional_classes)
 {
+  additional_classes = additional_classes || [];
   var image;
   if (level.img == null)
   {
@@ -632,7 +632,7 @@ window.templates.webgl.image = function(level)
       "src", level.img.data,
       "handler", "webgl-scroll-image"
     ];
-    var classes = ["checkerboard"];
+    var classes = ["checkerboard"].concat(additional_classes);
     if (level.img.flipped)
       classes.push("flipped");
 
@@ -642,7 +642,7 @@ window.templates.webgl.image = function(level)
   {
     image = ["div",
       ["img", "src", "./ui-images/loading.png"],
-      "class", "loading-image",
+      "class", (["loading-image"].concat(additional_classes)).join(" "),
       "style", "width: " + String(level.width ? level.width : 128) + "px; height: " + String(level.height ? level.height : 128) + "px;"
     ];
   }
@@ -876,7 +876,7 @@ window.templates.webgl.state_parameter_value = function(param, value)
     }
     else
     {
-      param_content = window.templates.webgl.linked_object(value, "webgl-draw-argument", "argument");
+      param_content = window.templates.webgl.linked_object(value, "webgl-state-argument", "argument");
     }
   }
   else
@@ -930,14 +930,18 @@ window.templates.webgl.tabs = function(tabs, active_tab)
 {
   var html = tabs.map(function(tab)
   {
-    if (!tab.enabled) return [];
     var content = [
       "div", tab.name,
-      "handler", "webgl-tab",
       "id", tab.id
     ];
+
     if (tab === active_tab)
-      content.push("class", "active");
+      content.push("class", "active", "handler", "webgl-tab");
+    else if (!tab.enabled)
+      content.push("class", "disabled");
+    else
+      content.push("handler", "webgl-tab");
+
     return content;
   });
   html.push(["div"]);
@@ -1441,29 +1445,12 @@ window.templates.webgl.program = function(call_index, program)
     ]);
   }
 
-  var attribute_table = null;
-  var uniform_table = null;
   var html =
   [
     "div",
     programs
   ];
 
-  // TODO do we want to show the tables in the program view?
-  // If the program is related to a call, attribute and uniforms tables
-  // will be created and attached to the template.
-  //if (call_index !== -1 && call_index !== null)
-  //{
-  //  attribute_table = window.templates.webgl.attribute_table(call_index, program);
-  //  uniform_table = window.templates.webgl.uniform_table(call_index, program);
-  //  html =
-  //  [
-  //    "div",
-  //    attribute_table,
-  //    uniform_table,
-  //    programs
-  //  ];
-  //}
   return html;
 };
 
