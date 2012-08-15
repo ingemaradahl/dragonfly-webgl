@@ -627,6 +627,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
       this.program = snapshot.programs[this.program_index];
+	  if (!this.program) break;
       this.uniform = this.program.uniforms[this.uniform_index];
       this.text = this.uniform.name;
       this.action = function()

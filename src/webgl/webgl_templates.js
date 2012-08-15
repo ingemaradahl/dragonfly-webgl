@@ -1489,7 +1489,7 @@ window.templates.webgl.settings = function(settings)
 window.templates.webgl.start_view = function()
 {
   var button = [];
-  if (window.webgl.runtime_id === -1)
+  if (!window.webgl.injected)
   {
     button = window.templates.webgl.reload_info();
   }

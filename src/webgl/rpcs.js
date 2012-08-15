@@ -916,8 +916,6 @@ cls.WebGL.RPCs.injection = function () {
     var trace_start_time = null;
     this.new_frame = function()
     {
-      handler.current_frame++;
-
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         var time = new Date() - trace_start_time;
@@ -939,7 +937,10 @@ cls.WebGL.RPCs.injection = function () {
         handler.capturing_frame = true;
         handler.snapshot = new Snapshot(handler);
       }
+
+      handler.current_frame++;
     };
+    this.new_frame();
 
     //canvas.onframeend = this.new_frame.bind(this);
 
@@ -990,7 +991,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.current_frame = 0;
 
-    this.capture_next_frame = false;
+    this.capture_next_frame = settings['pre-composite-capture'];
     this.capturing_frame = false;
 
     this.snapshot = null;

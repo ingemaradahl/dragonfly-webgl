@@ -13,6 +13,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 {
   var checkboxes =
   [
+    'pre-composite-capture',
     'fbo-readpixels',
     'stack-trace'
   ];
@@ -35,6 +36,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     'webgl-snapshot',
     // key-value map
     {
+      'pre-composite-capture' : false,
       'fbo-readpixels' : true,
       'stack-trace' : false,
       'history_length' : 4,
@@ -42,6 +44,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     },
     // key-label map
     {
+      'pre-composite-capture': "Capture calls issued prior to first compositing",
       'history-length': "Object history length",
       'fbo-readpixels': "Read pixels from framebuffer after draw calls",
       'snapshot-delay': "Set a timer for taking snapshots",
