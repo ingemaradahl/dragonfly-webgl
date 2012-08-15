@@ -31,6 +31,7 @@ window.templates.webgl.no_contexts = function()
 
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
+  var length = ["div", "Length: " +  buffer.data.length];
   var data_table;
   if (buffer.data_is_loaded())
   {
@@ -41,27 +42,6 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
     data_table = ["div", "Loading buffer data."];
   }
 
-  var buffer_info = [
-    {name: "Target", value: buffer.target_string()},
-    {name: "Usage", value: buffer.usage_string()},
-    {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.data.length)}
-  ];
-  var info_table_rows = buffer_info.map(function(info){
-    return [
-      "tr",
-      [
-        [
-          "th",
-          info.name
-        ],
-        [
-          "td",
-          info.value
-        ]
-      ]
-    ];
-  });
 
   var buffer_options = [
           ["option", "(x)", "value", "x"],
@@ -83,9 +63,6 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
       "id", "webgl-layout-selector"
       ],
     ];
-
-  var history = window.templates.webgl.history(buffer);
-  var preview = buffer_settings && window.webgl.gl ? window.templates.webgl.buffer_preview(buffer_settings) : "";
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -112,22 +89,52 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
             "h2",
             buffer.toString()
           ],
-          [
-            "table",
-            info_table_rows,
-            "class",
-            "table-info"
-          ],
+          length
         ]
       ],
-      history,
-      preview,
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
       data_table
+    ],
+    "class", "buffer-data"
+  ];
+};
+
+window.templates.webgl.buffer_info_table = function(buffer)
+{
+  var buffer_info = [
+    {name: "Target", value: buffer.target_string()},
+    {name: "Usage", value: buffer.usage_string()},
+    {name: "Size", value: String(buffer.size)},
+    {name: "Length", value: String(buffer.data.length)}
+  ];
+  
+  var info_table_rows = buffer_info.map(function(info){
+    return [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  });
+
+  var ret = ["div",
+    ["table", 
+      info_table_rows,
+      "class",
+      "table-info"
     ]
   ];
+  
+  return ret;
 };
 
 window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_row)

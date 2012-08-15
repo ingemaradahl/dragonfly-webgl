@@ -16,6 +16,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     summary_tab,
     preview_tab,
     new cls.WebGLStateTab("state", "State", ""),
+    new cls.WebGLBufferDataTab("buffer-data", "Data", ""),
     new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
 
@@ -171,142 +172,79 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     preview.render();
   };
 
-  this._render = function(snapshot, call_index, buffer)
-  {
-    if (call_index !== -1 && !buffer)
-    {
-      buffer = snapshot.trace[call_index].linked_object.buffer;
-    }
-    this._buffer = buffer;
-    this._call_index = call_index;
-    this._snapshot = snapshot;
+ // TODO Delete?
+ // this._render = function(snapshot, call_index, buffer)
+ // {
+ //   if (call_index !== -1 && !buffer)
+ //   {
+ //     buffer = snapshot.trace[call_index].linked_object.buffer;
+ //   }
+ //   this._buffer = buffer;
+ //   this._call_index = call_index;
+ //   this._snapshot = snapshot;
 
-    var coordinates;
-    var selected_index;
-    var start_row;
+ //   var coordinates;
+ //   var selected_index;
+ //   var start_row;
 
-    if (this._buffer_layouts[this._buffer.index_snapshot])
-    {
-      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
-      coordinates = layout_obj.coordinates || "x";
-      selected_index = layout_obj.selected_index || 0;
-      start_row = layout_obj.start_row || 0;
-    }
+ //   if (this._buffer_layouts[this._buffer.index_snapshot])
+ //   {
+ //     var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
+ //     coordinates = layout_obj.coordinates || "x";
+ //     selected_index = layout_obj.selected_index || 0;
+ //     start_row = layout_obj.start_row || 0;
+ //   }
 
-    this._buffer_settings = build_settings();
+ //   this._buffer_settings = build_settings();
 
-    //var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
-      //selected_index, start_row);
 
-    var preview = window.webgl.gl ? window.templates.webgl.buffer_preview(this._buffer_settings) : [];
-    var primary = [{title: "Buffer", content: preview}];
+ //   var preview = window.webgl.gl ? window.templates.webgl.buffer_preview(this._buffer_settings) : [];
+ //   var primary = [{title: "Buffer", content: preview}];
 
-    buffer.request_data();
-    this.render_with_header(snapshot, call_index, primary);
-    //this.render_with_header(this._snapshot, this._call_index, primary, secondary);
+ //   buffer.request_data();
+ //   this.render_with_header(snapshot, call_index, primary);
+ //   //this.render_with_header(this._snapshot, this._call_index, primary, secondary);
 
-    if (this._buffer_settings)
-    {
-      add_canvas();
-      this.set_preview();
-    }
-  };
+ //   if (this._buffer_settings)
+ //   {
+ //     add_canvas();
+ //     this.set_preview();
+ //   }
+ // };
 
+  // TODO delete?
   this._on_buffer_data = function(msg)
   {
     var buffer = msg;
-    var coordinates;
-    var selected_index;
+//    var coordinates;
+//    var selected_index;
 
     if (this._container && this._buffer === buffer)
     {
-      if (this._buffer_layouts[this._buffer.index_snapshot])
-      {
-        coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
-        selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
-      }
-
-      var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
-        selected_index);
-
-      this.render_with_header(this._snapshot, this._call_index, template);
-
+//      if (this._buffer_layouts[this._buffer.index_snapshot])
+//      {
+//        coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
+//        selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
+//      }
+//
+//      var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
+//        selected_index);
+//
+//      this.render_with_header(this._snapshot, this._call_index, template);
+//
       if (this._buffer_settings)
         add_canvas();
     }
   };
-
-  this._on_layout_select = function()
-  {
-    if (!this._buffer) return;
-    if (this._buffer.data_is_loaded())
-    {
-      var select = document.getElementById("webgl-layout-selector");
-      var coordinates = select.options[select.selectedIndex].value;
-      if(!this._buffer_layouts[this._buffer.index_snapshot])
-      {
-        this._buffer_layouts[this._buffer.index_snapshot] = {};
-        this._buffer_layouts[this._buffer.index_snapshot].selected_index =
-          select.selectedIndex;
-      }
-      if (coordinates === "custom")
-      {
-        var inputbox = document.getElementById("webgl-layout-input");
-        inputbox.hidden = false;
-        this._inputbox_hidden = false;
-      }
-      else
-      {
-        this._buffer_layouts[this._buffer.index_snapshot].coordinates = coordinates;
-        this.display_call(this._snapshot, this._call_index, this._buffer);
-      }
-    }
-  };
-
-  this._on_row_input = function(e)
-  {
-    if (e.keyCode !== 13 || !this._buffer) return;
-    if (this._buffer.data_is_loaded())
-    {
-      var inputbox = document.getElementById("webgl-row-input");
-      if (!this._buffer_layouts[this._buffer.index_snapshot])
-      {
-        this._buffer_layouts[this._buffer.index_snapshot] = {};
-      }
-      this._buffer_layouts[this._buffer.index_snapshot].start_row = inputbox.value;
-      this.display_call(this._snapshot, this._call_index, this._buffer);
-    }
-  };
-
-  this._on_layout_input = function(e)
-  {
-    if (e.keyCode !== 13 || !this._buffer) return;
-    if (this._buffer.data_is_loaded())
-    {
-      var inputbox = document.getElementById("webgl-layout-input");
-      this._buffer_layouts[this._buffer.index_snapshot].coordinates = inputbox.value;
-      if (!this._inputbox_hidden)
-      {
-        inputbox.hidden = false;
-      }
-      this.display_call(this._snapshot, this._call_index, this._buffer);
-    }
-  };
-
+  
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   messages.addListener('webgl-clear', clear);
-
-  var eh = window.eventHandlers;
-  eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
-  eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
-  eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 
   this.init(id, name, container_class);
 };
 
 cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 
-// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 
@@ -348,9 +286,17 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     };
   };
 
+  this.getBufferInfo = function()
+  {
+    return {
+      title: "Buffer Info",
+      content: window.templates.webgl.buffer_info_table(this._buffer)
+    };
+  };
+
   this.getAdditionalPrimaryViews = function()
   {
-    return [this.getBufferView()];
+    return [this.getBufferView(), this.getBufferInfo()];
   };
 
   this.renderAfter = function()
@@ -405,10 +351,116 @@ cls.WebGLBufferHistoryTab = function(id, name, container_class)
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 
+  
   this.init(id, name, container_class);
 };
 
 cls.WebGLBufferHistoryTab.prototype = cls.WebGLHistoryTab;
+
+// -----------------------------------------------------------------------------
+
+cls.WebGLBufferDataTab = function(id, name, container_class)
+{
+  this._buffer_layouts = {};
+
+  this.set_call = function(snapshot, call_index, object)
+  {
+    if (call_index !== -1)
+      object = snapshot.trace[call_index].linked_object.buffer;
+    this._buffer = object;
+    this._snapshot = snapshot;
+    this._call_index = call_index;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
+  
+  this.render = function()
+  {
+    var coordinates;
+    var selected_index;
+    var start_row;
+
+    if (this._buffer_layouts[this._buffer.index_snapshot])
+    {
+      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
+      coordinates = layout_obj.coordinates || "x";
+      selected_index = layout_obj.selected_index || 0;
+      start_row = layout_obj.start_row || 0;
+    }
+    
+    var template = window.templates.webgl.buffer_base(this._buffer, null,
+      coordinates, selected_index, start_row);
+    
+    this._container.clearAndRender(template);
+  };
+
+  this._on_layout_select = function()
+  {
+    if (!this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var select = document.getElementById("webgl-layout-selector");
+      var coordinates = select.options[select.selectedIndex].value;
+      if(!this._buffer_layouts[this._buffer.index_snapshot])
+      {
+        this._buffer_layouts[this._buffer.index_snapshot] = {};
+      }
+      if (coordinates === "custom")
+      {
+        var inputbox = document.getElementById("webgl-layout-input");
+        inputbox.hidden = false;
+        this._inputbox_hidden = false;
+        this._buffer_layouts[this._buffer.index_snapshot].selected_index =
+          select.selectedIndex;
+      }
+      else
+      {
+        this._buffer_layouts[this._buffer.index_snapshot].coordinates = coordinates;
+        this._buffer_layouts[this._buffer.index_snapshot].selected_index =
+          select.selectedIndex;
+        this.render();
+      }
+    }
+  };
+
+  this._on_row_input = function(e)
+  {
+    if (e.keyCode !== 13 || !this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var inputbox = document.getElementById("webgl-row-input");
+      if (!this._buffer_layouts[this._buffer.index_snapshot])
+      {
+        this._buffer_layouts[this._buffer.index_snapshot] = {};
+      }
+      this._buffer_layouts[this._buffer.index_snapshot].start_row = inputbox.value;
+      this.render();
+    }
+  };
+
+  this._on_layout_input = function(e)
+  {
+    if (e.keyCode !== 13 || !this._buffer) return;
+    if (this._buffer.data_is_loaded())
+    {
+      var inputbox = document.getElementById("webgl-layout-input");
+      this._buffer_layouts[this._buffer.index_snapshot].coordinates = inputbox.value;
+      if (!this._inputbox_hidden)
+      {
+        inputbox.hidden = false;
+      }
+      this.render();
+    }
+  };
+  
+  var eh = window.eventHandlers;
+  eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
+  eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
+  eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
+  
+  this.init(id, name, container_class);
+};
+
+cls.WebGLBufferDataTab.prototype = cls.WebGLTab;
 
 // -----------------------------------------------------------------------------
 
