@@ -1204,8 +1204,8 @@ window.templates.webgl.attribute_table = function(call_index, program)
   for (var i=0; i<attributes.length; i++)
   {
     var attribute = attributes[i];
-    var pointer = attribute.pointers.lookup(call_index);
-    var changed_this_call = pointer.call_index === call_index;
+    var pointer = attribute.pointers.lookup ? attribute.pointers.lookup(call_index) : null;
+    var changed_this_call = pointer ? pointer.call_index === call_index : false;
 
     rows.push([
       "tr",
@@ -1220,12 +1220,12 @@ window.templates.webgl.attribute_table = function(call_index, program)
         ],
         [
           "td",
-          pointer.buffer ? String(pointer.buffer) : "",
+          pointer && pointer.buffer ? String(pointer.buffer) : "",
           "class", changed_this_call ? "changed" : ""
         ],
         [
           "td",
-          pointer.layout
+          pointer && pointer.layout
          	? String(pointer.layout.size) + "x"
               + window.webgl.api.constant_value_to_string(pointer.layout.type)
               + ",  +" + String(pointer.layout.offset) + "/"

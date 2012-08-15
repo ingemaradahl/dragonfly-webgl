@@ -512,6 +512,7 @@ cls.WebGLAPI = function ()
   GLParam.prototype.generate_string = function(value)
   {
     if (typeof(value) === "object" && value != null && value.text != null) return value.text;
+    if (typeof(value) === "string") return "\"" + value + "\"";
     return String(value);
   };
 

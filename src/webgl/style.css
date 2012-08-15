@@ -557,13 +557,12 @@ img.full-texture
 .webgl-start .number-circle
 {
   border-radius: 999px;
-  behavior: url(PIE.htc);
 
   width: 24px;
   height: 24px;
   padding: 6px;
 
-  border: 2px solid black;
+  border: 1px solid black;
   text-align: center;
   font-size: 22px;
   font-weight: 700

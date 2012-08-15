@@ -126,6 +126,7 @@ cls.WebGLSnapshotArray = function(context_id)
     this.buffers.lookup = lookup.bind(this.buffers);
     this.textures.lookup = lookup.bind(this.textures);
     this.framebuffers.lookup = lookup.bind(this.framebuffers);
+    this.programs.lookup = lookup.bind(this.programs);
     this.framebuffers.lookup_all = function (call_index)
     {
       var framebuffers = {};
@@ -182,18 +183,6 @@ cls.WebGLSnapshotArray = function(context_id)
 
       return null;
     };
-
-    // Finds a program based on its id (index, but not index in array)
-    this.programs.lookup = function(index)
-    {
-      for (var i=0; i<this.length; i++)
-      {
-        if (this[i].index === index)
-          return this[i];
-      }
-
-      return null;
-    }.bind(this.programs);
 
     var init_textures = function(textures)
     {
@@ -325,6 +314,12 @@ cls.WebGLSnapshotArray = function(context_id)
           else if (!isNaN(arg))
           {
             args[k] = Number(arg);
+          }
+          else if (typeof(arg) === "string")
+          {
+            arg === "true" || arg === "false"
+              ? args[k] = arg === "true"
+              : args[k] = arg
           }
         }
 
@@ -486,7 +481,7 @@ cls.WebGLSnapshotArray = function(context_id)
       }
 
       // Link up program
-      drawcall.program = this.programs.lookup(drawcall.program_index);
+      drawcall.program = this.programs.lookup(drawcall.program_index, call_index);
       delete drawcall.program_index;
 
       for (var i=0; i<drawcall.program.attributes.length; i++)
@@ -626,8 +621,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       break;
     case "WebGLUniformLocation":
       if (this.program_index == null) return;
-      this.program = snapshot.programs[this.program_index];
-	  if (!this.program) break;
+      this.program = snapshot.programs.lookup(Number(this.program_index), call_index);
       this.uniform = this.program.uniforms[this.uniform_index];
       this.text = this.uniform.name;
       this.action = function()
@@ -637,7 +631,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       break;
     case "WebGLVertexLocation":
       if (this.program_index == null) return;
-      this.program = snapshot.programs[this.program_index];
+      this.program = snapshot.programs.lookup(Number(this.program_index), call_index);
       // Find right attribute based on loc index
       for (var i=0; i<this.program.attributes.length; i++)
       {
@@ -651,7 +645,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       this.action = function() {  /* alert("attribute!"); */ };
       break;
     case "WebGLProgram":
-      this.program = snapshot.programs[this.program_index];
+      this.program = snapshot.programs.lookup(Number(this.program_index), call_index);
       this.text = String(this.program);
       this.action = function ()
       {
