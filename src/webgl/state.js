@@ -6,10 +6,22 @@ cls.WebGLState = function ()
 {
 };
 
+
 cls.WebGLState.prototype.get_parameter = function(param_name, call_index, include_old_value)
 {
+  var link_object = function (value)
+  {
+    if (typeof(value) === "object" && value != null)
+    {
+      value = new cls.WebGLLinkedObject(value, call_index, this.snapshot);
+      if (window.webgl.api.has_state_parameter_type(param_name))
+        value.text = window.webgl.api.state_parameter_to_string(param_name, value.data);
+    }
+    return value;
+  }.bind(this);
+
   var param = this[param_name];
-  if (call_index == null || call_index === -1) return param[-1];
+  if (call_index == null || call_index === -1) return link_object(param[-1]);
 
   var max_call = -1;
   var second_max_call = -1;
@@ -25,12 +37,13 @@ cls.WebGLState.prototype.get_parameter = function(param_name, call_index, includ
     }
   }
 
-  if (!include_old_value) return param[max_call];
+  var res = link_object(param[max_call]);
+  if (!include_old_value) return res;
 
-  var result = {value: param[max_call]};
+  var result = {value: res};
   if (max_call === call_index && second_max_call !== max_call)
   {
-    result.old_value = param[second_max_call];
+    result.old_value = link_object(param[second_max_call]);
   }
 
   return result;
