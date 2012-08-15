@@ -16,8 +16,8 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 
   this.set_tabs([
     new cls.WebGLProgramSummaryTab("summary", "Summary", ""),
-    new cls.WebGLStateTab("state", "State", ""),
-    new cls.WebGLProgramTab("program", "Shaders", "")
+    new cls.WebGLProgramTab("program", "Shaders", ""),
+    new cls.WebGLStateTab("state", "State", "")
   ]);
 
   this.init(id, name, container_class);
@@ -50,7 +50,7 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   {
     return [this.getAttributeView(), this.getUniformView()];
   };
-  
+
   this._on_tooltip = function(evt, target)
   {
     var uniform = this._program.uniforms[target.id];
@@ -120,7 +120,7 @@ cls.WebGLProgramTab = function(id, name, container_class)
 
     }
   };
-  
+
   this.set_call = function(snapshot, call_index, object)
   {
     if (call_index !== -1)
@@ -138,7 +138,7 @@ cls.WebGLProgramTab = function(id, name, container_class)
     this._container.clearAndRender(template);
     sh_highlightDocument();
 
-    // If render has been called from a trace call hilight eventual uniform/attribute 
+    // If render has been called from a trace call hilight eventual uniform/attribute
     if (call_index !== -1 && call_index !== null)
     {
       var call = this._snapshot.trace[call_index];
