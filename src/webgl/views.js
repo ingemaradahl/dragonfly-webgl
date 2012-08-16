@@ -47,7 +47,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
       'pre-composite-capture': "Capture calls issued prior to first compositing",
       'history-length': "Object history length",
       'fbo-readpixels': "Read pixels from framebuffer after draw calls",
-      'snapshot-delay': "Set a timer for taking snapshots",
+      'snapshot-delay': "Delay in seconds when taking a delayed snapshot",
       'stack-trace': "Get WebGL call reference"
     },
     // settings map
@@ -539,21 +539,15 @@ cls.WebGLSideView = Object.create(ViewBase, {
     value: function()
     {
       if (!this._container) return;
-      var ctx_id =
-        window['cst-selects']['snapshot-select'].get_selected_context();
+      var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
       if (ctx_id === null) return;
 
-      var func = function()
-      {
-        this.on_take_snapshot();
-      }.bind(this);
-      var delay = window.settings['webgl-snapshot'].get('snapshot_delay')*1000;
-      var count = window.settings['webgl-snapshot'].get('snapshot_delay')-1;
-      if (count < 0)
-      {
-        count = 0;
-      }
-      var snapshot_timer;
+      var delay = window.settings['webgl-snapshot'].get('snapshot_delay');
+      var delay_millisec = delay * 1000;
+      setTimeout(this.on_take_snapshot.bind(this), delay_millisec);
+
+      var count = delay;
+      var render_interval;
       var render_func = function()
       {
         if (count > 0)
@@ -562,12 +556,12 @@ cls.WebGLSideView = Object.create(ViewBase, {
         }
         else
         {
-          clearInterval(snapshot_timer);
+          clearInterval(render_interval);
         }
       }.bind(this);
 
-      snapshot_timer = setInterval(render_func, 1000);
-      setTimeout(func, delay);
+      render_func();
+      render_interval = setInterval(render_func, 1000);
     }
   },
   on_snapshot_change: {
@@ -857,20 +851,49 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       if (!this._container)
       {
-        this._render_enabled = false;
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
       }
 
       this.render();
     }
   },
+  get_object_text: {
+    value: function()
+    {
+      var object;
+      if (this._call_index === -1)
+      {
+        object = this._object;
+      }
+      else
+      {
+        var linked_object = this._snapshot.trace[this._call_index].linked_object;
+        if (linked_object == null) return null;
+
+        var object_keys = ["buffer", "texture", "framebuffer", "program"];
+        for (var i = 0; i < object_keys.length; i++)
+        {
+          var key = object_keys[i];
+          if (linked_object.hasOwnProperty(key))
+          {
+            object = linked_object[key];
+            break;
+          }
+        }
+      }
+
+      if (object == null) return null;
+
+      return object.toStringLong ? object.toStringLong() : String(object);
+    }
+  },
   render: {
     value: function()
     {
+      var object = this.get_object_text();
       var head = this._call_index === -1 ?
-        window.templates.webgl.start_of_frame_header() :
-        window.templates.webgl.call_header(this._call_index, this._call);
+        window.templates.webgl.start_of_frame_header(object) :
+        window.templates.webgl.call_header(this._call_index, this._call, object);
 
       this._render_header(head);
 
