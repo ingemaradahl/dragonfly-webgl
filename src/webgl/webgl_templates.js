@@ -36,7 +36,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
   var buffer_size = Number(buffer.size / 1024).toFixed(2);
   var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
   var target = window.webgl.api.constant_value_to_string(buffer.target);
-  
+
   if (buffer.data_is_loaded())
   {
     data_table = window.templates.webgl.buffer_data_table(buffer, coordinates, start_row);
@@ -45,10 +45,10 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
   {
     {
     data_table = [
-      "div", "Buffer size (" + buffer_size + "kB) is larger than maximum preview size (" 
-        + setting_size + "kB). Automatic download disabled.", 
-        ["div", 
-          "Load buffer", "handler", "webgl-load-buffer-data", 
+      "div", "Buffer size (" + buffer_size + "kB) is larger than maximum preview size ("
+        + setting_size + "kB). Automatic download disabled.",
+        ["div",
+          "Load buffer", "handler", "webgl-load-buffer-data",
           "class", "ui-button"
         ],
       "class", "buffer-data"];
@@ -115,7 +115,7 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
 
 window.templates.webgl.loading_buffer_data = function()
 {
-  var html = ["div", "Downloading buffer data ", 
+  var html = ["div", "Downloading buffer data ",
     ["img", "src", "./ui-images/loading.png"],
     "class", "buffer-data"];
   return html;
@@ -959,15 +959,14 @@ window.templates.webgl.tabs = function(tabs, active_tab)
   {
     var content = [
       "div", tab.name,
-      "id", tab.id
+      "id", tab.id,
+      "handler", "webgl-tab"
     ];
 
     if (tab === active_tab)
-      content.push("class", "active", "handler", "webgl-tab");
+      content.push("class", "active");
     else if (!tab.enabled)
       content.push("class", "disabled");
-    else
-      content.push("handler", "webgl-tab");
 
     return content;
   });

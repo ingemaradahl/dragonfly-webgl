@@ -825,7 +825,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: function(tab_name)
     {
       var tab = this._lookup_tab(tab_name);
-      if (!tab) return;
+      if (!tab || !tab.enabled) return;
 
       this.set_active_tab(tab);
 
