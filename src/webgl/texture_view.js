@@ -101,7 +101,7 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
       content = window.templates.webgl.thumbnail_container(image);
     }
     // TODO use the right index based on setting
-    return {title: "Texture " + String(this._texture.index_snapshot + 1), content: content, class: "texture fit"};
+    return {title: "Texture", content: content, class: "texture fit"};
   };
 
   this.getTextureInfoView = function()
@@ -327,7 +327,12 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       },
       name: {
         label: "Texture",
-        sorter: "unsortable"
+        sorter : function (a, b) {
+          var a_name = a.name.toLowerCase();
+          var b_name = b.name.toLowerCase();
+          return a_name < b_name ? -1 :
+            a_name > b_name ? 1 : 0;
+        }
       },
       dimension: {
         label: "Dimension",
