@@ -15,8 +15,8 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this.set_tabs([
     summary_tab,
     preview_tab,
-    new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLBufferDataTab("buffer-data", "Data", ""),
+    new cls.WebGLStateTab("state", "State", ""),
     new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
   ]);
 
@@ -26,12 +26,17 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     this._buffer_layouts = {};
     this._inputbox_hidden = true;
   }.bind(this);
-
   clear();
+
+  this.clear = function()
+  {
+    clear();
+    cls.WebGLTab.clear.call(this);
+  };
 
   this.set_preview_enabled = function (enabled)
   {
-    this.set_tab_enabled(preview_tab, enabled)
+    this.set_tab_enabled(preview_tab, enabled);
   };
 
   this.set_summary_tab = function()
@@ -70,34 +75,6 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     preview.render();
   };
 
-  // TODO delete? Add to data tab
-  this._on_buffer_data = function(msg)
-  {
-    var buffer = msg;
-//    var coordinates;
-//    var selected_index;
-
-    if (this._container && this._buffer === buffer)
-    {
-//      if (this._buffer_layouts[this._buffer.index_snapshot])
-//      {
-//        coordinates = this._buffer_layouts[this._buffer.index_snapshot].coordinates;
-//        selected_index = this._buffer_layouts[this._buffer.index_snapshot].selected_index;
-//      }
-//
-//      var template = window.templates.webgl.buffer_base(buffer, this._buffer_settings, coordinates,
-//        selected_index);
-//
-//      this.render_with_header(this._snapshot, this._call_index, template);
-//
-      if (this._buffer_settings)
-        add_canvas();
-    }
-  };
-
-  messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
-  messages.addListener('webgl-clear', clear);
-
   this.init(id, name, container_class);
 };
 
@@ -112,11 +89,8 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
   this.set_call = function(snapshot, call_index, object)
   {
-    this._buffer = object;
-    if (call_index !== -1)
-    {
-      this._buffer = snapshot.trace[call_index].linked_object.buffer;
-    }
+    this._buffer = call_index === -1 ? object :
+      snapshot.trace[call_index].linked_object.buffer;
     var buffer_call = window.views.webgl_buffer_call;
     buffer_call.set_preview_enabled(this._buffer.previewable());
 
@@ -138,7 +112,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
   this.getBufferInfo = function()
   {
     return {
-      title: "Buffer Info",
+      title: "Buffer info",
       content: window.templates.webgl.buffer_info_table(this._buffer)
     };
   };
@@ -179,8 +153,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
       height = 300;
 
     buffer_holder.style.height = height + "px";
-    buffer_holder.style.width =
-      parseInt(buffer_preview.offsetWidth) + "px";
+    buffer_holder.style.width = parseInt(buffer_preview.offsetWidth) + "px";
     window.webgl.preview.onresize();
   };
 
@@ -199,7 +172,6 @@ cls.WebGLBufferHistoryTab = function(id, name, container_class)
     this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
-
 
   this.init(id, name, container_class);
 };
