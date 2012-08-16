@@ -715,6 +715,10 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     writable: true,
     value: false
   },
+  _last_scroll_position: {
+    writable: true,
+    value: null
+  },
   active_tab: {
     writable: true,
     value: null
@@ -724,9 +728,9 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     {
       if (this.active_tab !== tab)
       {
-        this.active_tab = tab;
         if (this.active_tab !== null)
           this.active_tab.ondestroy();
+        this.active_tab = tab;
         this._render_tabbar();
         tab.createView(this._body);
       }
@@ -948,6 +952,10 @@ cls.WebGLTab = Object.create(ViewBase, {
     writable: true,
     value: null
   },
+  _last_scroll_position: {
+    writable: true,
+    value: null
+  },
   enabled: {
     writable: true,
     value: true
@@ -957,14 +965,33 @@ cls.WebGLTab = Object.create(ViewBase, {
     value: function(container)
     {
       this._container = container;
-      //this.render();
     }
+  },
+  _rendered: {
+    writable: true,
+    value: false
   },
   ondestroy: {
     writable: true, configurable: true,
     value: function()
     {
+      if (this._rendered)
+      {
+        this._last_scroll_position = {
+          top: this._container.scrollTop,
+          left: this._container.scrollLeft
+        };
+      }
+
+      this._rendered = false;
       this._container = null;
+    }
+  },
+  clear: {
+    writable: true,
+    value: function ()
+    {
+      this._last_scroll_position = null;
       this._snapshot = null;
       this._call_index = null;
     }
@@ -981,10 +1008,27 @@ cls.WebGLTab = Object.create(ViewBase, {
     writable: true, configurable: true,
     value: function(snapshot, call_index)
     {
+      var same_call = this._snapshot === snapshot && this._call_index === call_index;
+
       this._snapshot = snapshot;
       this._call_index = call_index;
       if (this._container != null)
+      {
         this.render();
+        this._rendered = true;
+
+        var set_scroll = same_call && this._last_scroll_position != null;
+        this._container.scrollTop = set_scroll ? this._last_scroll_position.top : 0;
+        this._container.scrollLeft = set_scroll ? this._last_scroll_position.left : 0;
+      }
+    }
+  },
+  init: {
+    writable: true,
+    value: function()
+    {
+      ViewBase.init.apply(this, arguments);
+      messages.addListener("webgl-clear", this.clear.bind(this));
     }
   }
 });
@@ -1011,7 +1055,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true, configurable: true,
     value: function()
     {
-      this._container = null;
+      cls.WebGLTab.ondestroy.call(this);
       this._call = null;
     }
   },

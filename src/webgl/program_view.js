@@ -126,8 +126,6 @@ cls.WebGLProgramTab = function(id, name, container_class)
     if (call_index !== -1)
       object = snapshot.trace[call_index].linked_object.program;
     this._program = object;
-    this._call_index = call_index;
-    this._snapshot = snapshot;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 
