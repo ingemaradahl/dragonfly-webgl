@@ -719,6 +719,43 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     writable: true,
     value: null
   },
+  change_tab: {
+    /**
+     * @param {Boolean} next true if the next right tab should be changed to, else left.
+     */
+    value: function(next)
+    {
+      var tab;
+      var prev_tab = null;
+      var next_tab = null;
+      var passed_active = false;
+      for (var i = 0; i < this.tabs.length; i++)
+      {
+        tab = this.tabs[i];
+        if (!tab.enabled) continue;
+        if (this.active_tab === tab)
+        {
+          passed_active = true;
+        }
+        else if (passed_active)
+        {
+          next_tab = tab;
+          break;
+        }
+        else
+        {
+          prev_tab = tab;
+        }
+      }
+
+      tab = next ? next_tab : prev_tab;
+      if (tab != null)
+      {
+        this.set_active_tab(tab);
+        this.active_tab.set_call(this._snapshot, this._call_index, this._object);
+      }
+    }
+  },
   set_active_tab: {
     value: function(tab)
     {
@@ -949,6 +986,11 @@ cls.WebGLCallView.initialize = function()
     cls.WebGLCallView.active_view.show_tab(tab_id);
   };
 
+  var on_tab_scroll = function(evt, target)
+  {
+    cls.WebGLCallView.active_view.change_tab(evt.detail > 0);
+  };
+
   var on_framebuffer_select = function(event, target)
   {
     this.active_view.active_tab._framebuffer = target[target.selectedIndex].framebuffer;
@@ -971,6 +1013,7 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
   eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
+  eh.mousewheel["webgl-tab"] = on_tab_scroll.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
 };
