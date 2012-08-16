@@ -856,20 +856,49 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       if (!this._container)
       {
-        this._render_enabled = false;
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
       }
 
       this.render();
     }
   },
+  get_object_text: {
+    value: function()
+    {
+      var object;
+      if (this._call_index === -1)
+      {
+        object = this._object;
+      }
+      else
+      {
+        var linked_object = this._snapshot.trace[this._call_index].linked_object;
+        if (linked_object == null) return null;
+
+        var object_keys = ["buffer", "texture", "framebuffer", "program"];
+        for (var i = 0; i < object_keys.length; i++)
+        {
+          var key = object_keys[i];
+          if (linked_object.hasOwnProperty(key))
+          {
+            object = linked_object[key];
+            break;
+          }
+        }
+      }
+
+      if (object == null) return null;
+
+      return object.toStringLong ? object.toStringLong() : String(object);
+    }
+  },
   render: {
     value: function()
     {
+      var object = this.get_object_text();
       var head = this._call_index === -1 ?
-        window.templates.webgl.start_of_frame_header() :
-        window.templates.webgl.call_header(this._call_index, this._call);
+        window.templates.webgl.start_of_frame_header(object) :
+        window.templates.webgl.call_header(this._call_index, this._call, object);
 
       this._render_header(head);
 

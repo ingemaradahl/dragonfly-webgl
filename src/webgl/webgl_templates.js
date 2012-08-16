@@ -955,22 +955,23 @@ window.templates.webgl.tabs = function(tabs, active_tab)
   return html;
 };
 
-window.templates.webgl.start_of_frame_header = function(call, trace_call)
+window.templates.webgl.start_of_frame_header = function(object)
 {
-  var header = [
+  var title = [["h2", "Start of frame"]];
+  if (object != null)
+  {
+    title.push(["h2", " - ", "class", "divider"],
+      ["h2", String(object), "class", "call-object"]);
+  }
+
+  return [
     "div",
-    [
-      [
-        "h2", "Start of frame"
-      ]
-    ],
+    title,
     "class", "call-header"
   ];
-
-  return header;
 };
 
-window.templates.webgl.call_header = function(call, trace_call)
+window.templates.webgl.call_header = function(call, trace_call, object)
 {
   var callnr = parseInt(call, 10) + 1; // Start call count on 1.
 
@@ -1000,6 +1001,10 @@ window.templates.webgl.call_header = function(call, trace_call)
   if (trace_call.loc)
     window.templates.webgl.goto_script(trace_call.loc, function_name);
 
+  var object_title = object == null ? [] : [
+    ["h2", " - ", "class", "divider"],
+    ["h2", String(object), "class", "call-object"]
+  ];
   var header = [
     "div",
     [
@@ -1016,6 +1021,7 @@ window.templates.webgl.call_header = function(call, trace_call)
         "class", "arguments"
       ],
       ["h2", ")"],
+      object_title,
       spec_link
     ],
     "class", "call-header",
