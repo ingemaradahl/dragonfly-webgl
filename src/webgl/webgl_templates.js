@@ -31,7 +31,7 @@ window.templates.webgl.no_contexts = function()
 
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
-  var length = ["div", "Length: " +  buffer.data.length];
+  var length = ["div", "Length: " +  buffer.data_length];
   var data_table;
   var buffer_size = Number(buffer.size / 1024).toFixed(2);
   var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
@@ -127,7 +127,7 @@ window.templates.webgl.buffer_info_table = function(buffer)
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
     {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.real_length)}
+    {name: "Length", value: String(buffer.data_length)}
   ];
 
   var info_table_rows = buffer_info.map(function(info){
