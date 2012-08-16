@@ -22,31 +22,14 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 {
   this._draw_call = null;
 
-  this.createView = function(container)
-  {
-    cls.WebGLSummaryTab.createView.apply(this, arguments);
-
-    var preview_container = new Container(document.createElement("container"));
-    preview_container.setup("webgl_buffer_preview");
-    this._preview_container = preview_container.cell;
-  };
-
-  var add_canvas = function()
-  {
-    var canvas_holder = document.getElementById("webgl-canvas-holder");
-    canvas_holder.appendChild(window.webgl.gl.canvas);
-    canvas_holder.appendChild(this._preview_container);
-  }.bind(this);
-
   var render_preview = function()
   {
-    add_canvas();
     var preview = window.webgl.preview;
+    preview.add_canvas();
 
     var select = document.getElementById("webgl-attribute-selector");
     var pointer = select.options[select.selectedIndex].pointer;
 
-    preview.set_info_container(this._preview_container);
     preview.set_attribute(pointer, this._state, this._element_buffer);
     preview.render();
   }.bind(this);
@@ -86,7 +69,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
       var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
       this._element_buffer = draw_call.element_buffer;
       this._state = draw_call.parameters;
-      //render_preview();
+      render_preview();
     }
     cls.WebGLSummaryTab.renderAfter.call(this);
   };
@@ -104,8 +87,15 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
     var width = framebuffer.offsetWidth;
     buffer_preview.children[1].style.width = width + "px";
     buffer_preview.children[1].style.height = height + "px";
-    //window.webgl.preview.onresize();
+    window.webgl.preview.onresize();
   };
+
+  var on_attribute_select = function(event, target)
+  {
+    render_preview();
+  };
+
+  window.eventHandlers.change["webgl-select-attribute"] = on_attribute_select.bind(this);
 
   this.init(id, name, container_class);
 };

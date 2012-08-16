@@ -172,7 +172,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
     if (!this._table)
     {
       this._table = new SortableTable(this.tabledef, null,
-        ["name", "index"], null, null, false, "program_table"); // TODO complete
+        ["name"], null, null, false, "program_table"); // TODO complete
     }
     this.render();
   };
@@ -199,18 +199,19 @@ cls.WebGLProgramSideView = function(id, name, container_class)
 
   this._on_snapshot_change = function(snapshot)
   {
-    var i=1;
+    var i=0;
     this._content = snapshot.programs.map(function(program) {
       return {
         name: String(program),
-        index: program.index,
+        call_index: program.call_index,
+        id: i++
       };
     });
   };
 
   this._on_table_click = function(evt, target)
   {
-    var item_id = Number(target.get_attr("parent-node-chain", "data-object-id"));
+    var item_id = Number(target.getAttribute("data-object-id"));
     var snapshot =
       window['cst-selects']['snapshot-select'].get_selected_snapshot();
     var program = snapshot.programs[item_id];
@@ -221,7 +222,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
   this.tabledef = {
     handler: "webgl-program-table",
     column_order: ["program"],
-    idgetter: function(res) { return String(res.index); },
+    idgetter: function(res) { return String(res.id); },
     columns: {
       id: {
         label: "Program"
