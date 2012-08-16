@@ -12,7 +12,6 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 {
   this._program;
   this._call_index;
-  // Can be used to hilight attributes as well
 
   this.set_tabs([
     new cls.WebGLProgramSummaryTab("summary", "Summary", ""),
@@ -80,6 +79,7 @@ cls.WebGLProgramSummaryTab.prototype = cls.WebGLSummaryTab;
 
 cls.WebGLProgramTab = function(id, name, container_class)
 {
+  // Can be used to hilight attributes as well
   var hilight_uniform = function(uniform)
   {
     var regex = new RegExp("(\\s|^)(" + uniform.name + ")(\\s|$)");

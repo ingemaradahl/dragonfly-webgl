@@ -419,7 +419,7 @@ cls.WebGL.RPCs.injection = function () {
         program : result,
         index : this.programs.length,
         shaders : [],
-        attributes : {},
+        attributes : [],
         uniforms : []
       });
     };
@@ -776,6 +776,15 @@ cls.WebGL.RPCs.injection = function () {
       this.snapshot.add_texture(texture);
     };
 
+    snapshot_functions.createProgram = function (result, args)
+    {
+      this.snapshot.add_program(result);
+    };
+    snapshot_functions.linkProgram = function(result, args)
+    {
+      this.snapshot.add_program(args[0]);
+    };
+
     snapshot_functions.vertexAttribPointer = function (result, args, redundant)
     {
       if (redundant) return;
@@ -916,8 +925,6 @@ cls.WebGL.RPCs.injection = function () {
     var trace_start_time = null;
     this.new_frame = function()
     {
-      handler.current_frame++;
-
       if (handler.capturing_frame) {
         handler.capturing_frame = false;
         var time = new Date() - trace_start_time;
@@ -939,7 +946,10 @@ cls.WebGL.RPCs.injection = function () {
         handler.capturing_frame = true;
         handler.snapshot = new Snapshot(handler);
       }
+
+      handler.current_frame++;
     };
+    this.new_frame();
 
     //canvas.onframeend = this.new_frame.bind(this);
 
@@ -990,7 +1000,7 @@ cls.WebGL.RPCs.injection = function () {
 
     this.current_frame = 0;
 
-    this.capture_next_frame = false;
+    this.capture_next_frame = settings['pre-composite-capture'];
     this.capturing_frame = false;
 
     this.snapshot = null;
@@ -1608,17 +1618,6 @@ cls.WebGL.RPCs.injection = function () {
         }
       }.bind(this);
 
-      var init_programs = function ()
-      {
-        for (var i=0; i<h.programs.length; i++)
-        {
-          var prg = h.programs[i];
-          var info = this.handler.get_program_info(prg.program);
-
-          this.programs.push(info);
-        }
-      }.bind(this);
-
       var init_state = function ()
       {
         var state = this.handler.get_state();
@@ -1643,11 +1642,11 @@ cls.WebGL.RPCs.injection = function () {
       }.bind(this);
 
       init_buffers();
-      init_programs();
       init_state();
 
       // Init textures
       this.handler.textures.forEach(this.add_texture, this);
+      this.handler.programs.forEach(this.add_program, this);
 
       // Framebuffers needs to be initialized after textures
       init_framebuffers();
@@ -1716,6 +1715,18 @@ cls.WebGL.RPCs.injection = function () {
         var result_ref_index = this.call_refs.push(result_ref) - 1;
         result = "@" + String(result_ref_index);
       }
+      // Another just as ugly hack linking the result from a call to getAttribLocation
+      else if (function_name === "getAttribLocation")
+      {
+        var program = this.handler.lookup_program(args[0]);
+        var result_ref = {
+          type: "WebGLVertexLocation",
+          program_index: program.index,
+          loc_index: result
+        };
+        var result_ref_index = this.call_refs.push(result_ref) - 1;
+        result = "@" + String(result_ref_index);
+      }
 
       this.call_locs.push(loc);
 
@@ -1758,6 +1769,23 @@ cls.WebGL.RPCs.injection = function () {
         index_snapshot: framebuffer.index_snapshot,
         image : image
       });
+    };
+
+    this.add_program = function(program)
+    {
+      program = program instanceof WebGLProgram ? program : program.program;
+
+      var info = this.handler.get_program_info(program);
+
+      var program_state = {
+        call_index: this.call_index,
+        index: info.index,
+        shaders: info.shaders,
+        attributes: info.attributes,
+        uniforms: info.uniforms
+      }
+
+      this.programs.push(program_state);
     };
 
     /* Adds a buffer state to the snapshot */

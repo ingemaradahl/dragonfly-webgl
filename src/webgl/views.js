@@ -13,6 +13,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 {
   var checkboxes =
   [
+    'pre-composite-capture',
     'fbo-readpixels',
     'stack-trace'
   ];
@@ -35,6 +36,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     'webgl-snapshot',
     // key-value map
     {
+      'pre-composite-capture' : false,
       'fbo-readpixels' : true,
       'stack-trace' : false,
       'history_length' : 4,
@@ -42,6 +44,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     },
     // key-label map
     {
+      'pre-composite-capture': "Capture calls issued prior to first compositing",
       'history-length': "Object history length",
       'fbo-readpixels': "Read pixels from framebuffer after draw calls",
       'snapshot-delay': "Set a timer for taking snapshots",
@@ -291,7 +294,7 @@ cls.WebGLSnapshotSelect = function(id)
     var select = this;
     return function(view)
     {
-      return window.templates['cst-select'](select, select.disabled);
+      return window.templates['cst-select'](select);
     };
   };
 
@@ -423,9 +426,6 @@ cls.WebGLSnapshotSelect = function(id)
     }
   }.bind(this);
 
-
-
-
   var on_mouseover = function(event, target)
   {
     var option = event.target.get_ancestor("cst-option") || event.target.get_ancestor("cst-webgl-title");
@@ -486,15 +486,16 @@ cls.WebGLSideView = Object.create(ViewBase, {
   render: {
     value: function()
     {
-      if (!this._container) return;
+      if (window.webgl.runtime_id === -1)
+      {
+        window.toolbars[this.id].disable();
+      }
+
+      if (!this._container || window.webgl.runtime_id === -1) return;
 
       if (window.webgl.taking_snapshot)
       {
         this._container.clearAndRender(window.templates.webgl.taking_snapshot());
-      }
-      else if (window.webgl.runtime_id === -1)
-      {
-        this._container.clearAndRender(window.templates.webgl.reload_info());
       }
       else if (window.webgl.contexts.length === 0)
       {
@@ -585,12 +586,12 @@ cls.WebGLSideView.create_ui_widgets = function(id)
       {
         handler: 'webgl-' + id + '-take-snapshot',
         title: "Take snapshot",
-        icon: 'webgl-take-snapshot'
+        icon: 'webgl-take-snapshot',
       },
       {
         handler: 'webgl-' + id + '-take-custom-snapshot',
         title: "Take custom snapshot",
-        icon: 'webgl-take-snapshot'
+        icon: 'webgl-take-snapshot',
       }
     ],
     null,
@@ -887,9 +888,17 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   }
 });
 
-// Add listeners and methods for call view events.
+// Add listeners and methods for call view events, also sets start view when
+// starting dragonfly
 cls.WebGLCallView.initialize = function()
 {
+  // A bit hacky, but no good interface to do this exists in dragonfly..
+  var last_view = window.settings.general.get('last-selected-view');
+  if (/webgl_/.test(last_view))
+  {
+    window.settings.general.set('last-selected-view', "webgl_start");
+  }
+
   var on_goto_script_click = function(evt, target)
   {
     var line = parseInt(target.getAttribute("data-line"));
@@ -1079,7 +1088,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   getFrameBufferView: {
     value: function()
     {
-      var draw_call = this._draw_call;
       var framebuffers = this._snapshot.framebuffers.lookup_all(this._call_index);
 
       // Make sure the fbo image is downloading if isn't

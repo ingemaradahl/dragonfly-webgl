@@ -31,6 +31,7 @@ window.templates.webgl.no_contexts = function()
 
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
+  var length = ["div", "Length: " +  buffer.data.length];
   var data_table;
   if (buffer.data_is_loaded())
   {
@@ -41,27 +42,6 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
     data_table = ["div", "Loading buffer data."];
   }
 
-  var buffer_info = [
-    {name: "Target", value: buffer.target_string()},
-    {name: "Usage", value: buffer.usage_string()},
-    {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.data.length)}
-  ];
-  var info_table_rows = buffer_info.map(function(info){
-    return [
-      "tr",
-      [
-        [
-          "th",
-          info.name
-        ],
-        [
-          "td",
-          info.value
-        ]
-      ]
-    ];
-  });
 
   var buffer_options = [
           ["option", "(x)", "value", "x"],
@@ -83,9 +63,6 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
       "id", "webgl-layout-selector"
       ],
     ];
-
-  var history = window.templates.webgl.history(buffer);
-  var preview = buffer_settings && window.webgl.gl ? window.templates.webgl.buffer_preview(buffer_settings) : "";
 
   var row_inputbox = ["div",
     ["input", "type", "text", "handler",
@@ -112,22 +89,52 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
             "h2",
             buffer.toString()
           ],
-          [
-            "table",
-            info_table_rows,
-            "class",
-            "table-info"
-          ],
+          length
         ]
       ],
-      history,
-      preview,
       row_inputbox,
       coordinate_selector,
       layout_inputbox,
       data_table
+    ],
+    "class", "buffer-data"
+  ];
+};
+
+window.templates.webgl.buffer_info_table = function(buffer)
+{
+  var buffer_info = [
+    {name: "Target", value: buffer.target_string()},
+    {name: "Usage", value: buffer.usage_string()},
+    {name: "Size", value: String(buffer.size)},
+    {name: "Length", value: String(buffer.data.length)}
+  ];
+  
+  var info_table_rows = buffer_info.map(function(info){
+    return [
+      "tr",
+      [
+        [
+          "th",
+          info.name
+        ],
+        [
+          "td",
+          info.value
+        ]
+      ]
+    ];
+  });
+
+  var ret = ["div",
+    ["table", 
+      info_table_rows,
+      "class",
+      "table-info"
     ]
   ];
+  
+  return ret;
 };
 
 window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_row)
@@ -972,6 +979,7 @@ window.templates.webgl.call_header = function(call, trace_call)
   var spec_link = spec_url == null ? [] : [
     "span", "Specification",
     "handler", "webgl-speclink-click",
+    "title", "Open " + trace_call.function_name + " specification in a new tab",
     "class", "ui-button ui-control specification",
     "specification_url", spec_url
   ];
@@ -1203,8 +1211,8 @@ window.templates.webgl.attribute_table = function(call_index, program)
   for (var i=0; i<attributes.length; i++)
   {
     var attribute = attributes[i];
-    var pointer = attribute.pointers.lookup(call_index);
-    var changed_this_call = pointer.call_index === call_index;
+    var pointer = attribute.pointers.lookup ? attribute.pointers.lookup(call_index) : null;
+    var changed_this_call = pointer ? pointer.call_index === call_index : false;
 
     rows.push([
       "tr",
@@ -1219,12 +1227,12 @@ window.templates.webgl.attribute_table = function(call_index, program)
         ],
         [
           "td",
-          pointer.buffer ? String(pointer.buffer) : "",
+          pointer && pointer.buffer ? String(pointer.buffer) : "",
           "class", changed_this_call ? "changed" : ""
         ],
         [
           "td",
-          pointer.layout
+          pointer && pointer.layout
          	? String(pointer.layout.size) + "x"
               + window.webgl.api.constant_value_to_string(pointer.layout.type)
               + ",  +" + String(pointer.layout.offset) + "/"
@@ -1483,4 +1491,20 @@ window.templates.webgl.settings = function(settings)
       'id', 'remote-debug-settings'
     ];
 
+};
+
+window.templates.webgl.start_view = function()
+{
+  var button = [];
+  if (!window.webgl.injected)
+  {
+    button = window.templates.webgl.reload_info();
+  }
+  return ["div",
+    ["h2", "How to use the Dragonfly WebGL Debugger"],
+    ["div", "1", "class", "number-circle"],
+    "^ en ring gjord i css :)",
+    button,
+    "class", "webgl-start"
+  ];
 };

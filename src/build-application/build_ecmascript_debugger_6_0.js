@@ -244,7 +244,6 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     window.webgl = new cls.WebGL.WebGLDebugger();
 
-    // Initialize some listeners and corresponding methods for call views.
     cls.WebGLCallView.initialize();
     cls.WebGLStateTab.initialize();
 
@@ -252,6 +251,9 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.WebGLSnapshotSelect('snapshot-select', 'snapshot-options');
 
     // Tabs on the left side
+    new cls.WebGLStartView("webgl_start",
+                           "Start",
+                           "webgl-view start");
 
     new cls.WebGLDrawCallView("webgl_draw_call",
                            "Draw call", // TODO
