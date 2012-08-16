@@ -255,7 +255,7 @@ cls.WebGLSnapshotSelect = function(id)
     else if (this._selected_context_id != null && this._selected_snapshot_index != null)
     {
       var snapshot = window.webgl.snapshots[this._selected_context_id][this._selected_snapshot_index];
-      return "WebGLSnapshot #" + this._selected_snapshot_index + " (frame: " + snapshot.frame + ")";
+      return "Snapshot #" + this._selected_snapshot_index + ", frame " + snapshot.frame;
     }
     else
     {
@@ -311,7 +311,7 @@ cls.WebGLSnapshotSelect = function(id)
       var context_id = contexts[i];
       ret.push([
         "cst-webgl-title",
-        "WebGLContext #" + i,
+        "WebGLRenderingContext #" + i,
         "context-id", context_id,
         "class", "js-dd-dir-path"
       ]);
@@ -321,9 +321,10 @@ cls.WebGLSnapshotSelect = function(id)
         // Iterating the snapshots in that context.
         for (var j = 0; j < snapshots[context_id].length; j++)
         {
+          var snapshot = snapshots[context_id][j];
           ret.push([
             "cst-option",
-            "Snapshot #" + j,
+            "Snapshot #" + j + ", frame " + snapshot.frame,
             "snapshot-index", j,
             "context-index", i,
             "context-id", context_id,
