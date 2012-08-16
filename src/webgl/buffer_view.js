@@ -42,6 +42,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
   this.set_preview = function(buffer, settings)
   {
     var preview = window.webgl.preview;
+
     var layout = {
       offset : settings.offset,
       stride : settings.stride,
@@ -69,47 +70,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     preview.render();
   };
 
- // TODO Delete?
- // this._render = function(snapshot, call_index, buffer)
- // {
- //   if (call_index !== -1 && !buffer)
- //   {
- //     buffer = snapshot.trace[call_index].linked_object.buffer;
- //   }
- //   this._buffer = buffer;
- //   this._call_index = call_index;
- //   this._snapshot = snapshot;
-
- //   var coordinates;
- //   var selected_index;
- //   var start_row;
-
- //   if (this._buffer_layouts[this._buffer.index_snapshot])
- //   {
- //     var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
- //     coordinates = layout_obj.coordinates || "x";
- //     selected_index = layout_obj.selected_index || 0;
- //     start_row = layout_obj.start_row || 0;
- //   }
-
- //   this._buffer_settings = build_settings();
-
-
- //   var preview = window.webgl.gl ? window.templates.webgl.buffer_preview(this._buffer_settings) : [];
- //   var primary = [{title: "Buffer", content: preview}];
-
- //   buffer.request_data();
- //   this.render_with_header(snapshot, call_index, primary);
- //   //this.render_with_header(this._snapshot, this._call_index, primary, secondary);
-
- //   if (this._buffer_settings)
- //   {
- //     add_canvas();
- //     this.set_preview();
- //   }
- // };
-
-  // TODO delete?
+  // TODO delete? Add to data tab
   this._on_buffer_data = function(msg)
   {
     var buffer = msg;
@@ -133,7 +94,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         add_canvas();
     }
   };
-  
+
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
   messages.addListener('webgl-clear', clear);
 
@@ -148,15 +109,6 @@ cls.WebGLBufferCallView.prototype = cls.WebGLCallView;
 cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 {
   this._buffer = null;
-
-  this.createView = function(container)
-  {
-    cls.WebGLSummaryTab.createView.apply(this, arguments);
-
-    var preview_container = new Container(document.createElement("container"));
-    preview_container.setup("webgl_buffer_preview");
-    this._preview_container = preview_container.cell;
-  };
 
   this.set_call = function(snapshot, call_index, object)
   {

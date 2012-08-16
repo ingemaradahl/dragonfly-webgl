@@ -730,7 +730,7 @@ cls.WebGLMeshDrawer.prototype.prepare_buffer = function()
 
   this.preview = preview;
 
-  this.distance = preview.max_extent * 2;
+  this.distance = preview.max_extent * 4;
   this.zfar = Math.max(this.distance * 8, 500.0);
 
   this.disable_info_box();

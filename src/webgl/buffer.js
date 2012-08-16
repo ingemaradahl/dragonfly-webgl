@@ -34,7 +34,7 @@ cls.WebGLBuffer.prototype.request_data = function()
  */
 cls.WebGLBuffer.prototype.previewable = function()
 {
-  return this.target === window.webgl.gl.ARRAY_BUFFER || this.size;
+  return this.target === window.webgl.gl.ARRAY_BUFFER && this.size;
 };
 
 /**
