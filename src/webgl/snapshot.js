@@ -415,6 +415,12 @@ cls.WebGLSnapshotArray = function(context_id)
           case "program":
             switch (function_name)
             {
+              case "createProgram":
+                linked_object = result;
+                break;
+              case "attachShader":
+              case "linkProgram":
+              case "getProgramParameter":
               case "useProgram":
                 linked_object = args[0];
                 break;
