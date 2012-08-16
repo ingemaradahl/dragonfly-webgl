@@ -44,10 +44,10 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     },
     // key-label map
     {
-      'pre-composite-capture': "Capture calls issued prior to first compositing",
+      'pre-composite-capture': "Capture calls issued prior to first compositing (experimental)",
       'history-length': "Object history length",
-      'fbo-readpixels': "Read pixels from framebuffer after draw calls",
-      'snapshot-delay': "Set a timer for taking snapshots",
+      'fbo-readpixels': "Read pixels from framebuffers after draw calls",
+      'snapshot-delay': "Custom snapshot delay",
       'stack-trace': "Get WebGL call reference"
     },
     // settings map

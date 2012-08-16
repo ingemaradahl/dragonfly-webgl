@@ -558,16 +558,23 @@ img.full-texture
   padding: 5px;
 }
 
-.webgl-start .number-circle
+.webgl-start .warning
 {
-  border-radius: 999px;
-
-  width: 24px;
-  height: 24px;
-  padding: 6px;
-
-  border: 1px solid black;
-  text-align: center;
-  font-size: 22px;
-  font-weight: 700
+  padding: 8px;
+  padding-left: 58px;
+  margin: 20px 15px 0px;
+  border: 2px solid #aa4a4a;
+  border-radius: 4px;
+  background-color: #ffeeee;
+  background-image: url("../ui-images/webgl-warning.png");
+  background-position: 5px center;
+  background-repeat: no-repeat;
+  width: 70%;
+  min-height: 56px;
 }
+
+.webgl-start .warning > span
+{
+  margin: 5px;
+};
+

@@ -1460,18 +1460,40 @@ window.templates.webgl.settings = function(settings)
 
 };
 
-window.templates.webgl.start_view = function()
+window.templates.webgl.start_view = function(state)
 {
-  var button = [];
-  if (!window.webgl.injected)
+  var html = ["div"];
+  var header = ["h2", "Welcome to the Dragonfly WebGL Debugger"];
+  html.push(header);
+
+  switch (state)
   {
-    button = window.templates.webgl.reload_info();
+    case "init":
+      var warning = window.settings["webgl-snapshot"].map["pre-composite-capture"];
+      if (warning)
+      {
+        var warning_html = [ "div",
+          ["h3", "Pre composite capturing enabled"],
+          "This is an experimental feature, expect unstable behaviour.",
+          [ "span", "Open settings",
+            "class", "ui-button",
+            "handler", "webgl-open-settings",
+            "data-overlay-id", "settings-overlay",
+            "tabindex", "1"
+          ],
+          "class", "warning"
+        ];
+        html.push(warning_html);
+      }
+      html.push(window.templates.webgl.reload_info());
+      break;
+    case "snapshot":
+      break;
+    case "select":
+      break;
   }
-  return ["div",
-    ["h2", "How to use the Dragonfly WebGL Debugger"],
-    ["div", "1", "class", "number-circle"],
-    "^ en ring gjord i css :)",
-    button,
-    "class", "webgl-start"
-  ];
+
+  html.push("class", "webgl-start");
+
+  return html;
 };
