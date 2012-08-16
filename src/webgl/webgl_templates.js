@@ -109,7 +109,7 @@ window.templates.webgl.buffer_info_table = function(buffer)
     {name: "Size", value: String(buffer.size)},
     {name: "Length", value: String(buffer.data.length)}
   ];
-  
+
   var info_table_rows = buffer_info.map(function(info){
     return [
       "tr",
@@ -127,13 +127,13 @@ window.templates.webgl.buffer_info_table = function(buffer)
   });
 
   var ret = ["div",
-    ["table", 
+    ["table",
       info_table_rows,
       "class",
       "table-info"
     ]
   ];
-  
+
   return ret;
 };
 
@@ -1064,35 +1064,6 @@ window.templates.webgl.summary_view = function(item)
   ];
 };
 
-window.templates.webgl.drawcall = function(draw_call, trace_call, framebuffer)
-{
-  var img = window.templates.webgl.framebuffer_image(framebuffer);
-
-  var buffer_display = [];
-  if (window.webgl.gl)
-  {
-    buffer_display = window.templates.webgl.drawcall_buffer(draw_call);
-  }
-
-  var program = draw_call.program;
-
-  var call_index = draw_call.call_index;
-  var html = [
-    window.templates.webgl.summary_item(["h3", "Framebuffer"], img),
-    window.templates.webgl.summary_item(["h3", "Buffer"], buffer_display),
-
-    [
-      "div",
-      [
-       window.templates.webgl.summary_item(["h3", "Attributes"], window.templates.webgl.attribute_table(call_index, program)),
-       window.templates.webgl.summary_item(["h3", "Uniforms"], window.templates.webgl.uniform_table(call_index, program))
-      ] ,
-      "style", "clear: both;"]
-  ];
-
-  return html;
-};
-
 /**
  * Returns a div containing the buffer preview to be used together with draw
  * calls, including select form for switching attribute
@@ -1380,7 +1351,6 @@ window.templates.webgl.uniform_table = function(call_index, program)
   return table;
 };
 
-
 window.templates.webgl.uniform_tooltip = function(value)
 {
   var html = [];
@@ -1403,30 +1373,27 @@ window.templates.webgl.uniform_tooltip = function(value)
     table.push(row);
   }
 
-  html = ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
-
-  return html;
+  return ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
 };
-
 
 window.templates.webgl.taking_snapshot = function()
 {
-    var html = ["div",
-                  ["p", ["img", "src", "./ui-images/loading.png"]],
-                  ["p", "Taking snapshot..."],
-                  "class", "info-box"
-                ];
-    return html;
+  return [
+    "div",
+    ["p", ["img", "src", "./ui-images/loading.png"]],
+    ["p", "Taking snapshot..."],
+    "class", "info-box"
+  ];
 };
 
 window.templates.webgl.taking_delayed_snapshot = function(count)
 {
-    var html = ["div",
-                  ["p", ["img", "src", "./ui-images/loading.png"]],
-                  ["p", "Taking snapshot in " + String(count) + " seconds"],
-                  "class", "info-box"
-                ];
-    return html;
+  return [
+    "div",
+    ["p", ["img", "src", "./ui-images/loading.png"]],
+    ["p", "Taking snapshot in " + String(count) + " seconds"],
+    "class", "info-box"
+  ];
 };
 
 window.templates.webgl.program = function(call_index, program)

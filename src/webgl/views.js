@@ -996,6 +996,14 @@ cls.WebGLTab = Object.create(ViewBase, {
       this._container = null;
     }
   },
+  _snapshot: {
+    writable: true,
+    value: null
+  },
+  _call_index: {
+    writable: true,
+    value: null
+  },
   clear: {
     writable: true,
     value: function ()
@@ -1004,14 +1012,6 @@ cls.WebGLTab = Object.create(ViewBase, {
       this._snapshot = null;
       this._call_index = null;
     }
-  },
-  _snapshot: {
-    writable: true,
-    value: null
-  },
-  _call_index: {
-    writable: true,
-    value: null
   },
   set_call: {
     writable: true, configurable: true,
