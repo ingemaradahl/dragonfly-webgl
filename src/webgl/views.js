@@ -47,7 +47,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
       'pre-composite-capture': "Capture calls issued prior to first compositing",
       'history-length': "Object history length",
       'fbo-readpixels': "Read pixels from framebuffer after draw calls",
-      'snapshot-delay': "Set a timer for taking snapshots",
+      'snapshot-delay': "Delay in seconds when taking a delayed snapshot",
       'stack-trace': "Get WebGL call reference"
     },
     // settings map
@@ -539,21 +539,15 @@ cls.WebGLSideView = Object.create(ViewBase, {
     value: function()
     {
       if (!this._container) return;
-      var ctx_id =
-        window['cst-selects']['snapshot-select'].get_selected_context();
+      var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
       if (ctx_id === null) return;
 
-      var func = function()
-      {
-        this.on_take_snapshot();
-      }.bind(this);
-      var delay = window.settings['webgl-snapshot'].get('snapshot_delay')*1000;
-      var count = window.settings['webgl-snapshot'].get('snapshot_delay')-1;
-      if (count < 0)
-      {
-        count = 0;
-      }
-      var snapshot_timer;
+      var delay = window.settings['webgl-snapshot'].get('snapshot_delay');
+      var delay_millisec = delay * 1000;
+      setTimeout(this.on_take_snapshot.bind(this), delay_millisec);
+
+      var count = delay;
+      var render_interval;
       var render_func = function()
       {
         if (count > 0)
@@ -562,12 +556,12 @@ cls.WebGLSideView = Object.create(ViewBase, {
         }
         else
         {
-          clearInterval(snapshot_timer);
+          clearInterval(render_interval);
         }
       }.bind(this);
 
-      snapshot_timer = setInterval(render_func, 1000);
-      setTimeout(func, delay);
+      render_func();
+      render_interval = setInterval(render_func, 1000);
     }
   },
   on_snapshot_change: {
