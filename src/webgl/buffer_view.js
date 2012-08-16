@@ -212,6 +212,19 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
     var coordinates;
     var selected_index;
     var start_row;
+   
+    // If the buffer is an ELEMENT_ARRAY_BUFFER data will need to be requested.
+    var target = window.webgl.api.constant_value_to_string(this._buffer.target);
+    if (target === "ELEMENT_ARRAY_BUFFER")
+    {
+      if (!this._buffer.data_is_loaded())
+      {
+        this._buffer.request_data();
+        var template = window.templates.webgl.loading_buffer_data();
+        this._container.clearAndRender(template);
+        return;
+      }
+    }
 
     if (this._buffer_layouts[this._buffer.index_snapshot])
     {
