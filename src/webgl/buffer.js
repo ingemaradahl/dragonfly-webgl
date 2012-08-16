@@ -28,6 +28,12 @@ cls.WebGLBuffer.prototype.request_data = function()
   this.data.downloading = true;
 };
 
+cls.WebGLBuffer.prototype.previewable = function()
+{
+  return this.target === window.webgl.gl.ARRAY_BUFFER || this.size;
+};
+
+
 cls.WebGLBuffer.prototype.toString = function()
 {
   // TODO add setting to control if the index_snapshot or index should be used.

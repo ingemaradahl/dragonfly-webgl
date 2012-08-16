@@ -67,7 +67,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
       };
     }.bind(this);
 
-    if (buffer.target === gl.ELEMENT_ARRAY_BUFFER)
+    if (!buffer.previewable())
       return null;
 
     var calls = [];
@@ -269,14 +269,14 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
       this._buffer = snapshot.trace[call_index].linked_object.buffer;
     }
     var buffer_call = window.views.webgl_buffer_call;
-    buffer_call.set_preview_enabled(this._buffer.target !== window.webgl.gl.ELEMENT_ARRAY_BUFFER);
-    
+    buffer_call.set_preview_enabled(this._buffer.previewable());
+
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
   this.getBufferView = function()
   {
-    if (this._buffer.target === window.webgl.gl.ELEMENT_ARRAY_BUFFER)
+    if (!this._buffer.previewable())
       return null;
 
     return {
@@ -301,7 +301,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
   this.renderAfter = function()
   {
-    if (this._buffer.target === window.webgl.gl.ARRAY_BUFFER)
+    if (this._buffer.previewable())
     {
       var buffer_call = window.views.webgl_buffer_call;
       window.webgl.preview.add_canvas();
@@ -322,13 +322,13 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     var buffer_preview = buffer_item;
 
     var buffer_holder = buffer_item.querySelector(".webgl-holder");
-    
+
     var height = framebuffer.offsetHeight;
     if (height < 200)
       height = 200;
     if (height > 300)
       height = 300;
-    
+
     buffer_holder.style.height = height + "px";
     buffer_holder.style.width =
       parseInt(buffer_preview.offsetWidth) + "px";
@@ -351,7 +351,7 @@ cls.WebGLBufferHistoryTab = function(id, name, container_class)
     cls.WebGLTab.set_call.apply(this, arguments);
   };
 
-  
+
   this.init(id, name, container_class);
 };
 
@@ -372,7 +372,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
     this._call_index = call_index;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
-  
+
   this.render = function()
   {
     var coordinates;
@@ -386,10 +386,10 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       selected_index = layout_obj.selected_index || 0;
       start_row = layout_obj.start_row || 0;
     }
-    
+
     var template = window.templates.webgl.buffer_base(this._buffer, null,
       coordinates, selected_index, start_row);
-    
+
     this._container.clearAndRender(template);
   };
 
@@ -451,12 +451,12 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       this.render();
     }
   };
-  
+
   var eh = window.eventHandlers;
   eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
-  
+
   this.init(id, name, container_class);
 };
 
@@ -475,7 +475,7 @@ cls.WebGLBufferPreviewTab = function(id, name, container_class)
     this._buffer = object;
     var buffer_call = window.views.webgl_buffer_call;
 
-    if (this._buffer.target === window.webgl.gl.ELEMENT_ARRAY_BUFFER)
+    if (!this._buffer.previewable())
     {
       // Failsafe for when tab pins are in place
       buffer_call.set_tab_enabled(this, false);
