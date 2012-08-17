@@ -1336,15 +1336,9 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     var type = window.webgl.api.constant_value_to_string(uniform.type);
     if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
-      case "FLOAT_MAT3": data_tooltip = "data-tooltip";
-                         uniform_tooltip = tooltip_name;
-                         value = format_value(value);
-                         break;
-      case "FLOAT_MAT4": data_tooltip = "data-tooltip";
-                         uniform_tooltip = tooltip_name;
-                         value = format_value(value);
-                         break;
-      default: break;
+      data_tooltip = "data-tooltip";
+      uniform_tooltip = tooltip_name;
+      value = format_matrix(value);
     }
     // End
 
