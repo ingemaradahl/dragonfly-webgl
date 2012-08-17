@@ -1493,8 +1493,21 @@ window.templates.webgl.info_box = function(title, string, button, custom)
   ];
 };
 
+window.templates.webgl.collapse_box = function(title, string, button, custom, info_open)
+{
+  button = button || [];
+  custom = custom || [];
 
-window.templates.webgl.start_view = function(state)
+  return ["div",
+    [ "h3", title, "handler", "webgl-info-box-toggle"],
+    string instanceof Array ? string : [ "p", string],
+    custom,
+    button,
+    "class", "info-box collapsable" + (info_open ? " open" : "")
+  ];
+};
+
+window.templates.webgl.start_view = function(state, info_open)
 {
   var html = ["div"];
   html.push(["h2", "Welcome to the Dragonfly WebGL Debugger"]);
@@ -1513,7 +1526,7 @@ window.templates.webgl.start_view = function(state)
             "handler", "webgl-open-settings",
             "tabindex", "1"
           ],
-          "class", "warning"
+          "class", "info-box warning"
         ];
         html.push(warning_html);
       }
@@ -1541,15 +1554,39 @@ window.templates.webgl.start_view = function(state)
           "handler", "webgl-take-snapshot"
         ]
       ));
-      var settings = window.settings["webgl-snapshot"].map;
-      html.push(window.templates.webgl.info_box(
+      var settings = window.settings["webgl-snapshot"];
+      var show_settings = [
+        { key: 'fbo-readpixels',
+          desc: "A call to gl.readPixels will be executed after each draw " +
+                "call to record the framebuffer. This can take a lot of time " +
+                "on some devices."
+        },
+        { key: 'stack-trace',
+          desc: "Record the location of every call made to WebGL. This is done " +
+                "by analyzing the stack trace at each call. The stack trace is " +
+                "retrieved by throwing an exception, which affects the " +
+                "behaviour of the Javascript debugger."
+        }
+      ];
+
+      var setting_to_paragraph = function(setting)
+      {
+        return ["div",
+          ["h4", settings.label_map[setting.key] + ": " + (settings.map[setting.key] ? "enabled" : "disabled")],
+          ["p", setting.desc]
+        ];
+      }
+
+      html.push(window.templates.webgl.collapse_box(
         "Snapshot settings",
-        "Snapshots can be customized to some extent from the WebGL settings tab",
+        show_settings.map(setting_to_paragraph),
         [ "span", "Open settings",
           "class", "ui-button",
           "handler", "webgl-open-settings",
           "tabindex", "1"
-        ]
+        ],
+        ["p", "Snapshots can be customized to some extent from the WebGL settings tab"],
+        info_open
       ));
       break;
     case "select":

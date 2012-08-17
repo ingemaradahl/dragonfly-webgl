@@ -21,7 +21,7 @@ cls.WebGLDrawCallView.prototype = cls.WebGLCallView;
 cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 {
   this._draw_call = null;
-  
+
   var tooltip_name = "webgl-draw-uniform-tooltip";
 
   var render_preview = function()

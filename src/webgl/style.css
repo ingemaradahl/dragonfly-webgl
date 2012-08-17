@@ -603,25 +603,63 @@ img.full-texture
   padding-top: 0.5em;
 }
 
-.webgl-start .warning
+.webgl-start .info-box.warning
 {
   padding: 8px;
   padding-left: 58px;
-  margin: 30px 50px 0px;
   border: 2px solid #aa4a4a;
   border-radius: 4px;
   background-color: #ffeeee;
   background-image: url("../ui-images/webgl-warning.png");
   background-position: 5px center;
   background-repeat: no-repeat;
-  max-width: 400px;
   min-height: 56px;
+  max-width: 354px; /* Compensate for padding-left */
   text-align: center;
 }
 
 .webgl-start .info-box
 {
   max-width: 400px;
+}
+
+.webgl-start .collapsable
+{
+  -o-transition-property: max-height, -o-transform;
+  -o-transition-duration: 0.5s;
+  overflow: hidden;
+  max-height: 1em;
+}
+
+.webgl-start .open
+{
+  max-height: none;
+}
+
+
+.webgl-start .info-box.collapsable > h3:before
+{
+  content: "";
+  padding-left: 19px;
+  width:19px;
+  height:19px;
+  background:url("../ui-images/icons/icon_arrow_right.png") no-repeat 0 0;
+  background-position: center;
+}
+
+.webgl-start .info-box.collapsable.open > h3:before
+{
+  -o-transform:rotate(90deg);
+}
+
+.webgl-start .info-box.collapsable > p
+{
+  visibility: hidden;
+}
+
+.webgl-start .info-box.collapsable.open > p
+{
+  visibility: visible;
 }
 
 .webgl-start .info-box > span
@@ -639,6 +677,7 @@ img.full-texture
 
 .webgl-start .info-box > p,
 .webgl-start .info-box > h3,
+.webgl-start .info-box > div,
 .webgl-start .warning > p,
 .webgl-start .warning > h3
 {
