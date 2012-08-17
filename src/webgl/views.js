@@ -47,7 +47,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
       'pre-composite-capture': "Capture calls issued prior to first compositing (experimental)",
       'history-length': "Object history length",
       'fbo-readpixels': "Read pixels from framebuffers after draw calls",
-      'snapshot-delay': "Custom snapshot delay",
+      'snapshot-delay': "Custom snapshot delay in seconds",
       'stack-trace': "Get WebGL call reference"
     },
     // settings map
@@ -115,7 +115,7 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
   {
     var snapshot_delay = Number(event.target.value);
     settings['webgl-snapshot'].set('snapshot_delay', snapshot_delay);
-  }
+  };
 };
 
 /* General settings view */
