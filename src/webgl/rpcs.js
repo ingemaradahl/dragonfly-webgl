@@ -936,9 +936,10 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     var trace_start_time = null;
-    this.new_frame = function()
+    var new_frame = function()
     {
-      if (handler.capturing_frame) {
+      if (handler.capturing_frame)
+      {
         handler.capturing_frame = false;
         var time = new Date() - trace_start_time;
         console.log("Frame have been captured in " + time + " ms.");
@@ -961,12 +962,16 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       handler.current_frame++;
-    };
-    this.new_frame();
+    }.bind(this);
+    new_frame();
 
     if (core_is_fixed)
     {
-      canvas.onframeend = this.new_frame.bind(this);
+      canvas.onframeend = new_frame;
+    }
+    else
+    {
+      this.new_frame = new_frame;
     }
 
     var orig_getError = this.getError;
