@@ -28,22 +28,26 @@
   color: #5C0909 !important;
   display: inline-block;
   padding: 1px;
-  margin: 3px;
+  box-sizing: border-box;
 }
 
 .summary-item.error-item > h3
 {
   border-bottom: 1px solid #5C0909;
+  padding-bottom: 1px;
+}
+
+.summary-item.error-item.no-description > h3
+{
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .summary-item.error-item .cause
 {
   font-style: italic;
-}
-
-.summary-item.error-item .error-message > div
-{
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .summary-item.error-item .error-message > div:last-child

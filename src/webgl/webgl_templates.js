@@ -928,41 +928,34 @@ window.templates.webgl.state_parameter_value = function(param, value)
   return param_content;
 };
 
-window.templates.webgl.error_message = function(call)
+window.templates.webgl.error_message = function(solutions)
 {
-  var error_code = window.webgl.api.constant_value_to_string(call.error_code);
-
-  var fun_errors = window.webgl.api.functions[call.function_name].errors;
-  if (!fun_errors || !(error_code in fun_errors)) return [];
-
-  var errors = fun_errors[error_code];
-  errors = errors.map(function(error){return [
-    "div",
+  solutions = solutions.map(function(solution){return [
+    "li",
     [
       [
-        "span", error.txt
+        "span", solution.txt
       ],
-      !error.ref ? [] : [
-        "a", "Read more here.",
-        "href", error.ref
+      !solution.ref ? [] : [
+        "a", "Read more",
+        "target", "_blank",
+        "href", solution.ref
       ]
     ]
   ];});
 
-
   var content = [];
-  var result = [
+
+  content.push([
+    "div", "Possible cause" + (solutions.length === 1 ? "" : "s") + ":",
+    "class", "cause"
+  ]);
+  content.push(["ui", solutions]);
+
+  return [
     "div", content,
     "class", "error-message"
   ];
-
-  content.push([
-    "div", "Possible cause" + (errors.length === 1 ? "" : "s") + ":",
-    "class", "cause"
-  ]);
-  content.push(errors);
-
-  return result;
 };
 
 window.templates.webgl.tabs = function(tabs, active_tab)
