@@ -4,20 +4,6 @@ window.templates = window.templates || {};
 window.templates.webgl = window.templates.webgl || {};
 
 
-window.templates.webgl.reload_info = function()
-{
-  return [
-    "div",
-    [
-      "span", "Initialize WebGL Debugger",
-      "class", "ui-button reload-window",
-      "handler", "reload-window",
-      "tabindex", "1"
-    ],
-    "class", "info-box"
-  ];
-};
-
 window.templates.webgl.no_contexts = function()
 {
   return [
@@ -1500,18 +1486,91 @@ window.templates.webgl.settings = function(settings)
 
 };
 
-window.templates.webgl.start_view = function()
+window.templates.webgl.info_box = function(title, string, button, custom)
 {
-  var button = [];
-  if (!window.webgl.injected)
-  {
-    button = window.templates.webgl.reload_info();
-  }
-  return ["div",
-    ["h2", "How to use the Dragonfly WebGL Debugger"],
-    ["div", "1", "class", "number-circle"],
-    "^ en ring gjord i css :)",
+  button = button || [];
+  custom = custom || [];
+
+  return [ "div",
+    [ "h3", title],
+    [ "p", string],
+    custom,
     button,
-    "class", "webgl-start"
+    "class", "info-box"
   ];
+};
+
+
+window.templates.webgl.start_view = function(state)
+{
+  var html = ["div"];
+  var header = ["h2", "Welcome to the Dragonfly WebGL Debugger"];
+  html.push(header);
+
+  switch (state)
+  {
+    case "init":
+      var warning = window.settings["webgl-snapshot"].map["pre-composite-capture"];
+      if (warning)
+      {
+        var warning_html = [ "div",
+          ["h3", "Pre composite capturing enabled"],
+          ["p", "This is an experimental feature, expect unstable behaviour"],
+          [ "span", "Open settings",
+            "class", "ui-button",
+            "handler", "webgl-open-settings",
+            "data-overlay-id", "settings-overlay",
+            "tabindex", "1"
+          ],
+          "class", "warning"
+        ];
+        html.push(warning_html);
+      }
+
+      html.push(window.templates.webgl.info_box(
+        "Refresh the page you want to debug",
+        "The WebGL Debugger needs to be present from the start of the " +
+           "execution of the application you want to debug. Click the button " +
+           "below to refresh",
+        [ "span", "Initialize WebGL Debugger",
+          "class", "ui-button reload-window",
+          "handler", "reload-window",
+          "tabindex", "1"
+        ]
+      ));
+      break;
+    case "snapshot":
+      html.push(window.templates.webgl.info_box(
+        "Request a snapshot from a WebGLRenderingContext",
+        "Press the button to the right or below to request a new snapshot of " +
+        "WebGL. It will constitute of the state of WebGL and all calls made " +
+        "to WebGL during an entire frame",
+        [ "span", "Request snapshot",
+          "class", "ui-button",
+          "handler", "webgl-take-snapshot"
+        ]
+      ));
+      break;
+    case "select":
+      html.push(window.templates.webgl.info_box(
+        "Select a call to start inspecting",
+        "Or use the tabs for buffers, textures or programs to select which " +
+        "object you want to inspect.",
+        null,
+        // TODO: Make this prettier
+        ["p", "Errors are marked with a ",
+          ["span", "red", "class", "info-error-block"],
+          " background, redundant calls a ",
+          ["span", "yellow", "class", "info-redundant-block"],
+          " background and draw calls a ",
+          ["span", "green", "class", "info-drawcall-block"],
+          " background."
+        ]
+      ));
+      break;
+  }
+
+  html.push("class", "webgl-start");
+
+  return html;
 };

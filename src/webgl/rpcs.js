@@ -1777,6 +1777,8 @@ cls.WebGL.RPCs.injection = function () {
 
       var info = this.handler.get_program_info(program);
 
+      // TODO: Deep clone (uniforms are changed before the program object is
+      // transmitted
       var program_state = {
         call_index: this.call_index,
         index: info.index,

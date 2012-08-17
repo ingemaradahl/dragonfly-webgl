@@ -44,10 +44,10 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
     },
     // key-label map
     {
-      'pre-composite-capture': "Capture calls issued prior to first compositing",
+      'pre-composite-capture': "Capture calls issued prior to first compositing (experimental)",
       'history-length': "Object history length",
-      'fbo-readpixels': "Read pixels from framebuffer after draw calls",
-      'snapshot-delay': "Delay in seconds when taking a delayed snapshot",
+      'fbo-readpixels': "Read pixels from framebuffers after draw calls",
+      'snapshot-delay': "Custom snapshot delay",
       'stack-trace': "Get WebGL call reference"
     },
     // settings map
@@ -402,6 +402,7 @@ cls.WebGLSnapshotSelect = function(id)
 
     var snapshot = snapshots[ctx_id].get_latest_snapshot();
     messages.post("webgl-changed-snapshot", snapshot);
+    refresh_tab();
     this.updateElement();
   };
 
@@ -524,57 +525,8 @@ cls.WebGLSideView = Object.create(ViewBase, {
   init_events: {
     value: function()
     {
-      var eh = window.eventHandlers;
-      eh.click["webgl-" + this.id + "-take-snapshot"] = this.on_take_snapshot.bind(this);
-      eh.click["webgl-" + this.id + "-take-custom-snapshot"] = this.on_take_custom_snapshot.bind(this);
-
       messages.addListener('webgl-changed-snapshot', this.on_snapshot_change.bind(this));
       messages.addListener('webgl-taking-snapshot', this.render.bind(this));
-    }
-  },
-  on_take_snapshot: {
-    value: function()
-    {
-      if (!this._container) return;
-      var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
-      if (ctx_id != null)
-      {
-          window.webgl.request_snapshot(ctx_id);
-      }
-
-      if (this._on_take_snapshot) this._on_take_snapshot(ctx_id);
-      this.render();
-    }
-  },
-   //TODO Many improvments possible, for example run the timeout on the
-   // debuggee, add multiple frames snapshot, etc.
-  on_take_custom_snapshot: {
-    value: function()
-    {
-      if (!this._container) return;
-      var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
-      if (ctx_id === null) return;
-
-      var delay = window.settings['webgl-snapshot'].get('snapshot_delay');
-      var delay_millisec = delay * 1000;
-      setTimeout(this.on_take_snapshot.bind(this), delay_millisec);
-
-      var count = delay;
-      var render_interval;
-      var render_func = function()
-      {
-        if (count > 0)
-        {
-          this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(count--));
-        }
-        else
-        {
-          clearInterval(render_interval);
-        }
-      }.bind(this);
-
-      render_func();
-      render_interval = setInterval(render_func, 1000);
     }
   },
   on_snapshot_change: {
@@ -593,12 +545,13 @@ cls.WebGLSideView.create_ui_widgets = function(id)
     id,
     [
       {
-        handler: 'webgl-' + id + '-take-snapshot',
+        handler: 'webgl-take-snapshot',
         title: "Take snapshot",
         icon: 'webgl-take-snapshot',
+        id: 'webgl-' + id + '-take-snapshot',
       },
       {
-        handler: 'webgl-' + id + '-take-custom-snapshot',
+        handler: 'webgl-take-custom-snapshot',
         title: "Take custom snapshot",
         icon: 'webgl-take-snapshot',
       }
@@ -1021,7 +974,52 @@ cls.WebGLCallView.initialize = function()
     this.active_view.active_tab.render();
   };
 
+  var on_take_snapshot = function()
+  {
+    var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id != null)
+    {
+      window.webgl.request_snapshot(ctx_id);
+    }
+  }
+
+  //TODO Many improvments possible, for example run the timeout on the
+  // debuggee, add multiple frames snapshot, etc.
+  var on_take_custom_snapshot = function()
+  {
+    var ctx_id =
+      window['cst-selects']['snapshot-select'].get_selected_context();
+    if (ctx_id === null) return;
+
+    var delay = window.settings['webgl-snapshot'].get('snapshot_delay')*1000;
+    var count = window.settings['webgl-snapshot'].get('snapshot_delay')-1;
+
+    if (count < 0)
+    {
+      count = 0;
+    }
+    var snapshot_timer;
+    /*
+    var render_func = function()
+    {
+      if (count > 0)
+      {
+        this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(count--));
+      }
+      else
+      {
+        clearInterval(snapshot_timer);
+      }
+    }.bind(this);
+
+    snapshot_timer = setInterval(render_func, 1000);
+    */
+    setTimeout(on_take_snapshot, delay);
+  };
+
   var eh = window.eventHandlers;
+  eh.click["webgl-take-snapshot"] = on_take_snapshot.bind(this);
+  eh.click["webgl--take-custom-snapshot"] = on_take_custom_snapshot.bind(this);
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);

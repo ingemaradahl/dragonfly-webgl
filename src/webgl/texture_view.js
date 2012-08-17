@@ -279,7 +279,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     {
       this._container.clearAndRender(
         ['div',
-         ['p', "COMMON MAN TAKE A SNAPPY-SHOT!"], // TODO not really no
+         ['p', "No textures available."],
          'class', 'info-box'
         ]
       );
