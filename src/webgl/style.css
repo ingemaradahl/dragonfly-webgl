@@ -369,6 +369,7 @@ img.flipped
   font-weight: 700;
 }
 
+.info-error-block,
 .trace-table tr.trace-error
 {
   background-color: rgba(255,0,0, 0.4);
@@ -379,11 +380,13 @@ img.flipped
   background-color: rgba(215,215,0, 0.4);
 }
 
+.info-redundant-block,
 .trace-table > tr.trace-redundant
 {
   background-color: rgba(240,240,0, 0.4);
 }
 
+.info-drawcall-block,
 .trace-table tr.trace-drawcall
 {
   background: rgba(0,255,0, 0.4);
@@ -558,23 +561,54 @@ img.full-texture
   padding: 5px;
 }
 
+.webgl-start > h2
+{
+  padding-left: 0.5em;
+  padding-top: 0.5em;
+}
+
 .webgl-start .warning
 {
   padding: 8px;
   padding-left: 58px;
-  margin: 20px 15px 0px;
+  margin: 30px 50px 0px;
   border: 2px solid #aa4a4a;
   border-radius: 4px;
   background-color: #ffeeee;
   background-image: url("../ui-images/webgl-warning.png");
   background-position: 5px center;
   background-repeat: no-repeat;
-  width: 70%;
+  max-width: 400px;
   min-height: 56px;
+  text-align: center;
+}
+
+.webgl-start .info-box
+{
+  max-width: 400px;
+}
+
+.webgl-start .info-box > span
+{
+  margin-top: 3px;
+}
+
+.webgl-start .info-box > p,
+.webgl-start .info-box > h3,
+.webgl-start .warning > p,
+.webgl-start .warning > h3
+{
+  text-align: left;
 }
 
 .webgl-start .warning > span
 {
-  margin: 5px;
-};
+  margin-right: 29px; /* Half of left-padding in .warning */
+}
+
+span.button-focus
+{
+  outline: 2px dashed #005F9E;
+  outline-offset:3px;
+}
 

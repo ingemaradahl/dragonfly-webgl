@@ -21,15 +21,6 @@ cls.WebGLTraceView = function(id, name, container_class)
       var template = window.templates.webgl.trace_table(trace, this.id);
       this._container.clearAndRender(template);
     }
-    else
-    {
-      this._container.clearAndRender(
-        ['div',
-          ['p', "No trace available."],
-          'class', 'info-box'
-        ]
-      );
-    }
   };
 
   this._on_row_click = function(evt, target)
@@ -59,7 +50,6 @@ cls.WebGLTraceView = function(id, name, container_class)
   messages.addListener("setting-changed", on_setting_changed.bind(this));
 
   this.init(id, name, container_class);
-  this.init_events();
 };
 
 cls.WebGLTraceView.prototype = cls.WebGLSideView;

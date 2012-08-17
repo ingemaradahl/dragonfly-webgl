@@ -8,6 +8,8 @@ window.cls || (window.cls = {});
  */
 cls.WebGLStartView = function(id, name, container_class)
 {
+  var snapshot_present = false;
+
   this.createView = function(container)
   {
     this._container = container;
@@ -18,7 +20,11 @@ cls.WebGLStartView = function(id, name, container_class)
   {
     if (!this._container) return;
 
-    var state = window.webgl.injected ? "snapshot": "init";
+    var state = window.webgl.injected
+      ? snapshot_present
+        ? "select"
+        : "snapshot"
+      : "init";
     this._container.clearAndRender(window.templates.webgl.start_view(state));
   };
 
@@ -50,7 +56,42 @@ cls.WebGLStartView = function(id, name, container_class)
     overlay.change_group("webgl");
   };
 
+  var on_snapshot = function(event, target)
+  {
+    snapshot_present = true;
+    this.render();
+  };
+
+  var on_new_context = function()
+  {
+    var ui = UI.get_instance();
+    // Could be improved
+    var button = ui.get_button("webgl-trace-side-panel-take-snapshot") ||
+                 ui.get_button("webgl-buffer-side-panel-take-snapshot") ||
+                 ui.get_button("webgl-texture-side-panel-take-snapshot") ||
+                 ui.get_button("webgl-program-side-panel-take-snapshot");
+    if (button)
+      button.addClass("button-focus");
+
+    messages.removeListener('webgl-new-context', on_new_context_bound);
+  };
+  var on_new_context_bound = on_new_context.bind(this);
+
+  var on_taking_snapshot = function()
+  {
+    var ui = UI.get_instance();
+    var button = ui.get_button("webgl-trace-side-panel-take-snapshot");
+    if (button)
+      button.removeClass("button-focus");
+
+    messages.removeListener('webgl-taking-snapshot', on_taking_snapshot_bound);
+  };
+  var on_taking_snapshot_bound = on_taking_snapshot.bind(this)
+
   messages.addListener('setting-changed', on_settings.bind(this));
+  messages.addListener('webgl-new-snapshot', on_snapshot.bind(this));
+  messages.addListener('webgl-new-context', on_new_context_bound);
+  messages.addListener('webgl-taking-snapshot', on_taking_snapshot_bound);
 
   var eh = window.eventHandlers;
   eh.click["webgl-open-settings"] = on_open_settings.bind(this);
