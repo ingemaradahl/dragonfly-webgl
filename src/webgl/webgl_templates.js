@@ -1260,7 +1260,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
   return table;
 };
 
-window.templates.webgl.uniform_table = function(call_index, program)
+window.templates.webgl.uniform_table = function(call_index, program, tooltip_name)
 {
   var uniforms = program.uniforms;
   var rows = [];
@@ -1330,7 +1330,7 @@ window.templates.webgl.uniform_table = function(call_index, program)
     if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
       data_tooltip = "data-tooltip";
-      uniform_tooltip = "webgl-uniform-tooltip";
+      uniform_tooltip = tooltip_name;
       value = format_matrix(value);
     }
     // End
@@ -1524,7 +1524,7 @@ window.templates.webgl.start_view = function(state)
         "Refresh the page you want to debug",
         "The WebGL Debugger needs to be present from the start of the " +
            "execution of the application you want to debug. Click the button " +
-           "below to refresh",
+           "below to refresh.",
         [ "span", "Initialize WebGL Debugger",
           "class", "ui-button reload-window",
           "handler", "reload-window",
@@ -1537,7 +1537,7 @@ window.templates.webgl.start_view = function(state)
         "Request a snapshot from a WebGLRenderingContext",
         "Press the button to the right or below to request a new snapshot of " +
         "WebGL. It will constitute of the state of WebGL and all calls made " +
-        "to WebGL during an entire frame",
+        "to WebGL during an entire frame.",
         [ "span", "Request snapshot",
           "class", "ui-button",
           "handler", "webgl-take-snapshot"

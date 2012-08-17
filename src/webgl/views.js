@@ -1422,6 +1422,7 @@ cls.WebGLStateTab = function (id, name, container_class)
 
 cls.WebGLStateTab.prototype = cls.WebGLTab;
 
+
 cls.WebGLStateTab.initialize = function ()
 {
   var tabledef = {
