@@ -190,7 +190,7 @@ cls.WebGLProgramSideView = function(id, name, container_class)
     {
       this._container.clearAndRender(
         ['div',
-          ['p', "Yes indeed, time for a snapshot"], //TODO hmmm..
+          ['p', "No programs available."],
           'class', 'info-box'
         ]
       );
