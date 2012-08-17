@@ -1253,7 +1253,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
   return table;
 };
 
-window.templates.webgl.uniform_table = function(call_index, program)
+window.templates.webgl.uniform_table = function(call_index, program, tooltip_name)
 {
   var uniforms = program.uniforms;
   var rows = [];
@@ -1330,11 +1330,11 @@ window.templates.webgl.uniform_table = function(call_index, program)
     switch (type)
     {
       case "FLOAT_MAT3": data_tooltip = "data-tooltip";
-                         uniform_tooltip = "webgl-uniform-tooltip";
+                         uniform_tooltip = tooltip_name;
                          value = format_value(value);
                          break;
       case "FLOAT_MAT4": data_tooltip = "data-tooltip";
-                         uniform_tooltip = "webgl-uniform-tooltip";
+                         uniform_tooltip = tooltip_name;
                          value = format_value(value);
                          break;
       default: break;
