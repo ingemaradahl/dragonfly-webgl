@@ -469,18 +469,31 @@ cls.WebGLSideView = Object.create(ViewBase, {
     writable: true,
     value: null
   },
+  _last_scroll_position: {
+    writable: true,
+    value: null
+  },
   createView: {
     writable: true, configurable: true,
     value: function(container)
     {
       this._container = container;
       this.render();
+
+      var set_scroll = this._last_scroll_position != null;
+      this._container.scrollTop = set_scroll ? this._last_scroll_position.top : 0;
+      this._container.scrollLeft = set_scroll ? this._last_scroll_position.left : 0;
     }
   },
   ondestroy: {
     writable: true, configurable: true,
     value: function()
     {
+      this._last_scroll_position = {
+        top: this._container.scrollTop,
+        left: this._container.scrollLeft
+      };
+
       this._container = null;
     }
   },
@@ -567,6 +580,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
   on_snapshot_change: {
     value: function(snapshot)
     {
+      this._last_scroll_position = null;
       if (this._on_snapshot_change) this._on_snapshot_change(snapshot);
       this.render();
     }
