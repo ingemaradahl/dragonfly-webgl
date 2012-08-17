@@ -50,6 +50,7 @@ cls.WebGLTraceView = function(id, name, container_class)
   messages.addListener("setting-changed", on_setting_changed.bind(this));
 
   this.init(id, name, container_class);
+  this.init_events();
 };
 
 cls.WebGLTraceView.prototype = cls.WebGLSideView;
