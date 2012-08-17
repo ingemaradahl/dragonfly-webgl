@@ -140,7 +140,9 @@ cls.WebGLGeneralView.create_ui_widgets = function()
     // key-value map
     {
       'enable-debugger' : true,
-      'highlight-objects' : true
+      'highlight-objects' : true,
+
+      'first-run' : true,
     },
     // key-label map
     {
