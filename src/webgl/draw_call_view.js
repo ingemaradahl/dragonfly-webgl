@@ -39,7 +39,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this.getBufferView = function()
   {
     var buffer_display = window.templates.webgl.drawcall_buffer(this._draw_call);
-    return {title: "Buffer", content: buffer_display, class: "buffer-preview"};
+    return {title: "Vertex attributes", content: buffer_display, class: "buffer-preview"};
   };
 
   this.getAdditionalPrimaryViews = function()
@@ -116,7 +116,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 
   this.tooltip = Tooltips.register(tooltip_name);
   this.tooltip.ontooltip = this._on_tooltip.bind(this);
-  
+
   window.eventHandlers.change["webgl-select-attribute"] = on_attribute_select.bind(this);
 
   this.init(id, name, container_class);

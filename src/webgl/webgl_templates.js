@@ -1486,7 +1486,7 @@ window.templates.webgl.info_box = function(title, string, button, custom)
 
   return [ "div",
     [ "h3", title],
-    [ "p", string],
+    string ? [ "p", string] : [],
     custom,
     button,
     "class", "info-box"
@@ -1511,7 +1511,6 @@ window.templates.webgl.start_view = function(state)
           [ "span", "Open settings",
             "class", "ui-button",
             "handler", "webgl-open-settings",
-            "data-overlay-id", "settings-overlay",
             "tabindex", "1"
           ],
           "class", "warning"
@@ -1540,6 +1539,16 @@ window.templates.webgl.start_view = function(state)
         [ "span", "Request snapshot",
           "class", "ui-button",
           "handler", "webgl-take-snapshot"
+        ]
+      ));
+      var settings = window.settings["webgl-snapshot"].map;
+      html.push(window.templates.webgl.info_box(
+        "Snapshot settings",
+        "Snapshots can be customized to some extent from the WebGL settings tab",
+        [ "span", "Open settings",
+          "class", "ui-button",
+          "handler", "webgl-open-settings",
+          "tabindex", "1"
         ]
       ));
       break;
