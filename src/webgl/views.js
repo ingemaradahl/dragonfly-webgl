@@ -1161,9 +1161,20 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   getErrorView: {
     value: function()
     {
-      var error_content = window.templates.webgl.error_message(this._call);
       var error_code = window.webgl.api.constant_value_to_string(this._call.error_code);
-      return {title: "Error: " + error_code, content: error_content, class: "error-item"};
+      var func_errors = window.webgl.api.functions[this._call.function_name].errors;
+      var content = [];
+      var classes = ["error-item"];
+      if (func_errors && error_code in func_errors)
+      {
+        var solutions = func_errors[error_code];
+        content = window.templates.webgl.error_message(solutions);
+      }
+      else
+      {
+        classes.push("no-description");
+      }
+      return {title: "Error: " + error_code, content: content, class: classes.join(" ")};
     }
   },
   getFrameBufferView: {
@@ -1412,6 +1423,7 @@ cls.WebGLStateTab = function (id, name, container_class)
 };
 
 cls.WebGLStateTab.prototype = cls.WebGLTab;
+
 
 cls.WebGLStateTab.initialize = function ()
 {

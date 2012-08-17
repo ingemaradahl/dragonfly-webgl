@@ -17,82 +17,107 @@ window.templates.webgl.no_contexts = function()
 
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
-  var length = ["div", "Length: " +  buffer.data_length];
-  var data_table;
+  if (start_row == null) start_row = 0;
   var buffer_size = Number(buffer.size / 1024).toFixed(2);
   var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
   var target = window.webgl.api.constant_value_to_string(buffer.target);
+  var data_table;
 
   if (buffer.data_is_loaded())
   {
     data_table = window.templates.webgl.buffer_data_table(buffer, coordinates, start_row);
   }
+  else if(buffer.data_is_downloading())
+  {
+    return window.templates.webgl.loading_buffer_data();
+  }
   else
   {
-    {
-    data_table = [
-      "div", "Buffer size (" + buffer_size + "kB) is larger than maximum preview size ("
-        + setting_size + "kB). Automatic download disabled.",
-        ["div",
-          "Load buffer", "handler", "webgl-load-buffer-data",
-          "class", "ui-button"
-        ],
-      "class", "buffer-data"];
-  }
+    var template = window.templates.webgl.preview_disabled(buffer_size, setting_size, "webgl-load-buffer-data");
+    template.push("class", "buffer-data");
+    return template;
   }
 
   var buffer_options = [
-          ["option", "(x)", "value", "x"],
-          ["option", "(x,y,z)", "value", "x,y,z"],
-          ["option", "(u,v)", "value", "u,v"],
-          ["option", "(x,y,z,u,v)", "value", "x,y,z,u,v"],
-          ["option", "Custom", "value", "custom"],
-      ];
+    ["option", "(x)", "value", "x"],
+    ["option", "(x,y,z)", "value", "x,y,z"],
+    ["option", "(u,v)", "value", "u,v"],
+    ["option", "(x,y,z,u,v)", "value", "x,y,z,u,v"],
+    ["option", "Custom", "value", "custom"],
+  ];
 
   if (typeof(selected_item) === "number")
   {
     buffer_options[selected_item].push("selected", "selected");
-  };
+  }
 
-  var coordinate_selector = ["div",
-      ["select",
-      buffer_options,
-      "handler", "webgl-select-layout",
-      "id", "webgl-layout-selector"
-      ],
-    ];
-
-  var row_inputbox = ["div",
-    ["input", "type", "text", "handler",
-      "webgl-input-row", "id", "webgl-row-input",
-      "maxlength", "30",
-      "value", "Start at row.."]
+  var coordinate_selector = [
+    "select", buffer_options,
+    "handler", "webgl-select-layout",
+    "id", "webgl-layout-selector"
   ];
 
-  var layout_inputbox = ["div",
-      ["input", "type", "text", "handler",
-          "webgl-input-layout", "id", "webgl-layout-input",
-          "hidden", "true", "maxlength", "30",
-          "value", "E.g. \"a,b,c,d\""
+  var layout_inputbox = [
+    "input",
+    "type", "text",
+    "handler", "webgl-input-layout",
+    "id", "webgl-layout-input",
+    "maxlength", "30",
+    "placeholder", "E.g. \"a,b,c,d\""
+  ];
+
+  if (coordinates != null && selected_item === buffer_options.length - 1)
+  {
+    layout_inputbox.push("value", coordinates);
+  }
+  else
+  {
+    layout_inputbox.push("hidden", "true");
+  }
+
+
+  var start_row_row = [
+    "tr", [
+      [
+        "td", "Start row:"
       ],
-    ];
+      [
+        "td",
+        [
+          "input",
+          "type", "number",
+          "min", "0",
+          "handler", "webgl-input-row",
+          "id", "webgl-row-input",
+          "value", String(start_row)
+        ]
+      ]
+    ]
+  ];
+
+  var layout_row = [
+    "tr", [
+      [
+        "td", "Layout:"
+      ],
+      [
+        "td",
+        [
+          coordinate_selector,
+          layout_inputbox
+        ]
+      ]
+    ]
+  ];
 
   return [
-    "div",
-    [
+    "div", [
       [
-        "div",
-        [
-          [
-            "h2",
-            buffer.toString()
-          ],
-          length
+        "table", [
+          start_row_row,
+          layout_row
         ]
       ],
-      row_inputbox,
-      coordinate_selector,
-      layout_inputbox,
       data_table
     ],
     "class", "buffer-data"
@@ -101,10 +126,11 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
 
 window.templates.webgl.loading_buffer_data = function()
 {
-  var html = ["div", "Downloading buffer data ",
+  return [
+    "div", "Downloading buffer data ",
     ["img", "src", "./ui-images/loading.png"],
-    "class", "buffer-data"];
-  return html;
+    "class", "buffer-data"
+  ];
 };
 
 window.templates.webgl.buffer_info_table = function(buffer)
@@ -902,41 +928,34 @@ window.templates.webgl.state_parameter_value = function(param, value)
   return param_content;
 };
 
-window.templates.webgl.error_message = function(call)
+window.templates.webgl.error_message = function(solutions)
 {
-  var error_code = window.webgl.api.constant_value_to_string(call.error_code);
-
-  var fun_errors = window.webgl.api.functions[call.function_name].errors;
-  if (!fun_errors || !(error_code in fun_errors)) return [];
-
-  var errors = fun_errors[error_code];
-  errors = errors.map(function(error){return [
-    "div",
+  solutions = solutions.map(function(solution){return [
+    "li",
     [
       [
-        "span", error.txt
+        "span", solution.txt
       ],
-      !error.ref ? [] : [
-        "a", "Read more here.",
-        "href", error.ref
+      !solution.ref ? [] : [
+        "a", "Read more",
+        "target", "_blank",
+        "href", solution.ref
       ]
     ]
   ];});
 
-
   var content = [];
-  var result = [
+
+  content.push([
+    "div", "Possible cause" + (solutions.length === 1 ? "" : "s") + ":",
+    "class", "cause"
+  ]);
+  content.push(["ui", solutions]);
+
+  return [
     "div", content,
     "class", "error-message"
   ];
-
-  content.push([
-    "div", "Possible cause" + (errors.length === 1 ? "" : "s") + ":",
-    "class", "cause"
-  ]);
-  content.push(errors);
-
-  return result;
 };
 
 window.templates.webgl.tabs = function(tabs, active_tab)
@@ -1137,15 +1156,17 @@ window.templates.webgl.preview_canvas = function()
   ];
 };
 
-window.templates.webgl.preview_disabled = function(buffer_size, setting_size)
+window.templates.webgl.preview_disabled = function(buffer_size, setting_size, handler)
 {
-  return ["div",
-    ['div', "Buffer size (" + buffer_size + "kB) is larger than maximum preview size (" + setting_size + "kB), automatic download disabled."],
-    ['span',
-      ['span', "Load buffer"],
-      'handler', 'webgl-force-buffer',
-      'class', 'ui-button'
-    ]
+  // TODO translation
+  return [
+    "div", "Buffer size (" + buffer_size + "kB) is larger than maximum preview size ("
+      + setting_size + "kB). Automatic download disabled.",
+    [
+      "div", "Load buffer",
+      "handler", handler,
+      "class", "ui-button"
+    ],
   ];
 };
 
@@ -1214,8 +1235,8 @@ window.templates.webgl.attribute_table = function(call_index, program)
         ],
         [
           "td",
-          pointer && pointer.layout
-         	? String(pointer.layout.size) + "x"
+          pointer && pointer.layout ?
+            String(pointer.layout.size) + "x"
               + window.webgl.api.constant_value_to_string(pointer.layout.type)
               + ",  +" + String(pointer.layout.offset) + "/"
               + String(pointer.layout.stride)
@@ -1239,7 +1260,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
   return table;
 };
 
-window.templates.webgl.uniform_table = function(call_index, program)
+window.templates.webgl.uniform_table = function(call_index, program, tooltip_name)
 {
   var uniforms = program.uniforms;
   var rows = [];
@@ -1262,6 +1283,21 @@ window.templates.webgl.uniform_table = function(call_index, program)
     ],
     "class", "header"
   ]);
+
+  // To make long matrices print out shorter strings.
+  var format_matrix = function(value)
+  {
+    var ret = "[";
+    for (var j = 0; j < value.length && j < 4; j++)
+    {
+      var val = value[j].toFixed(5);
+      ret += val + ", ";
+    }
+    ret.substr(0, ret.length - 2);
+    ret += j === value.length ? "]" : "...]";
+
+    return ret;
+  };
 
   for (var i = 0; i < uniforms.length; i++)
   {
@@ -1287,43 +1323,15 @@ window.templates.webgl.uniform_table = function(call_index, program)
       value = values[last_index].value;
     }
 
-    // To make long matrices print out shorter strings.
-    var format_value = function(value)
-    {
-      var ret = "[";
-      var val;
-      for (var j=0; j<value.length && j < 4; j++)
-      {
-        val = value[j].toFixed(5);
-        ret += val + ", ";
-      }
-      ret.substr(0,ret.length-2);
-      if (j === value.length)
-      {
-        ret += "]";
-      }
-      else
-      {
-        ret += "...]";
-      }
-      return ret;
-    };
-
     // Adding a tooltip to matrices and formating long matrices.
     var data_tooltip = null;
     var uniform_tooltip = null;
-    var type = window.webgl.api.constant_value_to_string(uniform.type)
-    switch (type)
+    var type = window.webgl.api.constant_value_to_string(uniform.type);
+    if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
-      case "FLOAT_MAT3": data_tooltip = "data-tooltip";
-                         uniform_tooltip = "webgl-uniform-tooltip";
-                         value = format_value(value);
-                         break;
-      case "FLOAT_MAT4": data_tooltip = "data-tooltip";
-                         uniform_tooltip = "webgl-uniform-tooltip";
-                         value = format_value(value);
-                         break;
-      default: break;
+      data_tooltip = "data-tooltip";
+      uniform_tooltip = tooltip_name;
+      value = format_matrix(value);
     }
     // End
 
@@ -1515,7 +1523,7 @@ window.templates.webgl.start_view = function(state)
         "Refresh the page you want to debug",
         "The WebGL Debugger needs to be present from the start of the " +
            "execution of the application you want to debug. Click the button " +
-           "below to refresh",
+           "below to refresh.",
         [ "span", "Initialize WebGL Debugger",
           "class", "ui-button reload-window",
           "handler", "reload-window",
@@ -1528,7 +1536,7 @@ window.templates.webgl.start_view = function(state)
         "Request a snapshot from a WebGLRenderingContext",
         "Press the button to the right or below to request a new snapshot of " +
         "WebGL. It will constitute of the state of WebGL and all calls made " +
-        "to WebGL during an entire frame",
+        "to WebGL during an entire frame.",
         [ "span", "Request snapshot",
           "class", "ui-button",
           "handler", "webgl-take-snapshot"

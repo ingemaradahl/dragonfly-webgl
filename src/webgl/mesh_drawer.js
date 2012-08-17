@@ -63,7 +63,7 @@ cls.WebGLMeshDrawer = function(gl)
 
   var on_force_buffer = function()
   {
-    this.init_buffer(true)
+    this.init_buffer(true);
   };
 
   this.onresize = function()
@@ -96,7 +96,8 @@ cls.WebGLMeshDrawer = function(gl)
   {
     var buffer_size = Number(this.buffer.size / 1024).toFixed(2);
     var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
-    info_container.clearAndRender(window.templates.webgl.preview_disabled(buffer_size, setting_size));
+    var template = window.templates.webgl.preview_disabled(buffer_size, setting_size, "webgl-force-buffer");
+    info_container.clearAndRender(template);
     info_container.style.visibility = "visible";
   };
 
@@ -182,7 +183,7 @@ cls.WebGLMeshDrawer.prototype.buffers_loaded = function()
   return this.element_buffer
     ? this.buffer.data_is_loaded() && this.element_buffer.data_is_loaded()
     : this.buffer.data_is_loaded();
-}
+};
 
 /**
  * Initiates the buffer to be drawn by reconstructing it using the original
@@ -772,7 +773,7 @@ cls.WebGLMeshDrawer.prototype.set_rotation = function()
 {
   this.rot.x += this.mouse.x-this.prev_mouse.x;
   this.rot.y += this.mouse.y-this.prev_mouse.y;
-}
+};
 
 cls.WebGLMeshDrawer.prototype.deg_to_rad = function(degrees)
 {

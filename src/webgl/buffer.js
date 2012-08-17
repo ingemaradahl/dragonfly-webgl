@@ -162,3 +162,8 @@ cls.WebGLBuffer.prototype.data_is_loaded = function()
   return this.data.object_id === undefined;
 };
 
+cls.WebGLBuffer.prototype.data_is_downloading = function()
+{
+  return this.data.downloading === true;
+};
+
