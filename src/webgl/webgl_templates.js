@@ -1497,8 +1497,7 @@ window.templates.webgl.info_box = function(title, string, button, custom)
 window.templates.webgl.start_view = function(state)
 {
   var html = ["div"];
-  var header = ["h2", "Welcome to the Dragonfly WebGL Debugger"];
-  html.push(header);
+  html.push(["h2", "Welcome to the Dragonfly WebGL Debugger"]);
 
   switch (state)
   {
@@ -1563,7 +1562,7 @@ window.templates.webgl.start_view = function(state)
       break;
   }
 
-  html.push("class", "webgl-start");
+  html.push("class", "webgl-start", "id", "webgl-start");
 
   return html;
 };

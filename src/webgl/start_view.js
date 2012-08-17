@@ -90,8 +90,13 @@ cls.WebGLStartView = function(id, name, container_class)
 
   messages.addListener('setting-changed', on_settings.bind(this));
   messages.addListener('webgl-new-snapshot', on_snapshot.bind(this));
-  messages.addListener('webgl-new-context', on_new_context_bound);
-  messages.addListener('webgl-taking-snapshot', on_taking_snapshot_bound);
+
+  if (window.settings["webgl-general"].map["first-run"])
+  {
+    messages.addListener('webgl-new-context', on_new_context_bound);
+    messages.addListener('webgl-taking-snapshot', on_taking_snapshot_bound);
+    window.settings["webgl-general"].set("first-run", false);
+  }
 
   var eh = window.eventHandlers;
   eh.click["webgl-open-settings"] = on_open_settings.bind(this);
