@@ -59,3 +59,11 @@ cls.WebGLTexture.prototype.toString = function()
   // TODO add setting to control if the index_snapshot or index should be used.
   return this.name ? this.name : "Texture " + String(this.index_snapshot + 1);
 };
+
+cls.WebGLTexture.prototype.toStringLong = function()
+{
+  // TODO add setting to control if the index_snapshot or index should be used.
+  var texture = "Texture " + String(this.index_snapshot + 1);
+  if (this.name) texture += " (" + this.name + ")";
+  return texture;
+};

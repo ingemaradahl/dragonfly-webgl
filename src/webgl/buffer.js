@@ -144,7 +144,7 @@ cls.WebGLBuffer.prototype.build_settings = function(snapshot, call_index)
 cls.WebGLBuffer.prototype.toString = function()
 {
   // TODO add setting to control if the index_snapshot or index should be used.
-  return this.name ? this.name : "Buffer " + String(this.index_snapshot + 1);
+  return "Buffer " + String(this.index_snapshot + 1);
 };
 
 cls.WebGLBuffer.prototype.usage_string = function()

@@ -212,6 +212,18 @@ img.flipped
   vertical-align: -10%;
 }
 
+.call-header .divider
+{
+  color: #bbb;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.call-header .call-object
+{
+  white-space: nowrap;
+}
+
 .state-table
 {
   width: 0% !important;
@@ -260,6 +272,7 @@ img.flipped
   /*color: #000;*/
   /*background-color: #ccc;*/
   /*border: 1px solid #666;*/
+  margin-left: 10px;
 }
 
 #webgl-state-table-container .sortable-table

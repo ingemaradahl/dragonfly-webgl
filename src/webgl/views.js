@@ -470,18 +470,31 @@ cls.WebGLSideView = Object.create(ViewBase, {
     writable: true,
     value: null
   },
+  _last_scroll_position: {
+    writable: true,
+    value: null
+  },
   createView: {
     writable: true, configurable: true,
     value: function(container)
     {
       this._container = container;
       this.render();
+
+      var set_scroll = this._last_scroll_position != null;
+      this._container.scrollTop = set_scroll ? this._last_scroll_position.top : 0;
+      this._container.scrollLeft = set_scroll ? this._last_scroll_position.left : 0;
     }
   },
   ondestroy: {
     writable: true, configurable: true,
     value: function()
     {
+      this._last_scroll_position = {
+        top: this._container.scrollTop,
+        left: this._container.scrollLeft
+      };
+
       this._container = null;
     }
   },
@@ -519,6 +532,7 @@ cls.WebGLSideView = Object.create(ViewBase, {
   on_snapshot_change: {
     value: function(snapshot)
     {
+      this._last_scroll_position = null;
       if (this._on_snapshot_change) this._on_snapshot_change(snapshot);
       this.render();
     }
@@ -672,6 +686,43 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     writable: true,
     value: null
   },
+  change_tab: {
+    /**
+     * @param {Boolean} next true if the next right tab should be changed to, else left.
+     */
+    value: function(next)
+    {
+      var tab;
+      var prev_tab = null;
+      var next_tab = null;
+      var passed_active = false;
+      for (var i = 0; i < this.tabs.length; i++)
+      {
+        tab = this.tabs[i];
+        if (!tab.enabled) continue;
+        if (this.active_tab === tab)
+        {
+          passed_active = true;
+        }
+        else if (passed_active)
+        {
+          next_tab = tab;
+          break;
+        }
+        else
+        {
+          prev_tab = tab;
+        }
+      }
+
+      tab = next ? next_tab : prev_tab;
+      if (tab != null)
+      {
+        this.set_active_tab(tab);
+        this.active_tab.set_call(this._snapshot, this._call_index, this._object);
+      }
+    }
+  },
   set_active_tab: {
     value: function(tab)
     {
@@ -741,7 +792,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: function(tab_name)
     {
       var tab = this._lookup_tab(tab_name);
-      if (!tab) return;
+      if (!tab || !tab.enabled) return;
 
       this.set_active_tab(tab);
 
@@ -804,20 +855,49 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       if (!this._container)
       {
-        this._render_enabled = false;
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
-        this._render_enabled = true;
       }
 
       this.render();
     }
   },
+  get_object_text: {
+    value: function()
+    {
+      var object;
+      if (this._call_index === -1)
+      {
+        object = this._object;
+      }
+      else
+      {
+        var linked_object = this._snapshot.trace[this._call_index].linked_object;
+        if (linked_object == null) return null;
+
+        var object_keys = ["buffer", "texture", "framebuffer", "program"];
+        for (var i = 0; i < object_keys.length; i++)
+        {
+          var key = object_keys[i];
+          if (linked_object.hasOwnProperty(key))
+          {
+            object = linked_object[key];
+            break;
+          }
+        }
+      }
+
+      if (object == null) return null;
+
+      return object.toStringLong ? object.toStringLong() : String(object);
+    }
+  },
   render: {
     value: function()
     {
+      var object = this.get_object_text();
       var head = this._call_index === -1 ?
-        window.templates.webgl.start_of_frame_header() :
-        window.templates.webgl.call_header(this._call_index, this._call);
+        window.templates.webgl.start_of_frame_header(object) :
+        window.templates.webgl.call_header(this._call_index, this._call, object);
 
       this._render_header(head);
 
@@ -873,6 +953,11 @@ cls.WebGLCallView.initialize = function()
     cls.WebGLCallView.active_view.show_tab(tab_id);
   };
 
+  var on_tab_scroll = function(evt, target)
+  {
+    cls.WebGLCallView.active_view.change_tab(evt.detail > 0);
+  };
+
   var on_framebuffer_select = function(event, target)
   {
     this.active_view.active_tab._framebuffer = target[target.selectedIndex].framebuffer;
@@ -888,15 +973,6 @@ cls.WebGLCallView.initialize = function()
   {
     this.active_view.active_tab.render();
   };
-
-
-
-
-
-  // FREDAG:
-  // fixa så att eventsen fångas här, och inte alla webgl- this.id
-  // -take-snapshot evensen lyssnas på och skit
-
 
   var on_take_snapshot = function()
   {
@@ -949,6 +1025,7 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
   eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
+  eh.mousewheel["webgl-tab"] = on_tab_scroll.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
 };

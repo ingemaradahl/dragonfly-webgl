@@ -1811,6 +1811,7 @@ cls.WebGL.RPCs.injection = function () {
         buffer_state.size = buffer.size;
         buffer_state.usage = buffer.usage;
         buffer_state.target = buffer.target;
+        buffer_state.data_length = buffer.data.length;
         buffer_state.constructor = buffer.constructor;
       }
 

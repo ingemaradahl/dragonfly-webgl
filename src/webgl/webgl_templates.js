@@ -17,17 +17,29 @@ window.templates.webgl.no_contexts = function()
 
 window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinates, selected_item, start_row)
 {
-  var length = ["div", "Length: " +  buffer.data.length];
+  var length = ["div", "Length: " +  buffer.data_length];
   var data_table;
+  var buffer_size = Number(buffer.size / 1024).toFixed(2);
+  var setting_size = window.settings['webgl-preview'].map['max_preview_size'];
+  var target = window.webgl.api.constant_value_to_string(buffer.target);
+
   if (buffer.data_is_loaded())
   {
     data_table = window.templates.webgl.buffer_data_table(buffer, coordinates, start_row);
   }
   else
   {
-    data_table = ["div", "Loading buffer data."];
+    {
+    data_table = [
+      "div", "Buffer size (" + buffer_size + "kB) is larger than maximum preview size ("
+        + setting_size + "kB). Automatic download disabled.",
+        ["div",
+          "Load buffer", "handler", "webgl-load-buffer-data",
+          "class", "ui-button"
+        ],
+      "class", "buffer-data"];
   }
-
+  }
 
   var buffer_options = [
           ["option", "(x)", "value", "x"],
@@ -87,13 +99,21 @@ window.templates.webgl.buffer_base = function(buffer, buffer_settings, coordinat
   ];
 };
 
+window.templates.webgl.loading_buffer_data = function()
+{
+  var html = ["div", "Downloading buffer data ",
+    ["img", "src", "./ui-images/loading.png"],
+    "class", "buffer-data"];
+  return html;
+};
+
 window.templates.webgl.buffer_info_table = function(buffer)
 {
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
     {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.data.length)}
+    {name: "Length", value: String(buffer.data_length)}
   ];
 
   var info_table_rows = buffer_info.map(function(info){
@@ -925,15 +945,14 @@ window.templates.webgl.tabs = function(tabs, active_tab)
   {
     var content = [
       "div", tab.name,
-      "id", tab.id
+      "id", tab.id,
+      "handler", "webgl-tab"
     ];
 
     if (tab === active_tab)
-      content.push("class", "active", "handler", "webgl-tab");
+      content.push("class", "active");
     else if (!tab.enabled)
       content.push("class", "disabled");
-    else
-      content.push("handler", "webgl-tab");
 
     return content;
   });
@@ -941,22 +960,23 @@ window.templates.webgl.tabs = function(tabs, active_tab)
   return html;
 };
 
-window.templates.webgl.start_of_frame_header = function(call, trace_call)
+window.templates.webgl.start_of_frame_header = function(object)
 {
-  var header = [
+  var title = [["h2", "Start of frame"]];
+  if (object != null)
+  {
+    title.push(["h2", " - ", "class", "divider"],
+      ["h2", String(object), "class", "call-object"]);
+  }
+
+  return [
     "div",
-    [
-      [
-        "h2", "Start of frame"
-      ]
-    ],
+    title,
     "class", "call-header"
   ];
-
-  return header;
 };
 
-window.templates.webgl.call_header = function(call, trace_call)
+window.templates.webgl.call_header = function(call, trace_call, object)
 {
   var callnr = parseInt(call, 10) + 1; // Start call count on 1.
 
@@ -986,6 +1006,10 @@ window.templates.webgl.call_header = function(call, trace_call)
   if (trace_call.loc)
     window.templates.webgl.goto_script(trace_call.loc, function_name);
 
+  var object_title = object == null ? [] : [
+    ["h2", " - ", "class", "divider"],
+    ["h2", String(object), "class", "call-object"]
+  ];
   var header = [
     "div",
     [
@@ -1002,6 +1026,7 @@ window.templates.webgl.call_header = function(call, trace_call)
         "class", "arguments"
       ],
       ["h2", ")"],
+      object_title,
       spec_link
     ],
     "class", "call-header",
