@@ -572,6 +572,25 @@ img.full-texture
   width: 100%;
   height: 100%;
   padding: 5px;
+
+  position:relative;
+  z-index:1;
+}
+
+.webgl-start:before
+{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+
+  background-image: url("../ui-images/webgl-logo-big.png");
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  opacity:0.5;
 }
 
 .webgl-start > h2
@@ -604,6 +623,14 @@ img.full-texture
 .webgl-start .info-box > span
 {
   margin-top: 3px;
+}
+
+
+.webgl-start .info-box .info-error-block,
+.webgl-start .info-box .info-redundant-block,
+.webgl-start .info-box .info-drawcall-block
+{
+  padding: 1px 3px;
 }
 
 .webgl-start .info-box > p,
