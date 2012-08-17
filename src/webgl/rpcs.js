@@ -36,16 +36,29 @@ cls.WebGL.RPCs.injection = function () {
   // TODO Temporary, see HTMLCanvas.prototype.getContext why
   var contexts = [];
 
-  // TODO: temprary creates the function requestAnimationFrame. Remove when we have a callback on new frame.
-  window.requestAnimationFrame = function (fun)
+  // The minimum version of Core that have improved functionality:
+  // readPixels, onframeeend
+  var CORE_VERSION_REQUIRED = 372;
+
+  var core_version = new RegExp("Presto/\\d+.\\d+.(\\d+)").exec(window.navigator.userAgent);
+  core_version = core_version != null && "1" in core_version ?
+    Number(core_version[1]) : 0;
+
+  var core_is_fixed = core_version >= CORE_VERSION_REQUIRED;
+
+  if (!core_is_fixed)
   {
-    window.setTimeout(fun, 1000 / 60);
-    for (var c = 0; c < contexts.length; c++)
+    // To support older versions of Opera that does not have the
+    window.requestAnimationFrame = function (fun)
     {
-      if (contexts[c].new_frame) contexts[c].new_frame();
-    }
-  };
-  window.webkitRequestAnimationFrame = window.mozRequestAnimationFrame = window.requestAnimationFrame;
+      window.setTimeout(fun, 1000 / 60);
+      for (var c = 0; c < contexts.length; c++)
+      {
+        if (contexts[c].new_frame) contexts[c].new_frame();
+      }
+    }.bind(window);
+    window.webkitRequestAnimationFrame = window.mozRequestAnimationFrame = window.requestAnimationFrame;
+  }
 
   /**
    * Clone regular and typed arrays.
@@ -923,9 +936,10 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     var trace_start_time = null;
-    this.new_frame = function()
+    var new_frame = function()
     {
-      if (handler.capturing_frame) {
+      if (handler.capturing_frame)
+      {
         handler.capturing_frame = false;
         var time = new Date() - trace_start_time;
         console.log("Frame have been captured in " + time + " ms.");
@@ -948,10 +962,17 @@ cls.WebGL.RPCs.injection = function () {
       }
 
       handler.current_frame++;
-    };
-    this.new_frame();
+    }.bind(this);
+    new_frame();
 
-    //canvas.onframeend = this.new_frame.bind(this);
+    if (core_is_fixed)
+    {
+      canvas.onframeend = new_frame;
+    }
+    else
+    {
+      this.new_frame = new_frame;
+    }
 
     var orig_getError = this.getError;
     this.getError = function()
@@ -1139,7 +1160,8 @@ cls.WebGL.RPCs.injection = function () {
       };
     };
 
-    /* Reads the pixels from the currently bound framebuffer into an object
+    /**
+     * Reads the pixels from the currently bound framebuffer into an object
      * described below.
      * @param {WebGLFramebuffer} framebuffer optional Which framebuffer to read from.
      * @returns {Object} containing image and dimensions
@@ -1180,7 +1202,7 @@ cls.WebGL.RPCs.injection = function () {
           data : null,
           flipped : false
         }
-      }
+      };
 
       // Encode to PNG
       var canvas = document.createElement("canvas");
@@ -1189,38 +1211,29 @@ cls.WebGL.RPCs.injection = function () {
       var ctx = canvas.getContext("2d");
 
       var img_data = ctx.createImageData(width, height);
-      var pixels = img_data.data;
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-      ctx.putImageData(img_data, 0, 0);
-
-      image.img.data = canvas.toDataURL("image/png");
-      image.img.flipped = true;
-
-      /* TODO: delete this; old method of retrieving framebuffer data
-      // Image data will be stored as RGBA - 4 bytes per pixel
-      var size = width * height * 4;
-      var arr = new ArrayBuffer(size);
-      var pixels = new Uint8Array(arr);
-
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-      // Encode to PNG
-      var canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      var ctx = canvas.getContext("2d");
-
-      var img_data = ctx.createImageData(width, height);
-
-      // TODO this is so slooooow.
-      for (var i=0; i<size; i+=4)
+      var pixels;
+      if (core_is_fixed)
       {
-        img_data.data[i] = pixels[i];
-        img_data.data[i+1] = pixels[i+1];
-        img_data.data[i+2] = pixels[i+2];
-        img_data.data[i+3] = pixels[i+3];
+        pixels = img_data.data;
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
       }
-      */
+      else
+      {
+        // This is painfully slow but it's gets the job done
+        var size = width * height * 4;
+        var arr = new ArrayBuffer(size);
+        pixels = new Uint8Array(arr);
+
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+        for (var i = 0; i < size; i += 4)
+        {
+          img_data.data[i] = pixels[i];
+          img_data.data[i + 1] = pixels[i + 1];
+          img_data.data[i + 2] = pixels[i + 2];
+          img_data.data[i + 3] = pixels[i + 3];
+        }
+      }
 
       ctx.putImageData(img_data, 0, 0);
 
