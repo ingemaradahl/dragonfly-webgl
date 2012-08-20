@@ -524,11 +524,20 @@ cls.WebGLSideView = Object.create(ViewBase, {
       }
     }
   },
+  on_snapshot_delay: {
+    value: function(msg)
+    {
+      if (!this._container) return;
+
+      this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(msg.delay));
+    }
+  },
   init_events: {
     value: function()
     {
       messages.addListener('webgl-changed-snapshot', this.on_snapshot_change.bind(this));
       messages.addListener('webgl-taking-snapshot', this.render.bind(this));
+      messages.addListener('webgl-snapshot-delay', this.on_snapshot_delay.bind(this));
     }
   },
   on_snapshot_change: {
@@ -1001,12 +1010,12 @@ cls.WebGLCallView.initialize = function()
       count = 0;
     }
     var snapshot_timer;
-    /*
+
     var render_func = function()
     {
       if (count > 0)
       {
-        this._container.clearAndRender(window.templates.webgl.taking_delayed_snapshot(count--));
+        messages.post('webgl-snapshot-delay', { delay: count--});
       }
       else
       {
@@ -1015,13 +1024,14 @@ cls.WebGLCallView.initialize = function()
     }.bind(this);
 
     snapshot_timer = setInterval(render_func, 1000);
-    */
+
+    messages.post('webgl-snapshot-delay', { delay: count+1});
     setTimeout(on_take_snapshot, delay);
   };
 
   var eh = window.eventHandlers;
   eh.click["webgl-take-snapshot"] = on_take_snapshot.bind(this);
-  eh.click["webgl--take-custom-snapshot"] = on_take_custom_snapshot.bind(this);
+  eh.click["webgl-take-custom-snapshot"] = on_take_custom_snapshot.bind(this);
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
   eh.click["webgl-tab"] = tab_handler.bind(this);

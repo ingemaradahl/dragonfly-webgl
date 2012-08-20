@@ -648,8 +648,15 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
           break;
         }
       }
-      this.text = this.attribute.name;
-      this.action = function() {  /* alert("attribute!"); */ };
+      if (this.attribute)
+      {
+        this.text = this.attribute.name;
+        this.action = function() {  /* alert("attribute!"); */ };
+      }
+      else
+      {
+        this.text = String(this.loc_index);
+      }
       break;
     case "WebGLProgram":
       this.program = snapshot.programs.lookup(Number(this.program_index), call_index);
