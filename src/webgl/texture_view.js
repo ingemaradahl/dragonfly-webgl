@@ -11,17 +11,17 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 {
   var shared_settings = {selected_mipmap: 0};
 
-  var texture_mipmap = new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "");
-  var full_texture = new cls.WebGLFullTextureTab("full-texture", "Texture", "");
+  var texture_mipmap = new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "scroll");
+  var full_texture = new cls.WebGLFullTextureTab("full-texture", "Texture", "scroll texture");
 
   texture_mipmap.settings = full_texture.settings = shared_settings;
 
   this.set_tabs([
-    new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
+    new cls.WebGLTextureCallSummaryTab("summary", "Summary", "scroll"),
     full_texture,
     texture_mipmap,
-    new cls.WebGLStateTab("state", "State", ""),
-    new cls.WebGLTextureHistoryTab("texture-history", "History", "")
+    new cls.WebGLStateTab("state", "State", "scroll"),
+    new cls.WebGLTextureHistoryTab("texture-history", "History", "scroll")
   ]);
 
   this.display_call = function(snapshot, call_index, object)

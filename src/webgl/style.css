@@ -68,22 +68,26 @@
   position: relative;
 }
 
-.framebuffer .select-float
+.framebuffer .select-float,
+.texture .select-float
 {
   display: none;
 }
+
 .summary-item .select-float select
 {
   position: absolute;
 }
 
-.framebuffer .select-float select
+.framebuffer .select-float select,
+.texture .select-float select
 {
   position: fixed;
 }
 
 .summary-item:hover .select-float,
-.framebuffer:hover .select-float
+.framebuffer:hover .select-float,
+.texture:hover .select-float
 {
   display: block;
   z-index: 10;
