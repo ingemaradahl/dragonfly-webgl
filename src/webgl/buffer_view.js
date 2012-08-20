@@ -212,6 +212,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
     var coordinates;
     var selected_index;
     var start_row;
+    var template;
 
     // If the buffer is an ELEMENT_ARRAY_BUFFER data will need to be requested.
     var target = window.webgl.api.constant_value_to_string(this._buffer.target);
@@ -220,7 +221,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       if (!this._buffer.data_is_loaded())
       {
         this._buffer.request_data();
-        var template = window.templates.webgl.loading_buffer_data();
+        template = window.templates.webgl.loading_buffer_data();
         this._container.clearAndRender(template);
         return;
       }
@@ -234,15 +235,37 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       start_row = layout_obj.start_row || 0;
     }
 
-    var template = window.templates.webgl.buffer_base(this._buffer, null,
+    template = window.templates.webgl.buffer_base(this._buffer, null,
       coordinates, selected_index, start_row);
 
     this._container.clearAndRender(template);
   };
 
+  this.render_table = function()
+  {
+    if (this._container == null) return;
+
+    var coordinates;
+    var selected_index;
+    var start_row;
+
+    if (this._buffer_layouts[this._buffer.index_snapshot])
+    {
+      var layout_obj = this._buffer_layouts[this._buffer.index_snapshot];
+      coordinates = layout_obj.coordinates || "x";
+      selected_index = layout_obj.selected_index || 0;
+      start_row = layout_obj.start_row || 0;
+    }
+
+    var template = window.templates.webgl.buffer_data_table(this._buffer, coordinates, start_row);
+
+    this._container.firstChild.lastChild.clearAndRender(template);
+  };
+
   this._on_layout_select = function()
   {
     if (!this._buffer) return;
+
     if (this._buffer.data_is_loaded())
     {
       var select = document.getElementById("webgl-layout-selector");
@@ -267,21 +290,41 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
         this.render();
       }
     }
-
   };
 
+  this._input_row_timer = null;
   this._on_row_input = function(e)
   {
-    if (e.keyCode !== 13 || !this._buffer) return;
-    if (this._buffer.data_is_loaded())
+    if (!this._buffer) return;
+
+    var directly = false;
+    if (e.keyCode && e.keyCode === 13)
+      directly = true;
+
+    var update = function()
     {
-      var inputbox = document.getElementById("webgl-row-input");
-      if (!this._buffer_layouts[this._buffer.index_snapshot])
+      if (this._container == null) return;
+
+      if (this._buffer.data_is_loaded())
       {
-        this._buffer_layouts[this._buffer.index_snapshot] = {};
+        var inputbox = document.getElementById("webgl-row-input");
+        if (!this._buffer_layouts[this._buffer.index_snapshot])
+        {
+          this._buffer_layouts[this._buffer.index_snapshot] = {};
+        }
+        this._buffer_layouts[this._buffer.index_snapshot].start_row = Number(inputbox.value);
+        this.render_table();
       }
-      this._buffer_layouts[this._buffer.index_snapshot].start_row = inputbox.value;
-      this.render();
+    }.bind(this);
+
+    if (directly)
+    {
+      update();
+    }
+    else
+    {
+      clearTimeout(this._input_row_timer);
+      this._input_row_timer = setTimeout(update, 300);
     }
   };
 
@@ -296,7 +339,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       {
         inputbox.hidden = false;
       }
-      this.render();
+      this.render_table();
     }
   };
 
@@ -317,6 +360,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
 
   var eh = window.eventHandlers;
   eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
+  eh.change["webgl-input-row"] = this._on_row_input.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 

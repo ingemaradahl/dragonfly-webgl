@@ -245,7 +245,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
     "sortable-table buffer-data-table"
   ];
 
-  return [data_table, more_data];
+  return ["div", data_table, more_data];
 };
 
 /**
