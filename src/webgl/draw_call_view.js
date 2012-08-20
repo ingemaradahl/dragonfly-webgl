@@ -211,7 +211,7 @@ cls.WebGLFramebufferTab = function(id, name, container_class)
     var content_height = this._container.offsetHeight;
     var content_width = this._container.offsetWidth;
 
-    var img_container = this._container.childNodes[1];
+    var img_container = this._container.lastChild;
     var img = img_container.childNodes[0];
     var top = Math.max(0, (content_height - img.offsetHeight) / 2);
     img_container.style.top = String(top) + "px";
