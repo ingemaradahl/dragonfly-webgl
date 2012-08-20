@@ -868,11 +868,11 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
       }
 
-      this.render_header();
-
       this.set_active_tab(this.tabs[0]);
 
       this.active_tab.set_call(snapshot, call_index, object);
+
+      this.render_header();
     }
   },
   get_object_text: {
