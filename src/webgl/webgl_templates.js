@@ -792,6 +792,55 @@ window.templates.webgl.texture_info = function(texture)
   return info_table;
 };
 
+window.templates.webgl.mipmaps = function(texture, selected)
+{
+  var mipmaps = [];
+  var selector = [];
+  var ret = [];
+  selected = selected || 0;
+
+  var img;
+  if (texture.levels.length > 1)
+  {
+    for (var i=0; i<texture.levels.length; i++)
+    {
+      mipmaps.push({title: "Level " + i, index: i});
+    }
+    
+    img = window.templates.webgl.image(texture.levels[selected],
+    ["full-texture"]); 
+    var options = mipmaps.map(function(level) {
+      var option = ['option', level.title];
+        if (level.index === selected)
+        {
+          option.push('selected', 'selected'); 
+        }
+        return option;
+      });
+
+    selector = ["select", options, "handler", "webgl-mipmap-select"];
+    selector = ["div", selector, "class", "select-float"];
+  }
+  else
+  {
+    img = window.templates.webgl.image(texture.levels[0], ["full-texture"]);
+    selector = null;
+  }
+  
+  img = [
+    "div", img,
+    "style", "position: relative;"
+  ];
+  
+  if (selector)
+  {
+    ret.push(selector);
+  }
+  ret.push(img);
+
+  return ret;
+};
+
 window.templates.webgl.mipmap_table = function(texture)
 {
   var ret = ["div", "No mipmaps"];
@@ -815,6 +864,7 @@ window.templates.webgl.mipmap_table = function(texture)
   var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
+    var mipmap_index=1;
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
       var image = window.templates.webgl.image(level);
       var image_source = null;
@@ -834,8 +884,9 @@ window.templates.webgl.mipmap_table = function(texture)
         "class", "table-info"
       ];
 
-      return [ "tr",
-        [ "th", image ],
+      return [ "tr", 
+        [ "th", image, "handler", "webgl-mipmap-click", "index",
+          String(mipmap_index++) ],
         [ "td", info_table ]
         ];
     });
