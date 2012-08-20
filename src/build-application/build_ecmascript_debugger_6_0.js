@@ -293,7 +293,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     cls.WebGLTextureSideView.create_ui_widgets();
 
     new cls.WebGLProgramSideView("program-side-panel",
-                                 "Program",
+                                 "Programs",
                                  "scroll side-panel program");
     cls.WebGLProgramSideView.create_ui_widgets();
 

@@ -1189,7 +1189,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   getFrameBufferView: {
     value: function()
     {
-      if (!this._snapshot.settings['fbo-readpixels']) return null;
+      if (!this._snapshot.settings['fbo-readpixels'] ||
+          this._call_index === -1) return null;
       var framebuffers = this._snapshot.framebuffers.lookup_all(this._call_index);
 
       // Make sure the fbo image is downloading if isn't
