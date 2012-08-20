@@ -78,13 +78,23 @@
   z-index: 10;
 }
 
-
-.thumbnail > *
+img.thumbnail
 {
   border: 1px solid #888888;
   max-height: 300px;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+svg.thumbnail
+{
+  border: 1px solid #888888;
+  box-sizing: border-box;
+
+  max-height: 300px;
+  max-width: 100%;
+  -o-object-fit: contain;
+  -o-object-position: left;
 }
 
 /* Tabs */

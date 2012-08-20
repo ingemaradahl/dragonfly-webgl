@@ -621,22 +621,34 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
   {
     case "clear":
       var color = bound_framebuffer.image.color;
+      var to_hex = function(float_val)
+      {
+        return (Math.round(float_val * 255).toString(16));
+      };
       var colors = Math.round(color[0] * 255) + ", " +
                    Math.round(color[1] * 255) + ", " +
                    Math.round(color[2] * 255) + ", " +
                    color[3];
-      image = ["div",
-        "style",
-          "width:" + String(bound_framebuffer.image.width) +
-          "px; height:" + String(bound_framebuffer.image.height) +
-          "px; background: rgba(" + colors + ");",
-        "class", "checkerboard"
+      image = ["svg:svg",
+        ["rect",
+          "width", String(bound_framebuffer.image.width),
+          "height", String(bound_framebuffer.image.height),
+          "x", "0",
+          "y", "0",
+          "style", "fill: rgba(" + colors + ");",
+        ],
+        "width", String(bound_framebuffer.image.width),
+        "height", String(bound_framebuffer.image.height),
+        "version", "1.1",
+        "preserveAspectRatio", "xMinYMin meet",
+        "viewBox", "0 0" + String(bound_framebuffer.image.width) + " " + String(bound_framebuffer.image.width),
+        "class", "thumbnail checkerboard"
+
       ];
       break;
     case "init":
     case "draw":
-      image = window.templates.webgl.image(bound_framebuffer.image);
-      image = window.templates.webgl.thumbnail_container(image);
+      image = window.templates.webgl.image(bound_framebuffer.image, ["thumbnail"]);
       break;
   }
 
@@ -644,15 +656,6 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     options > 1 ? select : [],
     image,
     "class", "framebuffer-thumbnail"
-  ];
-};
-
-window.templates.webgl.thumbnail_container = function(image)
-{
-  return [
-    "div",
-    image,
-    "class", "thumbnail"
   ];
 };
 
