@@ -98,6 +98,7 @@ cls.WebGLSnapshotArray = function(context_id)
   var Snapshot = function (snapshot, parent_)
   {
     this.parent_ = parent_;
+    this.settings = snapshot.settings;
     this.frame = snapshot.frame;
     this.buffers = snapshot.buffers;
     this.programs = snapshot.programs;

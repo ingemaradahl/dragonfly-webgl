@@ -1608,6 +1608,7 @@ cls.WebGL.RPCs.injection = function () {
     this.programs = [];
     this.textures = [];
     this.framebuffers = [];
+    this.settings = {};
 
     function clone_history(history)
     {
@@ -1622,6 +1623,8 @@ cls.WebGL.RPCs.injection = function () {
     var init = function ()
     {
       var h = this.handler;
+
+      this.settings = clone_object(h.settings);
 
       var init_buffers = function ()
       {
@@ -2038,6 +2041,7 @@ cls.WebGL.RPCs.injection = function () {
     {
       return {
         index : this.index,
+        settings : this.settings,
         frame : this.frame,
         calls : this.calls,
         call_locs : this.call_locs,
