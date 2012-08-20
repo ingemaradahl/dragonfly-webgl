@@ -862,16 +862,17 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
       this.set_tab_enabled(this._lookup_tab("state"), call_index !== -1);
-      this.set_active_tab(this.tabs[0]);
-
-      this.active_tab.set_call(snapshot, call_index, object);
 
       if (!this._container)
       {
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
       }
 
-      this.render();
+      this.render_header();
+
+      this.set_active_tab(this.tabs[0]);
+
+      this.active_tab.set_call(snapshot, call_index, object);
     }
   },
   get_object_text: {
@@ -904,7 +905,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       return object.toStringLong ? object.toStringLong() : String(object);
     }
   },
-  render: {
+  render_header: {
     value: function()
     {
       var object = this.get_object_text();
@@ -913,11 +914,6 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         window.templates.webgl.call_header(this._call_index, this._call, object);
 
       this._render_header(head);
-
-      if (this.active_tab._container !== null)
-      {
-        this.active_tab.render();
-      }
     }
   },
   _onresize: {
