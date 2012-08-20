@@ -15,7 +15,7 @@ cls.WebGLProgramCallView = function(id, name, container_class)
 
   this.set_tabs([
     new cls.WebGLProgramSummaryTab("summary", "Summary", "scroll"),
-    new cls.WebGLProgramTab("program", "Shaders", "scroll"),
+    new cls.WebGLProgramTab("program", "Shaders", "scroll shaders"),
     new cls.WebGLStateTab("state", "State", "scroll")
   ]);
 
@@ -54,14 +54,13 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
 
   this._on_tooltip = function(evt, target)
   {
-    var uniform = this._program.uniforms[target.id];
+    var uniform_index = target['data-uniform-index'];
+    var uniform = this._program.uniforms[uniform_index];
     var value = uniform.values[0].value;
-    var last_index = 0;
     var values = uniform.values;
     // We want the values related to this._call_index
-    for (var i=1; i<values.length && values[i].call_index <= this._call_index; i++)
+    for (var i = 1; i < values.length && values[i].call_index <= this._call_index; i++)
     {
-      last_index = i;
       value = values[i].value;
     }
     var html = window.templates.webgl.uniform_tooltip(value);

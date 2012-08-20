@@ -297,23 +297,25 @@ img.flipped
 }
 
 /* Program */
-.program-call div.js-resource-content
+.shaders .header
 {
-  border: 1px solid #ccc;
-  overflow-y: hidden;
-  overflow-x: auto;
-  margin-top: 0px;
-  margin-bottom: 15px;
+  background-color: #E9E9E9;
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.447) 100%);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 3px 7px;
 }
 
-.program div.js-resource-content
+.shaders div.js-resource-content
 {
   border: 1px solid #ccc;
+  border-left: none;
+  border-right: none;
   overflow-y: hidden;
   overflow-x: auto;
-  margin-top: 0px;
-  margin-bottom: 15px;
 }
+
 .webgl-view .uniform-table .changed
 {
   color: red;

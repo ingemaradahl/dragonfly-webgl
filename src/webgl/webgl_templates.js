@@ -1337,13 +1337,11 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     }
 
     // Adding a tooltip to matrices and formating long matrices.
-    var data_tooltip = null;
-    var uniform_tooltip = null;
+    var tooltip = [];
     var type = window.webgl.api.constant_value_to_string(uniform.type);
     if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
-      data_tooltip = "data-tooltip";
-      uniform_tooltip = tooltip_name;
+      tooltip = ["data-tooltip", tooltip_name];
       value = format_matrix(value);
     }
     // End
@@ -1362,10 +1360,9 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
         [
           "td",
           String(value),
-          "id", uniform.index,
           "class", changed_this_call ? "changed" : "",
-          data_tooltip, uniform_tooltip
-        ]
+          "data-uniform-index", uniform.index,
+        ].concat(tooltip)
       ]
     ]);
   }
@@ -1386,18 +1383,16 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
 window.templates.webgl.uniform_tooltip = function(value)
 {
   var html = [];
-  var row = [];
-  var cols = [];
   var table = ["table"];
   var dim = Math.sqrt(value.length);
 
-  for (var i=0; i<dim; i++)
+  for (var i = 0; i < dim; i++)
   {
-    row = ["tr"];
-    cols = [];
-    for (var j=0; j<dim; j++)
+    var row = ["tr"];
+    var cols = [];
+    for (var j = 0; j < dim; j++)
     {
-      var fixed_val = value[i+j].toFixed(5);
+      var fixed_val = value[i + j].toFixed(5);
       var val = fixed_val === "0.00000" ? "0" : fixed_val;
       cols.push(["td", val]);
     }
@@ -1446,19 +1441,20 @@ window.templates.webgl.program = function(call_index, program)
         shader_type = "Fragment";
         break;
     }
+
     programs.push([
-      ["h1", shader_type + " shader " + String(shader.index)],
+      [
+        "div", shader_type + " shader " + String(shader.index),
+        "class", "header"
+      ],
       window.templates.webgl.shader_source(shader.src)
     ]);
   }
 
-  var html =
-  [
+  return [
     "div",
     programs
   ];
-
-  return html;
 };
 
 window.templates.webgl.settings = function(settings)
