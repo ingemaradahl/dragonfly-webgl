@@ -588,11 +588,52 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.framebuffer_image = function (framebuffers, binding)
+window.templates.webgl.framebuffer_image = function (framebuffer, additional_classes)
+{
+  additional_classes = additional_classes || [];
+  var image;
+  switch (framebuffer.type)
+  {
+    case "clear":
+      var color = framebuffer.image.color;
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      image = ["div",
+        "style",
+          "width:" + String(framebuffer.image.width) +
+          "px; height:" + String(framebuffer.image.height) +
+          "px; background: rgba(" + colors + ");",
+        "class", ["checkerboard"].concat(additional_classes).join(" ")
+      ];
+      break;
+    case "init":
+    case "draw":
+      image = window.templates.webgl.image(framebuffer.image, additional_classes);
+      break;
+  }
+  return image;
+};
+
+window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
+{
+  var select = window.templates.webgl.framebuffer_selector(framebuffers, binding);
+
+  var image = window.templates.webgl.framebuffer_image(binding);
+  image = window.templates.webgl.thumbnail_container(image);
+
+  return [
+    "div",
+    select,
+    image,
+    "class", "framebuffer-thumbnail"
+  ];
+};
+
+window.templates.webgl.framebuffer_selector = function (framebuffers, binding)
 {
   var select = ["select"];
-  var bound_framebuffer;
-  var image;
   var options = 0;
 
   for (var f in framebuffers)
@@ -603,7 +644,6 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     if (framebuffer.index === binding.index)
     {
       option.push("selected", "selected");
-      bound_framebuffer = framebuffer;
     }
 
     select.push(option);
@@ -617,34 +657,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     "class", "select-float"
   ];
 
-  switch (bound_framebuffer.type)
-  {
-    case "clear":
-      var color = bound_framebuffer.image.color;
-      var colors = Math.round(color[0] * 255) + ", " +
-                   Math.round(color[1] * 255) + ", " +
-                   Math.round(color[2] * 255) + ", " +
-                   color[3];
-      image = ["div",
-        "style",
-          "width:" + String(bound_framebuffer.image.width) +
-          "px; height:" + String(bound_framebuffer.image.height) +
-          "px; background: rgba(" + colors + ");",
-        "class", "checkerboard"
-      ];
-      break;
-    case "init":
-    case "draw":
-      image = window.templates.webgl.image(bound_framebuffer.image);
-      image = window.templates.webgl.thumbnail_container(image);
-      break;
-  }
-
-  return ["div",
-    options > 1 ? select : [],
-    image,
-    "class", "framebuffer-thumbnail"
-  ];
+  return options > 1 ? select : [];
 };
 
 window.templates.webgl.thumbnail_container = function(image)

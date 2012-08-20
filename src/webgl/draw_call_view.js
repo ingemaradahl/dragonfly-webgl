@@ -9,10 +9,24 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLDrawCallView = function(id, name, container_class)
 {
+  var shared_settings = {framebuffer: null};
+
+  var summary = new cls.WebGLDrawCallSummaryTab("summary", "Summary", "scroll");
+  var framebuffer = new cls.WebGLFramebufferTab("framebuffer", "Framebuffer", "scroll framebuffer");
+
+  summary.settings = framebuffer.settings = shared_settings;
+
   this.set_tabs([
-    new cls.WebGLDrawCallSummaryTab("summary", "Summary", ""),
-    new cls.WebGLStateTab("state", "State", "")
+    summary,
+    framebuffer,
+    new cls.WebGLStateTab("state", "State", "scroll")
   ]);
+
+  this.display_call = function(snapshot, call_index, object)
+  {
+    shared_settings.framebuffer = null;
+    cls.WebGLCallView.display_call.apply(this, arguments);
+  };
 
   this.init(id, name, container_class);
 };
@@ -23,6 +37,18 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this._draw_call = null;
 
   var tooltip_name = "webgl-draw-uniform-tooltip";
+
+  this.ondestroy = function()
+  {
+    this.settings.framebuffer = this._framebuffer;
+    cls.WebGLSummaryTab.ondestroy.call(this);
+  };
+
+  this.set_call = function(snapshot, call_index)
+  {
+    this._framebuffer = this.settings.framebuffer;
+    cls.WebGLSummaryTab.set_call.apply(this, arguments);
+  };
 
   var render_preview = function()
   {
@@ -122,3 +148,83 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this.init(id, name, container_class);
 };
 cls.WebGLDrawCallSummaryTab.prototype = cls.WebGLSummaryTab;
+
+
+cls.WebGLFramebufferTab = function(id, name, container_class)
+{
+  this._framebuffer = null;
+
+  this.ondestroy = function()
+  {
+    cls.WebGLTab.ondestroy.call(this);
+    this.settings.framebuffer = this._framebuffer;
+  };
+
+  this.set_call = function(snapshot, call_index)
+  {
+    this._framebuffer = this.settings.framebuffer;
+    cls.WebGLTab.set_call.apply(this, arguments);
+  };
+
+  this.render = function()
+  {
+    var framebuffers = this._snapshot.framebuffers.lookup_all(this._call_index);
+
+    // Make sure the fbo image is downloading if isn't
+    for(var f in framebuffers)
+    {
+      var framebuffer = framebuffers[f];
+      if (!framebuffer.is_loaded())
+      {
+        framebuffer.request_data();
+      }
+    }
+
+    var framebuffer_binding;
+    if (this._framebuffer)
+    {
+      framebuffer_binding = this._framebuffer;
+    }
+    else
+    {
+      framebuffer_binding = this._snapshot.state.get_parameter("FRAMEBUFFER_BINDING", this._call_index);
+      // Framebuffer === null => default framebuffer (framebuffers[0])
+      framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
+    }
+
+    var image = window.templates.webgl.framebuffer_image(framebuffer_binding, ["full-framebuffer"]);
+    var select = window.templates.webgl.framebuffer_selector(framebuffers, framebuffer_binding);
+    var content = [
+      select,
+      [
+        "div", image,
+        "style", "position: relative;"
+      ],
+    ];
+
+    this._container.clearAndRender(content);
+    this.layout();
+  };
+
+  this.layout = function()
+  {
+    var content_height = this._container.offsetHeight;
+    var content_width = this._container.offsetWidth;
+
+    var img_container = this._container.childNodes[1];
+    var img = img_container.childNodes[0];
+    var top = Math.max(0, (content_height - img.offsetHeight) / 2);
+    img_container.style.top = String(top) + "px";
+    var left = Math.max(0, (content_width - img.offsetWidth) / 2);
+    img_container.style.left = String(left) + "px";
+    img_container.style.width = String(img.offsetWidth) + "px";
+  };
+
+  this.onresize = function()
+  {
+    this.layout();
+  };
+
+  this.init(id, name, container_class);
+};
+cls.WebGLFramebufferTab.prototype = cls.WebGLTab;

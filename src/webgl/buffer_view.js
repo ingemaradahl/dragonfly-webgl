@@ -10,14 +10,14 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
-  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "General", "");
-  var preview_tab = new cls.WebGLBufferPreviewTab("preview", "Visual", "");
+  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "General", "scroll");
+  var preview_tab = new cls.WebGLBufferPreviewTab("preview", "Visual", "scroll");
   this.set_tabs([
     summary_tab,
     preview_tab,
-    new cls.WebGLBufferDataTab("buffer-data", "Data", ""),
-    new cls.WebGLStateTab("state", "State", ""),
-    new cls.WebGLBufferHistoryTab("buffer-history", "History", "")
+    new cls.WebGLBufferDataTab("buffer-data", "Data", "scroll"),
+    new cls.WebGLStateTab("state", "State", "scroll"),
+    new cls.WebGLBufferHistoryTab("buffer-history", "History", "scroll")
   ]);
 
   var clear = function()
@@ -85,7 +85,7 @@ cls.WebGLBufferCallView = function(id, name, container_class)
         add_canvas();
     }
   };
-  
+
   messages.addListener('webgl-buffer-data', this._on_buffer_data.bind(this));
 
   this.init(id, name, container_class);
@@ -212,7 +212,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
     var coordinates;
     var selected_index;
     var start_row;
-   
+
     // If the buffer is an ELEMENT_ARRAY_BUFFER data will need to be requested.
     var target = window.webgl.api.constant_value_to_string(this._buffer.target);
     if (target === "ELEMENT_ARRAY_BUFFER")
@@ -299,7 +299,7 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       this.render();
     }
   };
-  
+
   var on_load_buffer_data = function()
   {
     var template = window.templates.webgl.loading_buffer_data();
@@ -314,16 +314,16 @@ cls.WebGLBufferDataTab = function(id, name, container_class)
       this.render();
     }
   };
-  
+
   var eh = window.eventHandlers;
   eh.change["webgl-select-layout"] = this._on_layout_select.bind(this);
   eh.keypress["webgl-input-layout"] = this._on_layout_input.bind(this);
   eh.keypress["webgl-input-row"] = this._on_row_input.bind(this);
 
   eh.click["webgl-load-buffer-data"] = on_load_buffer_data.bind(this);
-  
+
   messages.addListener('webgl-buffer-data', on_buffer_data.bind(this));
-  
+
   this.init(id, name, container_class);
 };
 

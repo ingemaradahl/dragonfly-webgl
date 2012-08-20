@@ -10,11 +10,11 @@ cls.WebGL || (cls.WebGL = {});
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
   this.set_tabs([
-    new cls.WebGLTextureCallSummaryTab("summary", "Summary", ""),
-    new cls.WebGLFullTextureTab("full-texture", "Texture", ""),
-    new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", ""),
-    new cls.WebGLStateTab("state", "State", ""),
-    new cls.WebGLTextureHistoryTab("texture-history", "History", "")
+    new cls.WebGLTextureCallSummaryTab("summary", "Summary", "scroll"),
+    new cls.WebGLFullTextureTab("full-texture", "Texture", "scroll"),
+    new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "scroll"),
+    new cls.WebGLStateTab("state", "State", "scroll"),
+    new cls.WebGLTextureHistoryTab("texture-history", "History", "scroll")
   ]);
 
   this.display_call = function(snapshot, call_index, object)

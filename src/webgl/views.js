@@ -742,6 +742,8 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         if (this.active_tab !== null)
           this.active_tab.ondestroy();
         this.active_tab = tab;
+
+        this._body.className = tab.container_class;
         this._render_tabbar();
         tab.createView(this._body);
       }
@@ -1157,6 +1159,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     {
       cls.WebGLTab.ondestroy.call(this);
       this._call = null;
+      this._framebuffer = null;
     }
   },
   getStateView: {
@@ -1215,7 +1218,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
       }
 
-      var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);
+      var content = window.templates.webgl.framebuffer_summary(framebuffers, framebuffer_binding);
       return {title: "Framebuffer", content: content, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
@@ -1252,7 +1255,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       this._object = object;
       this._draw_call = call_index === -1 ? null :
         snapshot.drawcalls.get_by_call(call_index);
-      this._framebuffer = null;
       cls.WebGLTab.set_call.apply(this, arguments);
     }
   },
