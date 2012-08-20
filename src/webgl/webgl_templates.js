@@ -799,35 +799,44 @@ window.templates.webgl.mipmaps = function(texture, selected)
   var ret = [];
   selected = selected || 0;
 
-  texture.request_data();
-
-  texture.request_data();
-
-  for (var i=0; i<texture.levels.length; i++)
+  var img;
+  if (texture.levels.length > 1)
   {
-    mipmaps.push({title: "Level " + i, index: i});
-  }
-
-  var options = mipmaps.map(function(level) {
-    var option = ['option', level.title];
-      if (level.index === selected)
-      {
-        option.push('selected', 'selected'); 
-      }
-      return option;
-    });
-
-  
-  var img = window.templates.webgl.image(texture.levels[selected],
+    for (var i=0; i<texture.levels.length; i++)
+    {
+      mipmaps.push({title: "Level " + i, index: i});
+    }
+    
+    img = window.templates.webgl.image(texture.levels[selected],
     ["full-texture"]); 
+    var options = mipmaps.map(function(level) {
+      var option = ['option', level.title];
+        if (level.index === selected)
+        {
+          option.push('selected', 'selected'); 
+        }
+        return option;
+      });
+
+    selector = ["select", options, "handler", "webgl-mipmap-select"];
+    selector = ["div", selector, "class", "select-float"];
+  }
+  else
+  {
+    img = window.templates.webgl.image(texture.levels[0], ["full-texture"]);
+    selector = null;
+  }
+  
   img = [
     "div", img,
     "style", "position: relative;"
   ];
-
-  selector = ["select", options, "handler", "webgl-mipmap-select"];
-  selector = ["div", selector];
-  ret = [selector, img];
+  
+  if (selector)
+  {
+    ret.push(selector);
+  }
+  ret.push(img);
 
   return ret;
 };

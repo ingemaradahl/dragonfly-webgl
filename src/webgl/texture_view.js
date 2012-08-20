@@ -171,25 +171,6 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
       this._selected_mipmap);
     this._container.clearAndRender(template);
     this.layout();
-
-    //var texture = this._texture;
-    //texture.request_data();
-    //var level0 = texture.levels[0];
-    //var image;
-    //if (!level0 || level0.img == null && !texture.mipmapped)
-    //{
-    //  image = ["span", "No data."];
-    //}
-    //else
-    //{
-    //  image = window.templates.webgl.image(level0, ["full-texture"]);
-    //  image = [
-    //    "div", image,
-    //    "style", "position: relative;"
-    //  ];
-    //}
-    //this._container.clearAndRender(image);
-    //this.layout();
   };
 
   var on_select_mipmap = function(evt, target)
@@ -209,7 +190,7 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
     var content_height = this._container.offsetHeight;
     var content_width = this._container.offsetWidth;
 
-    var img_container = this._container.childNodes[1];
+    var img_container = this._container.lastChild;
     var img = img_container.childNodes[0];
     var top = Math.max(0, (content_height - img.offsetHeight) / 2);
     img_container.style.top = String(top) + "px";
@@ -268,7 +249,7 @@ cls.WebGLTextureMipmapTab = function(id, name, container_class)
   var on_mipmap_click = function(evt, target)
   {
     var mipmap_index = target.getAttribute("index");
-    this.settings.selected_mipmap = mipmap_index;
+    this.settings.selected_mipmap = parseInt(mipmap_index);
     cls.WebGLCallView.active_view.show_tab("full-texture");
   };
 
