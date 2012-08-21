@@ -489,7 +489,7 @@ cls.WebGL.RPCs.injection = function () {
         var loc = gl.getUniformLocation(program, active_uniform.name);
         var uniform_value = gl.getUniform(program, loc);
         var value;
-        if (typeof(uniform_value) === "object")
+        if (uniform_value && typeof(uniform_value) === "object")
         {
           value = [];
           value.length = uniform_value.length;
