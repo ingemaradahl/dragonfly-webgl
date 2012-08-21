@@ -641,7 +641,7 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
         "height", String(bound_framebuffer.image.height),
         "version", "1.1",
         "preserveAspectRatio", "xMinYMin meet",
-        "viewBox", "0 0" + String(bound_framebuffer.image.width) + " " + String(bound_framebuffer.image.width),
+        "viewBox", "0 0 " + String(bound_framebuffer.image.width) + " " + String(bound_framebuffer.image.width),
         "class", "thumbnail checkerboard"
 
       ];
@@ -683,7 +683,6 @@ window.templates.webgl.image = function(level, additional_classes)
   else
   {
     image = ["div",
-      ["img", "src", "./ui-images/loading.png"],
       "class", (["loading-image"].concat(additional_classes)).join(" "),
       "style", "width: " + String(level.width ? level.width : 128) + "px; height: " + String(level.height ? level.height : 128) + "px;"
     ];
@@ -1394,8 +1393,9 @@ window.templates.webgl.uniform_tooltip = function(value)
     row.push(cols);
     table.push(row);
   }
+  table.push("class", "sortable-table uniform-tooltip");
 
-  return ["div", "Matrix " + String(dim) + "x" + String(dim), ["hr"], table];
+  return ["div", ["h4", "Matrix " + String(dim) + "×" + String(dim), "class", "uniform-tooltip"], table];
 };
 
 window.templates.webgl.taking_snapshot = function()

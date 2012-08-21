@@ -323,6 +323,22 @@ img.flipped
   border: 1px solid #999999;
 }
 
+table.sortable-table.uniform-tooltip
+{
+  border-top: 1px solid #999999;
+}
+
+.sortable-table.uniform-tooltip td
+{
+  min-width: 4em;
+  text-align: right;
+}
+
+h4.uniform-tooltip
+{
+margin-top: 2px;
+}
+
 /* TODO: does not work, looks very bad currently. Looks like the cell needs to have a width specified */
 /*.webgl-view .uniforms td*/
 /*{*/
@@ -518,22 +534,11 @@ img.flipped
 
 .webgl-view div.loading-image
 {
-  /* Should work, but doesn't */
-  /* background: url(./ui-images/loading.png) no-repeat center center; */
+  background: url("../ui-images/loading.png") no-repeat center center;
 
   border: 1px;
   border-style: solid;
   border-color: gray;
-  position: relative;
-}
-
-.loading-image > img
-{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: -8px;
-  margin-left: -8px;
 }
 
 div.mipmap-table
