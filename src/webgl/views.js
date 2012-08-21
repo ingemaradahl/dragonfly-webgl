@@ -742,6 +742,8 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         if (this.active_tab !== null)
           this.active_tab.ondestroy();
         this.active_tab = tab;
+
+        this._body.className = tab.container_class;
         this._render_tabbar();
         tab.createView(this._body);
       }
@@ -860,16 +862,17 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
       this.set_tab_enabled(this._lookup_tab("state"), call_index !== -1);
-      this.set_active_tab(this.tabs[0]);
-
-      this.active_tab.set_call(snapshot, call_index, object);
 
       if (!this._container)
       {
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
       }
 
-      this.render();
+      this.set_active_tab(this.tabs[0]);
+
+      this.active_tab.set_call(snapshot, call_index, object);
+
+      this.render_header();
     }
   },
   get_object_text: {
@@ -902,7 +905,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       return object.toStringLong ? object.toStringLong() : String(object);
     }
   },
-  render: {
+  render_header: {
     value: function()
     {
       var object = this.get_object_text();
@@ -911,11 +914,6 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         window.templates.webgl.call_header(this._call_index, this._call, object);
 
       this._render_header(head);
-
-      if (this.active_tab._container !== null)
-      {
-        this.active_tab.render();
-      }
     }
   },
   _onresize: {
@@ -1157,6 +1155,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     {
       cls.WebGLTab.ondestroy.call(this);
       this._call = null;
+      this._framebuffer = null;
     }
   },
   getStateView: {
@@ -1190,6 +1189,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
   getFrameBufferView: {
     value: function()
     {
+      if (!this._snapshot.settings['fbo-readpixels'] ||
+          this._call_index === -1) return null;
       var framebuffers = this._snapshot.framebuffers.lookup_all(this._call_index);
 
       // Make sure the fbo image is downloading if isn't
@@ -1214,7 +1215,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         framebuffer_binding = framebuffer_binding ? framebuffer_binding.framebuffer : framebuffers[0];
       }
 
-      var content = window.templates.webgl.framebuffer_image(framebuffers, framebuffer_binding);
+      var content = window.templates.webgl.framebuffer_summary(framebuffers, framebuffer_binding);
       return {title: "Framebuffer", content: content, class: "framebuffer fit", onclick: "framebuffer"};
     }
   },
@@ -1251,7 +1252,6 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       this._object = object;
       this._draw_call = call_index === -1 ? null :
         snapshot.drawcalls.get_by_call(call_index);
-      this._framebuffer = null;
       cls.WebGLTab.set_call.apply(this, arguments);
     }
   },

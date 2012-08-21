@@ -67,12 +67,27 @@
   display: none;
   position: relative;
 }
+
+.framebuffer .select-float,
+.texture .select-float
+{
+  display: none;
+}
+
 .summary-item .select-float select
 {
   position: absolute;
 }
 
-.summary-item:hover .select-float
+.framebuffer .select-float select,
+.texture .select-float select
+{
+  position: fixed;
+}
+
+.summary-item:hover .select-float,
+.framebuffer:hover .select-float,
+.texture:hover .select-float
 {
   display: block;
   z-index: 10;
@@ -295,23 +310,25 @@ img.flipped
 }
 
 /* Program */
-.program-call div.js-resource-content
+.shaders .header
 {
-  border: 1px solid #ccc;
-  overflow-y: hidden;
-  overflow-x: auto;
-  margin-top: 0px;
-  margin-bottom: 15px;
+  background-color: #E9E9E9;
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.447) 100%);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 3px 7px;
 }
 
-.program div.js-resource-content
+.shaders div.js-resource-content
 {
   border: 1px solid #ccc;
+  border-left: none;
+  border-right: none;
   overflow-y: hidden;
   overflow-x: auto;
-  margin-top: 0px;
-  margin-bottom: 15px;
 }
+
 .webgl-view .uniform-table .changed
 {
   color: red;
@@ -361,6 +378,10 @@ margin-top: 2px;
   margin-top: 10px;
   border: 1px solid #999999;
   width: 100px;
+}
+.buffer-data-table tr > td:first-child
+{
+  text-align: right;
 }
 
 .buffer-settings
@@ -556,7 +577,8 @@ div.mipmap-table
   border: 1px solid #ccc;
 }
 
-img.full-texture
+img.full-texture,
+.full-framebuffer
 {
   display: block;
   box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.300);

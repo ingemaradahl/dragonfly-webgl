@@ -138,8 +138,8 @@ window.templates.webgl.buffer_info_table = function(buffer)
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
-    {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.data_length)}
+    {name: "Bytesize", value: String(buffer.size) + " bytes"},
+    {name: "Length", value: String(buffer.data_length) + " elements"}
   ];
 
   var info_table_rows = buffer_info.map(function(info){
@@ -220,7 +220,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
     ];
   }
 
-  var table_head = [["td", "Index"]];
+  var table_head = [["td", "Row"]];
   for (var k=0; k<columns; k++)
   {
     table_head.push(["td", coordinate_list[k]]);
@@ -245,7 +245,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
     "sortable-table buffer-data-table"
   ];
 
-  return [data_table, more_data];
+  return ["div", data_table, more_data];
 };
 
 /**
@@ -588,11 +588,65 @@ window.templates.webgl.trace_table = function(calls, view_id)
   ];
 };
 
-window.templates.webgl.framebuffer_image = function (framebuffers, binding)
+window.templates.webgl.framebuffer_image = function (framebuffer, additional_classes)
+{
+  additional_classes = additional_classes || [];
+  var image;
+  switch (framebuffer.type)
+  {
+    case "clear":
+      var color = framebuffer.image.color;
+      var to_hex = function(float_val)
+      {
+        return (Math.round(float_val * 255).toString(16));
+      };
+      var colors = Math.round(color[0] * 255) + ", " +
+                   Math.round(color[1] * 255) + ", " +
+                   Math.round(color[2] * 255) + ", " +
+                   color[3];
+      image = ["svg:svg",
+        ["rect",
+          "width", String(framebuffer.image.width),
+          "height", String(framebuffer.image.height),
+          "x", "0",
+          "y", "0",
+          "style", "fill: rgba(" + colors + ");",
+        ],
+        "width", String(framebuffer.image.width),
+        "height", String(framebuffer.image.height),
+        "version", "1.1",
+        "preserveAspectRatio", "xMinYMin meet",
+        "viewBox", "0 0 " + String(framebuffer.image.width) + " " + String(framebuffer.image.width),
+        "class", ["checkerboard"].concat(additional_classes).join(" ")
+
+      ];
+      break;
+    case "init":
+    case "draw":
+      image = window.templates.webgl.image(framebuffer.image, additional_classes);
+      break;
+  }
+
+  return image;
+};
+
+window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
+{
+  var select = window.templates.webgl.framebuffer_selector(framebuffers, binding);
+
+  var image = window.templates.webgl.framebuffer_image(binding, ["thumbnail"]);
+
+  return [
+    "div",
+    select,
+    image,
+    "class", "framebuffer-thumbnail"
+  ];
+};
+
+window.templates.webgl.framebuffer_selector = function (framebuffers, binding)
 {
   var select = ["select"];
-  var bound_framebuffer;
-  var image;
   var options = 0;
 
   for (var f in framebuffers)
@@ -603,7 +657,6 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     if (framebuffer.index === binding.index)
     {
       option.push("selected", "selected");
-      bound_framebuffer = framebuffer;
     }
 
     select.push(option);
@@ -617,46 +670,8 @@ window.templates.webgl.framebuffer_image = function (framebuffers, binding)
     "class", "select-float"
   ];
 
-  switch (bound_framebuffer.type)
-  {
-    case "clear":
-      var color = bound_framebuffer.image.color;
-      var to_hex = function(float_val)
-      {
-        return (Math.round(float_val * 255).toString(16));
-      };
-      var colors = Math.round(color[0] * 255) + ", " +
-                   Math.round(color[1] * 255) + ", " +
-                   Math.round(color[2] * 255) + ", " +
-                   color[3];
-      image = ["svg:svg",
-        ["rect",
-          "width", String(bound_framebuffer.image.width),
-          "height", String(bound_framebuffer.image.height),
-          "x", "0",
-          "y", "0",
-          "style", "fill: rgba(" + colors + ");",
-        ],
-        "width", String(bound_framebuffer.image.width),
-        "height", String(bound_framebuffer.image.height),
-        "version", "1.1",
-        "preserveAspectRatio", "xMinYMin meet",
-        "viewBox", "0 0 " + String(bound_framebuffer.image.width) + " " + String(bound_framebuffer.image.width),
-        "class", "thumbnail checkerboard"
 
-      ];
-      break;
-    case "init":
-    case "draw":
-      image = window.templates.webgl.image(bound_framebuffer.image, ["thumbnail"]);
-      break;
-  }
-
-  return ["div",
-    options > 1 ? select : [],
-    image,
-    "class", "framebuffer-thumbnail"
-  ];
+  return options > 1 ? select : [];
 };
 
 window.templates.webgl.image = function(level, additional_classes)
@@ -781,6 +796,57 @@ window.templates.webgl.texture_info = function(texture)
   return info_table;
 };
 
+window.templates.webgl.mipmaps = function(texture, selected)
+{
+  var mipmaps = [];
+  var selector = [];
+  var ret = [];
+  selected = selected || 0;
+
+  var img;
+  if (texture.levels.length > 1)
+  {
+    for (var i=0; i<texture.levels.length; i++)
+    {
+      mipmaps.push({title: "Level " + i, index: i});
+    }
+     
+    img = window.templates.webgl.image(texture.levels[selected],
+            ["full-texture"]) || 
+          window.templates.webgl.image(texture.levels[0],
+            ["full-texture"]); 
+    var options = mipmaps.map(function(level) {
+      var option = ['option', level.title];
+        if (level.index === selected)
+        {
+          option.push('selected', 'selected'); 
+        }
+        return option;
+      });
+
+    selector = ["select", options, "handler", "webgl-mipmap-select"];
+    selector = ["div", selector, "class", "select-float"];
+  }
+  else
+  {
+    img = window.templates.webgl.image(texture.levels[0], ["full-texture"]);
+    selector = null;
+  }
+  
+  img = [
+    "div", img,
+    "style", "position: relative;"
+  ];
+  
+  if (selector)
+  {
+    ret.push(selector);
+  }
+  ret.push(img);
+
+  return ret;
+};
+
 window.templates.webgl.mipmap_table = function(texture)
 {
   var ret = ["div", "No mipmaps"];
@@ -804,6 +870,7 @@ window.templates.webgl.mipmap_table = function(texture)
   var mipmap_table = [];
   if (texture.mipmapped && texture.levels.length > 1)
   {
+    var mipmap_index=1;
     var mipmap_levels = texture.levels.slice(1).map(function(level) {
       var image = window.templates.webgl.image(level);
       var image_source = null;
@@ -824,7 +891,8 @@ window.templates.webgl.mipmap_table = function(texture)
       ];
 
       return [ "tr",
-        [ "th", image ],
+        [ "th", image, "handler", "webgl-mipmap-click", "index",
+          String(mipmap_index++) ],
         [ "td", info_table ]
         ];
     });
@@ -1292,7 +1360,7 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     var ret = "[";
     for (var j = 0; j < value.length && j < 4; j++)
     {
-      var val = value[j].toFixed(5);
+      var val = value[j].toFixed(3);
       ret += val + ", ";
     }
     ret.substr(0, ret.length - 2);
@@ -1326,13 +1394,11 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     }
 
     // Adding a tooltip to matrices and formating long matrices.
-    var data_tooltip = null;
-    var uniform_tooltip = null;
+    var tooltip = [];
     var type = window.webgl.api.constant_value_to_string(uniform.type);
     if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
-      data_tooltip = "data-tooltip";
-      uniform_tooltip = tooltip_name;
+      tooltip = ["data-tooltip", tooltip_name];
       value = format_matrix(value);
     }
     // End
@@ -1351,10 +1417,9 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
         [
           "td",
           String(value),
-          "id", uniform.index,
           "class", changed_this_call ? "changed" : "",
-          data_tooltip, uniform_tooltip
-        ]
+          "data-uniform-index", uniform.index,
+        ].concat(tooltip)
       ]
     ]);
   }
@@ -1375,18 +1440,16 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
 window.templates.webgl.uniform_tooltip = function(value)
 {
   var html = [];
-  var row = [];
-  var cols = [];
   var table = ["table"];
   var dim = Math.sqrt(value.length);
 
-  for (var i=0; i<dim; i++)
+  for (var i = 0; i < dim; i++)
   {
-    row = ["tr"];
-    cols = [];
-    for (var j=0; j<dim; j++)
+    var row = ["tr"];
+    var cols = [];
+    for (var j = 0; j < dim; j++)
     {
-      var fixed_val = value[i+j].toFixed(5);
+      var fixed_val = value[i + j].toFixed(5);
       var val = fixed_val === "0.00000" ? "0" : fixed_val;
       cols.push(["td", val]);
     }
@@ -1436,19 +1499,20 @@ window.templates.webgl.program = function(call_index, program)
         shader_type = "Fragment";
         break;
     }
+
     programs.push([
-      ["h1", shader_type + " shader " + String(shader.index)],
+      [
+        "div", shader_type + " shader " + String(shader.index),
+        "class", "header"
+      ],
       window.templates.webgl.shader_source(shader.src)
     ]);
   }
 
-  var html =
-  [
+  return [
     "div",
     programs
   ];
-
-  return html;
 };
 
 window.templates.webgl.settings = function(settings)
