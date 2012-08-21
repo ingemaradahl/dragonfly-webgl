@@ -26,7 +26,7 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
   this.display_call = function(snapshot, call_index, object)
   {
-    var texture = call_index === -1 ? object :
+    var texture = object ? object :
       snapshot.trace[call_index].linked_object.texture;
     this.set_tab_enabled(this._lookup_tab("texture-mipmap"), texture.mipmapped &&
       texture.levels.length > 1);
@@ -141,7 +141,7 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 
   this.set_call = function(snapshot, call_index, object)
   {
-    this._texture = call_index === -1 ? object :
+    this._texture = object ? object :
       snapshot.trace[call_index].linked_object.texture;
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
@@ -157,7 +157,7 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
 {
   this.set_call = function(snapshot, call_index, object)
   {
-    this._texture = call_index === -1 ? object :
+    this._texture = object ? object :
       snapshot.trace[call_index].linked_object.texture;
     cls.WebGLTab.set_call.apply(this, arguments);
   };
@@ -213,7 +213,7 @@ cls.WebGLTextureHistoryTab = function(id, name, container_class)
 {
   this.set_call = function(snapshot, call_index, object)
   {
-    if (call_index !== -1)
+    if (call_index !== -1 && object == null)
       object = snapshot.trace[call_index].linked_object.texture;
     this._history = object.history;
     cls.WebGLTab.set_call.apply(this, arguments);
