@@ -633,6 +633,8 @@ window.templates.webgl.framebuffer_image = function (framebuffer, additional_cla
 window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
 {
   var select = window.templates.webgl.framebuffer_selector(framebuffers, binding);
+  var dimensions = ["div", "Height: " + binding.image.height + "px Width: " +
+  binding.image.width +"px", "class", "dimension-float"];
 
   var image = window.templates.webgl.framebuffer_image(binding, ["thumbnail"]);
 
@@ -640,6 +642,7 @@ window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
     "div",
     select,
     image,
+    dimensions,
     "class", "framebuffer-thumbnail"
   ];
 };
