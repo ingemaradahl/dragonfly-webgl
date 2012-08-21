@@ -891,8 +891,8 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: function(snapshot, call_index, object)
     {
       this._snapshot = snapshot;
-      this._call_index = call_index;
       this._object = object;
+      this._call_index = object ? object.call_index : call_index;
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
 
       this.set_tab_enabled(this._lookup_tab("state"), call_index !== -1);
@@ -904,7 +904,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 
       this.set_active_tab(this.tabs[0]);
 
-      this.active_tab.set_call(snapshot, call_index, object);
+      this.active_tab.set_call(snapshot, this._call_index, object);
 
       this.render_header();
     }
@@ -913,7 +913,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     value: function()
     {
       var object;
-      if (this._call_index === -1)
+      if (this._object)
       {
         object = this._object;
       }
