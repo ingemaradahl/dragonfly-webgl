@@ -603,7 +603,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
         label: "Usage",
       },
       size: {
-        label: "Size",
+        label: "Bytesize",
         sorter: function (a,b) {
           return a.size_val < b.size_val ? -1 : a.size_val > b.size_val ? 1 : 0;
         }
