@@ -138,8 +138,8 @@ window.templates.webgl.buffer_info_table = function(buffer)
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
-    {name: "Size", value: String(buffer.size)},
-    {name: "Length", value: String(buffer.data_length)}
+    {name: "Bytesize", value: String(buffer.size) + " bytes"},
+    {name: "Length", value: String(buffer.data_length) + " elements"}
   ];
 
   var info_table_rows = buffer_info.map(function(info){
