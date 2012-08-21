@@ -354,6 +354,10 @@ img.flipped
   border: 1px solid #999999;
   width: 100px;
 }
+.buffer-data-table tr > td:first-child
+{
+  text-align: right;
+}
 
 .buffer-settings
 {

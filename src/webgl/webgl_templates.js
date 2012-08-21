@@ -220,7 +220,7 @@ window.templates.webgl.buffer_data_table = function(buffer, coordinates, start_r
     ];
   }
 
-  var table_head = [["td", "Index"]];
+  var table_head = [["td", "Row"]];
   for (var k=0; k<columns; k++)
   {
     table_head.push(["td", coordinate_list[k]]);
@@ -1356,7 +1356,7 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     var ret = "[";
     for (var j = 0; j < value.length && j < 4; j++)
     {
-      var val = value[j].toFixed(5);
+      var val = value[j].toFixed(3);
       ret += val + ", ";
     }
     ret.substr(0, ret.length - 2);
