@@ -36,8 +36,6 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
 {
   this._draw_call = null;
 
-  var tooltip_name = "webgl-draw-uniform-tooltip";
-
   this.ondestroy = function()
   {
     this.settings.framebuffer = this._framebuffer;
@@ -82,7 +80,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this.getUniformView = function()
   {
     var uniform_content = window.templates.webgl.uniform_table(this._call_index,
-      this._draw_call.program, tooltip_name);
+      this._draw_call.program);
     return {title: "Uniforms", content: uniform_content};
   };
 
@@ -123,25 +121,6 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   {
     render_preview();
   };
-
-  this._on_tooltip = function(evt, target)
-  {
-    var uniform = this._draw_call.program.uniforms[target.id];
-    var value = uniform.values[0].value;
-    var last_index = 0;
-    var values = uniform.values;
-    // We want the values related to this._call_index
-    for (var i=1; i<values.length && values[i].call_index <= this._call_index; i++)
-    {
-      last_index = i;
-      value = values[i].value;
-    }
-    var html = window.templates.webgl.uniform_tooltip(value);
-    this.tooltip.show(html, false);
-  };
-
-  this.tooltip = Tooltips.register(tooltip_name);
-  this.tooltip.ontooltip = this._on_tooltip.bind(this);
 
   window.eventHandlers.change["webgl-select-attribute"] = on_attribute_select.bind(this);
 

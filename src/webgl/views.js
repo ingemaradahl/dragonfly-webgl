@@ -890,7 +890,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     configurable: true,
     value: function(snapshot, call_index, object)
     {
-      this._snapshot = snapshot;
+      this._snapshot = snapshot ? snapshot : this._snapshot;
       this._object = object;
       this._call_index = object ? object.call_index : call_index;
       this._call = call_index === -1 ? null : snapshot.trace[call_index];
@@ -1072,6 +1072,34 @@ cls.WebGLCallView.initialize = function()
   eh.mousewheel["webgl-tab"] = on_tab_scroll.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
+
+  var uniform_tooltip = Tooltips.register("webgl-uniform-tooltip");
+  uniform_tooltip.ontooltip = function (event, target)
+  {
+    var uniform = target["data-uniform"];
+    var call_index = target["data-call-index"];
+
+    var value = uniform.values[0].value;
+    var last_index = 0;
+    var values = uniform.values;
+    // We want the values related to this._call_index
+    for (var i=1; i<values.length && values[i].call_index <= call_index; i++)
+    {
+      last_index = i;
+      value = values[i].value;
+    }
+    var html = window.templates.webgl.uniform_tooltip(value);
+    this.show(html, false);
+  }.bind(uniform_tooltip);
+
+  var layout_tooltip = Tooltips.register("webgl-layout-tooltip");
+  layout_tooltip.ontooltip = function (event, target)
+  {
+    var layout = target["data-layout"];
+
+    var html = window.templates.webgl.layout_tooltip(layout);
+    this.show(html, false);
+  }.bind(layout_tooltip);
 };
 
 // ----------------------------------------------------------------------------
