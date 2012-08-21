@@ -20,15 +20,49 @@ cls.WebGLSnapshotView.create_ui_widgets = function()
 
   var on_change_stacktrace = function (enabled)
   {
+    /* When this option is enabled, there is no use in having the "break on
+     * exceptions" option set, as it will break for every call that webgl
+     * does during snapshot recording and for calls that is recorded in
+     * objects history.
+     */
     if (enabled)
     {
-      /* When this option is enabled, there is no use in having the "break on
-       * exceptions" option set, as it will break for every call that webgl
-       * does..
-       */
-      window.settings['js_source'].set('error', false);
+      var js_settings = window.settings['js_source'];
+      if (js_settings.map['error'] || js_settings.map['exception'])
+      {
+        var message = "When enabling this option the options " +
+          "'Break when an exception is thrown' and " +
+          "'Show parse errors and break on exceptions' can not be active " +
+          "while this option is active. Do you want to disable them to enable " +
+          "this option, otherwise this option will remain disabled?";
+        // TODO show a fancy Dragonfly UI control instead
+        var response = confirm(message);
+        if (!response)
+        {
+          window.settings['webgl-snapshot'].set('stack-trace', false);
+          return;
+        }
+      }
+
+      if (js_settings.map['error'])
+        js_settings.set('error', false);
+
+      if (js_settings.map['exception'])
+        js_settings.set('exception', false);
     }
   };
+
+  messages.addListener("setting-changed", function(setting) {
+    if (setting.id !== "js_source") return;
+
+    if (setting.key === "error" || setting.key === "exception")
+    {
+      if (window.settings['webgl-snapshot'].map['stack-trace'] && setting.value === true)
+      {
+        window.settings['webgl-snapshot'].set('stack-trace', false);
+      }
+    }
+  });
 
   new Settings
   (

@@ -379,7 +379,7 @@ margin-top: 2px;
   border: 1px solid #999999;
   width: 100px;
 }
-.buffer-data-table tr > td:first-child
+.buffer-data-table tr > td
 {
   text-align: right;
 }
