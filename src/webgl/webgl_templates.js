@@ -884,7 +884,7 @@ window.templates.webgl.mipmap_table = function(texture)
         { name: "Level", value: String(level.level) },
         { name: "Source", value: level.element_type },
         image_source,
-        { name: "Dimensions", value: level.height + "x" + level.width + " px" },
+        { name: "Dimensions", value: level.height + "×" + level.width + " px" },
       ].map(build_info_row);
 
       var info_table = [
@@ -1309,12 +1309,14 @@ window.templates.webgl.attribute_table = function(call_index, program)
         [
           "td",
           pointer && pointer.layout ?
-            String(pointer.layout.size) + "x"
+            String(pointer.layout.size) + "×"
               + window.webgl.api.constant_value_to_string(pointer.layout.type)
               + ",  +" + String(pointer.layout.offset) + "/"
               + String(pointer.layout.stride)
             : "",
-          "class", changed_this_call ? "changed" : ""
+          "class", changed_this_call ? "changed" : "",
+          "data-tooltip", "webgl-layout-tooltip",
+          "data-layout", pointer.layout
         ]
       ]
     ]);
@@ -1333,7 +1335,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
   return table;
 };
 
-window.templates.webgl.uniform_table = function(call_index, program, tooltip_name)
+window.templates.webgl.uniform_table = function(call_index, program)
 {
   var uniforms = program.uniforms;
   var rows = [];
@@ -1401,7 +1403,11 @@ window.templates.webgl.uniform_table = function(call_index, program, tooltip_nam
     var type = window.webgl.api.constant_value_to_string(uniform.type);
     if (type === "FLOAT_MAT3" || type === "FLOAT_MAT4")
     {
-      tooltip = ["data-tooltip", tooltip_name];
+      tooltip = [
+        "data-call-index", call_index,
+        "data-uniform", uniform,
+        "data-tooltip", "webgl-uniform-tooltip",
+      ];
       value = format_matrix(value);
     }
     // End
@@ -1462,6 +1468,11 @@ window.templates.webgl.uniform_tooltip = function(value)
   table.push("class", "sortable-table uniform-tooltip");
 
   return ["div", ["h4", "Matrix " + String(dim) + "×" + String(dim), "class", "uniform-tooltip"], table];
+};
+
+window.templates.webgl.layout_tooltip = function(layout)
+{
+  return ["div", ["div", "Offset: " + layout.offset], ["div", "Stride: " + layout.stride]];
 };
 
 window.templates.webgl.taking_snapshot = function()
