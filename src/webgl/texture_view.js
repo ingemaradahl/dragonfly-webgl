@@ -9,7 +9,7 @@ cls.WebGL || (cls.WebGL = {});
  */
 cls.WebGLTextureCallView = function(id, name, container_class)
 {
-  var shared_settings = {selected_mipmap: 0};
+  var shared_settings = {};
 
   var texture_mipmap = new cls.WebGLTextureMipmapTab("texture-mipmap", "Mipmaps", "scroll");
   var full_texture = new cls.WebGLFullTextureTab("full-texture", "Texture", "scroll texture");
@@ -35,7 +35,6 @@ cls.WebGLTextureCallView = function(id, name, container_class)
 
   this.set_call = function(snapshot, call_index)
   {
-    this._selected_mipmap = this.settings.selected_mipmap;
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
@@ -161,22 +160,19 @@ cls.WebGLFullTextureTab = function(id, name, container_class)
     this._texture = call_index === -1 ? object :
       snapshot.trace[call_index].linked_object.texture;
     cls.WebGLTab.set_call.apply(this, arguments);
-    this._selected_mipmap = this.settings.selected_mipmap;
   };
 
   this.render = function()
   {
-    this._selected_mipmap = this.settings.selected_mipmap;
     var template = window.templates.webgl.mipmaps(this._texture,
-      this._selected_mipmap);
+      this.settings[this._texture]);
     this._container.clearAndRender(template);
     this.layout();
   };
 
   var on_select_mipmap = function(evt, target)
   {
-    this.settings.selected_mipmap = target.selectedIndex;
-    this._selected_mipmap = target.selectedIndex;
+    this.settings[this._texture] = target.selectedIndex;
     this.render();
   };
 
@@ -249,7 +245,7 @@ cls.WebGLTextureMipmapTab = function(id, name, container_class)
   var on_mipmap_click = function(evt, target)
   {
     var mipmap_index = target.getAttribute("index");
-    this.settings.selected_mipmap = parseInt(mipmap_index);
+    this.settings[this._texture] = parseInt(mipmap_index);
     cls.WebGLCallView.active_view.show_tab("full-texture");
   };
 

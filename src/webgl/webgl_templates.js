@@ -806,9 +806,11 @@ window.templates.webgl.mipmaps = function(texture, selected)
     {
       mipmaps.push({title: "Level " + i, index: i});
     }
-    
+     
     img = window.templates.webgl.image(texture.levels[selected],
-    ["full-texture"]); 
+            ["full-texture"]) || 
+          window.templates.webgl.image(texture.levels[0],
+            ["full-texture"]); 
     var options = mipmaps.map(function(level) {
       var option = ['option', level.title];
         if (level.index === selected)
