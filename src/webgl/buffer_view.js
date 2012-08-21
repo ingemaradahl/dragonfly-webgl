@@ -10,7 +10,7 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
-  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "General", "scroll");
+  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "Summary", "scroll");
   var preview_tab = new cls.WebGLBufferPreviewTab("preview", "Visual", "scroll");
   this.set_tabs([
     summary_tab,
