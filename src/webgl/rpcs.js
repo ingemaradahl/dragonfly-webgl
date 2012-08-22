@@ -1000,8 +1000,10 @@ cls.WebGL.RPCs.injection = function () {
     }
 
     // TODO: temporary store contexts to be able to execute the new_frame funciton on them.
-    contexts.push(gl);
-
+    if (!core_is_fixed)
+    {
+      contexts.push(gl);
+    }
     var handler = wrap_context.call(gl, this);
 
     events["new-context"].post(handler.get_interface());
