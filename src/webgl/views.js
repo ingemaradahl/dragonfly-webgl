@@ -1017,6 +1017,20 @@ cls.WebGLCallView.initialize = function()
     this.active_view.active_tab.render();
   };
 
+  var on_new_snapshot = function(context_id)
+  {
+    var snapshot = window.webgl.snapshots[context_id].get_latest_snapshot();
+    var draw_call = snapshot.drawcalls[snapshot.drawcalls.length - 1];
+    if (draw_call)
+    {
+      window.views["webgl_draw_call"].display_call(snapshot, draw_call.call_index);
+    }
+    else
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_start");
+    }
+  };
+
   var on_take_snapshot = function()
   {
     var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
@@ -1094,6 +1108,7 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-summary-view-function"] = on_summary_view_function.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
+  messages.addListener("webgl-new-snapshot", on_new_snapshot.bind(this));
 
   var uniform_tooltip = Tooltips.register("webgl-uniform-tooltip");
   uniform_tooltip.ontooltip = function (event, target)

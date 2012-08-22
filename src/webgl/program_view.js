@@ -10,9 +10,6 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLProgramCallView = function(id, name, container_class)
 {
-  this._program;
-  this._call_index;
-
   this.set_tabs([
     new cls.WebGLProgramSummaryTab("summary", "Summary", "scroll"),
     new cls.WebGLProgramTab("program", "Shaders", "scroll shaders"),
