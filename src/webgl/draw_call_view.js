@@ -65,7 +65,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this.getBufferView = function()
   {
     var buffer_display = window.templates.webgl.drawcall_buffer(this._draw_call);
-    return {title: "Vertex attributes", content: buffer_display, class: "buffer-preview"};
+    return {title: "Vertex attributes", content: buffer_display, class: "buffer-preview fit"};
   };
 
   this.getAdditionalPrimaryViews = function()
