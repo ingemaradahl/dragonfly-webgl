@@ -26,7 +26,6 @@ cls.WebGLProgramCallView.prototype = cls.WebGLCallView;
 
 cls.WebGLProgramSummaryTab = function(id, name, container_class)
 {
-  var tooltip_name = "webgl-program-uniform-tooltip";
   this.set_call = function(snapshot, call_index, object)
   {
     this._program = call_index === -1 ? object :
@@ -43,7 +42,7 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   this.getUniformView = function()
   {
     var uniform_content = window.templates.webgl.uniform_table(this._call_index,
-      this._program, tooltip_name);
+      this._program);
     return {title: "Uniforms", content: uniform_content};
   };
 
@@ -51,24 +50,6 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   {
     return [this.getAttributeView(), this.getUniformView()];
   };
-
-  this._on_tooltip = function(evt, target)
-  {
-    var uniform_index = target['data-uniform-index'];
-    var uniform = this._program.uniforms[uniform_index];
-    var value = uniform.values[0].value;
-    var values = uniform.values;
-    // We want the values related to this._call_index
-    for (var i = 1; i < values.length && values[i].call_index <= this._call_index; i++)
-    {
-      value = values[i].value;
-    }
-    var html = window.templates.webgl.uniform_tooltip(value);
-    this.tooltip.show(html, false);
-  };
-
-  this.tooltip = Tooltips.register(tooltip_name);
-  this.tooltip.ontooltip = this._on_tooltip.bind(this);
 
   this.init(id, name, container_class);
 };

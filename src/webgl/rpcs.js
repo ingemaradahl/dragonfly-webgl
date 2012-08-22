@@ -724,7 +724,7 @@ cls.WebGL.RPCs.injection = function () {
           var texture = this.lookup_texture(tex);
           if (texture && texture.levels[0].width === image.width && texture.levels[0].height === image.height)
           {
-            this.snapshot.add_texture(texture, {data: image.data ? image.img.data : null, flipped : image.data ? image.img.flipped : null});
+            this.snapshot.add_texture(texture, {data: image.img.data ? image.img.data : null, flipped : image.img.data ? image.img.flipped : null});
           }
           else if (texture)
           {

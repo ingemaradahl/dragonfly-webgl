@@ -109,11 +109,11 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
     }
     else
     {
-      var image = window.templates.webgl.image(level0);
-      content = window.templates.webgl.thumbnail_container(image);
+      var image = window.templates.webgl.image(level0, ["thumbnail"]);
+      //content = window.templates.webgl.thumbnail_container(image);
     }
     // TODO use the right index based on setting
-    return {title: "Texture", content: content, class: "texture fit"};
+    return {title: "Texture", content: image, class: "texture fit"};
   };
 
   this.getTextureInfoView = function()
