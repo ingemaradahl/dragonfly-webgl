@@ -60,6 +60,9 @@ cls.WebGL.RPCs.injection = function () {
     window.webkitRequestAnimationFrame = window.mozRequestAnimationFrame = window.requestAnimationFrame;
   }
 
+  // Keep a canvas instance, used when cloning framebuffer / texture data
+  var debugger_canvas = document.createElement("canvas");
+
   /**
    * Clone regular and typed arrays.
    */
@@ -1205,7 +1208,7 @@ cls.WebGL.RPCs.injection = function () {
       };
 
       // Encode to PNG
-      var canvas = document.createElement("canvas");
+      var canvas = debugger_canvas;
       canvas.width = width;
       canvas.height = height;
       var ctx = canvas.getContext("2d");
@@ -1239,6 +1242,12 @@ cls.WebGL.RPCs.injection = function () {
 
       image.img.data = canvas.toDataURL("image/png");
       image.img.flipped = true;
+
+      canvas.width = 1;
+      canvas.height = 1;
+
+      delete img_data;
+      delete ctx;
 
       if (rebind)
       {
@@ -1857,7 +1866,7 @@ cls.WebGL.RPCs.injection = function () {
 
         if (element instanceof HTMLImageElement)
         {
-          var canvas = document.createElement("canvas");
+          var canvas = debugger_canvas;
           canvas.height = element.height;
           canvas.width = element.width;
 
@@ -1887,7 +1896,7 @@ cls.WebGL.RPCs.injection = function () {
         }
         else if (element instanceof ImageData)
         {
-          var canvas = document.createElement("canvas");
+          var canvas = debugger_canvas;
           canvas.height = element.height;
           canvas.width = element.width;
 
@@ -1903,7 +1912,7 @@ cls.WebGL.RPCs.injection = function () {
              element instanceof Uint16Array ||
              element instanceof Uint32Array)
         {
-          var canvas = document.createElement("canvas");
+          var canvas = debugger_canvas;
           var canvas_ctx = canvas.getContext("2d");
 
           var imgData = canvas_ctx.createImageData(this.width, this.height);
