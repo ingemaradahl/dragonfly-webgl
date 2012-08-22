@@ -109,24 +109,27 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
     }
     else
     {
-      var image = window.templates.webgl.image(level0, ["thumbnail"]);
-      //content = window.templates.webgl.thumbnail_container(image);
+      content = window.templates.webgl.image(level0, ["thumbnail"]);
+      content.push("handler", "webgl-summary-view-goto-tab");
     }
-    // TODO use the right index based on setting
-    return {title: "Texture", content: image, class: "texture fit"};
+
+    return {
+      title: "Texture",
+      content: content,
+      class: "texture fit",
+      onclick: {
+        tab: "full-texture"
+      }
+    };
   };
 
   this.getTextureInfoView = function()
   {
-    // TODO show the texture name somewhere
     var info_content = window.templates.webgl.texture_info(this._texture);
-    return {title: "Texture info", content: info_content};
-  };
-
-  this.getTextureHistoryView = function()
-  {
-    var history_content = window.templates.webgl.history(this._texture.history);
-    return {title: "History", content: history_content};
+    return {
+      title: "Texture info",
+      content: info_content
+    };
   };
 
   this.getAdditionalPrimaryViews = function()
@@ -136,7 +139,7 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
 
   this.getSecondaryViews = function()
   {
-    return [this.getTextureInfoView(), this.getTextureHistoryView()];
+    return [this.getTextureInfoView()];
   };
 
   this.set_call = function(snapshot, call_index, object)

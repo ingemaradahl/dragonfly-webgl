@@ -1024,7 +1024,27 @@ cls.WebGLCallView.initialize = function()
     {
       window.webgl.request_snapshot(ctx_id);
     }
-  }
+  };
+
+  var lookup_attrib = function(elem, key)
+  {
+    var attr = elem.getAttribute(key);
+    while (!attr && (elem = elem.parentNode))
+    {
+      attr = elem.nodeType === 1 ? elem.getAttribute(key) : null;
+    }
+    return attr;
+  };
+
+  var on_summary_view_goto_tab = function(event, target)
+  {
+    this.active_view.show_tab(lookup_attrib(target, "data-tab"));
+  };
+
+  var on_summary_view_function = function(event, target)
+  {
+    target["data-function"](event, target);
+  };
 
   //TODO Many improvments possible, for example run the timeout on the
   // debuggee, add multiple frames snapshot, etc.
@@ -1070,6 +1090,8 @@ cls.WebGLCallView.initialize = function()
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
   eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
   eh.mousewheel["webgl-tab"] = on_tab_scroll.bind(this);
+  eh.click["webgl-summary-view-goto-tab"] = on_summary_view_goto_tab.bind(this);
+  eh.click["webgl-summary-view-function"] = on_summary_view_function.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
 
@@ -1230,7 +1252,15 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       var state_parameters = this._snapshot.state.get_function_parameters(
         this._call.function_name, this._call_index, true);
       var state_content = window.templates.webgl.state_parameters(state_parameters);
-      return {title: "State parameters", content: state_content, onclick: "state"};
+
+      return {
+        title: "State parameters",
+        content: state_content,
+        onclick: {
+          tab: "state",
+          header_only: true
+        }
+      };
     }
   },
   getErrorView: {
@@ -1249,7 +1279,12 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       {
         classes.push("no-description");
       }
-      return {title: "Error: " + error_code, content: content, class: classes.join(" ")};
+
+      return {
+        title: "Error: " + error_code,
+        content: content,
+        class: classes.join(" ")
+      };
     }
   },
   getFrameBufferView: {
@@ -1282,7 +1317,23 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       }
 
       var content = window.templates.webgl.framebuffer_summary(framebuffers, framebuffer_binding);
-      return {title: "Framebuffer", content: content, class: "framebuffer fit", onclick: "framebuffer"};
+
+      return {
+        title: "Framebuffer",
+        content: content,
+        class: "framebuffer fit",
+        onclick: {
+          func: function()
+          {
+            var draw_call = this._snapshot.drawcalls.get_by_call(this._call_index);
+            if (!draw_call) return;
+            // TODO prevent the draw call view to render the first tab first and then the frmebuffer tab
+            window.views["webgl_draw_call"].display_call(this._snapshot, draw_call.call_index);
+            window.views["webgl_draw_call"].show_tab("framebuffer");
+          }.bind(this),
+          header_only: true
+        }
+      };
     }
   },
   getPrimaryViews: {
@@ -1434,9 +1485,7 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
 
             if (!this._primary_clearer)
             {
-              clear = document.createElement("div");
-              clear.className = "clear";
-              primary.insertBefore(clear, primary_childs[len - 2]);
+              primary_childs_fit[0].className += " clear";
               this._primary_clearer = true;
             }
             remove_primary_clearer = false;
@@ -1446,8 +1495,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
 
       if (this._primary_clearer && remove_primary_clearer)
       {
-        clear_elem = primary.querySelector(".clear");
-        primary.removeChild(clear_elem);
+        clear_elem = primary.querySelector(".primary-summary .summary-item.clear");
+        clear_elem.className = clear_elem.className.replace(" clear", "");
         this._primary_clearer = false;
       }
 
@@ -1455,17 +1504,14 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       {
         if (!this._secondary_clearer)
         {
-          clear = document.createElement("div");
-          clear.className = "clear";
-          secondary.insertBefore(clear, secondary.firstChild);
-          //primary.className += " fit";
+          secondary.firstChild.className += " clear";
           this._secondary_clearer = true;
         }
       }
       else if (this._secondary_clearer)
       {
-        clear_elem = secondary.querySelector(".clear");
-        secondary.removeChild(clear_elem);
+        clear_elem = secondary.firstChild;
+        clear_elem.className = clear_elem.className.replace(" clear", "");
         this._secondary_clearer = false;
       }
 

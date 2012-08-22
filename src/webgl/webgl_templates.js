@@ -1169,7 +1169,8 @@ window.templates.webgl.summary_view = function(item)
 
   var classes = "summary-item";
   if (item.class) classes += " " + item.class;
-  return [
+
+  var content = [
     "div",
     [
       header,
@@ -1177,6 +1178,25 @@ window.templates.webgl.summary_view = function(item)
     ],
     "class", classes
   ];
+
+  var onclick = item.onclick;
+  if (onclick)
+  {
+    var target = onclick.header_only === true ? header : content;
+
+    if (onclick.tab)
+    {
+      target.push("handler", "webgl-summary-view-goto-tab");
+      target.push("data-tab", onclick.tab);
+    }
+    else if (onclick.func)
+    {
+      target.push("handler", "webgl-summary-view-function");
+      target.push("data-function", onclick.func);
+    }
+  }
+
+  return content;
 };
 
 /**
@@ -1296,11 +1316,13 @@ window.templates.webgl.attribute_table = function(call_index, program)
     "class", "header"
   ]);
 
-  for (var i=0; i<attributes.length; i++)
+  for (var i = 0; i < attributes.length; i++)
   {
     var attribute = attributes[i];
-    var pointer = attribute.pointers.lookup ? attribute.pointers.lookup(call_index) : null;
-    var changed_this_call = pointer ? pointer.call_index === call_index : false;
+    var pointer = attribute.pointers.lookup ?
+      attribute.pointers.lookup(call_index) : null;
+    var changed_this_call = pointer && call_index !== -1 ?
+      pointer.call_index === call_index : false;
 
     rows.push([
       "tr",
@@ -1422,7 +1444,10 @@ window.templates.webgl.uniform_table = function(call_index, program)
       ];
       value = format_matrix(value);
     }
-    // End
+    else if (value instanceof Array)
+    {
+      value = value.join(", ");
+    }
 
     rows.push([
       "tr",
