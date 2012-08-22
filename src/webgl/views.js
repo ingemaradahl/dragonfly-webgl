@@ -1207,6 +1207,10 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     writable: true,
     value: false
   },
+  _secondary_clearer: {
+    writable: true,
+    value: false
+  },
   _framebuffer: {
     writable: true,
     value: null
@@ -1340,16 +1344,23 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
     {
       after_render = after_render === true;
       second_pass = second_pass === true;
-      if (after_render) this._primary_clearer = false;
+      if (after_render)
+      {
+        this._primary_clearer = false;
+        this._secondary_clearer = false;
+      }
 
       var MIN_CHILD_WIDTH = 300;
       var MIN_CHILD_IMAGE_WIDTH = 200;
       var MAX_CHILD_WIDTH = 500;
 
       var primary = this._container.querySelector(".primary-summary");
+      var secondary = this._container.querySelector(".secondary-summary");
       if (!primary) return;
       var primary_childs = primary.querySelectorAll(".summary-item");
+      var secondary_childs = secondary ? primary.querySelectorAll(".summary-item") : [];
       var childs = this._container.querySelectorAll(".summary-item");
+      var clear, clear_elem;
 
       var container_offset_width = this._container.childNodes[0].offsetWidth;
       var container_width = container_offset_width -
@@ -1398,29 +1409,34 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
       var remove_primary_clearer = true;
       if (total_child_width >= container_width && max_columns <= 2)
       {
-        if (primary_childs.length >= 3)
+        var primary_childs_fit = primary.querySelectorAll(".summary-item.fit");
+        if (primary_childs_fit.length >= 2)
         {
           var len = primary_childs.length;
-          var last = primary_childs[len - 1].originalHeight;
-          var second_last = primary_childs[len - 2].originalHeight;
-          var third_last = primary_childs[len - 3].originalHeight;
+          var height_one = primary_childs_fit[0].originalHeight;
+          var height_two = primary_childs_fit[1].originalHeight;
+          var height_before = 0;
+          for (var k = 0; k < primary_childs.length; k++) {
+            var child = primary_childs[k];
+            if (child.hasClass("fit")) break;
+            height_before += child.originalHeight;
+          }
 
-          if (last + second_last >= third_last + Math.max(last, second_last))
+          if (height_one + height_two >= height_before + Math.max(height_one, height_two))
           {
             var width = max_columns === 1 ?
               Math.floor(container_width / 2) - child_margin : column_width;
             if (width < MIN_CHILD_IMAGE_WIDTH)
               width = Math.max(MIN_CHILD_IMAGE_WIDTH, column_width);
 
-            primary_childs[len - 1].style.width = String(width) + "px";
-            primary_childs[len - 2].style.width = String(width) + "px";
+            primary_childs_fit[0].style.width = String(width) + "px";
+            primary_childs_fit[1].style.width = String(width) + "px";
 
             if (!this._primary_clearer)
             {
-              var clear = document.createElement("div");
+              clear = document.createElement("div");
               clear.className = "clear";
               primary.insertBefore(clear, primary_childs[len - 2]);
-              third_last.className += " fit";
               this._primary_clearer = true;
             }
             remove_primary_clearer = false;
@@ -1430,9 +1446,27 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
 
       if (this._primary_clearer && remove_primary_clearer)
       {
-        var clear_elem = primary.querySelector(".clear");
+        clear_elem = primary.querySelector(".clear");
         primary.removeChild(clear_elem);
         this._primary_clearer = false;
+      }
+
+      if (primary_childs.length >= max_columns && secondary_childs.length > 0)
+      {
+        if (!this._secondary_clearer)
+        {
+          clear = document.createElement("div");
+          clear.className = "clear";
+          secondary.insertBefore(clear, secondary.firstChild);
+          //primary.className += " fit";
+          this._secondary_clearer = true;
+        }
+      }
+      else if (this._secondary_clearer)
+      {
+        clear_elem = secondary.querySelector(".clear");
+        secondary.removeChild(clear_elem);
+        this._secondary_clearer = false;
       }
 
       // If the "container" does not have a scrollbar before the calculation

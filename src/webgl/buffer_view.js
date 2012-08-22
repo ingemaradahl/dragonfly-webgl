@@ -10,7 +10,7 @@ cls.WebGL || (cls.WebGL = {});
 
 cls.WebGLBufferCallView = function(id, name, container_class)
 {
-  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "General", "scroll");
+  var summary_tab = new cls.WebGLBufferCallSummaryTab("summary", "Summary", "scroll");
   var preview_tab = new cls.WebGLBufferPreviewTab("preview", "Visual", "scroll");
   this.set_tabs([
     summary_tab,
@@ -118,7 +118,7 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     return {
       title: "Buffer preview",
       content: window.templates.webgl.preview_canvas(),
-      class: "buffer-preview"
+      class: "buffer-preview fit"
     };
   };
 
@@ -603,7 +603,7 @@ cls.WebGLBufferSideView = function(id, name, container_class)
         label: "Usage",
       },
       size: {
-        label: "Bytesize",
+        label: "Byte size",
         sorter: function (a,b) {
           return a.size_val < b.size_val ? -1 : a.size_val > b.size_val ? 1 : 0;
         }

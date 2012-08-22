@@ -12,7 +12,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   var shared_settings = {framebuffer: null};
 
   var summary = new cls.WebGLDrawCallSummaryTab("summary", "Summary", "scroll");
-  var framebuffer = new cls.WebGLFramebufferTab("framebuffer", "Framebuffer", "scroll framebuffer");
+  var framebuffer = new cls.WebGLFramebufferTab("framebuffer", "Framebuffer", "scroll framebuffer-full");
 
   summary.settings = framebuffer.settings = shared_settings;
 
@@ -63,7 +63,7 @@ cls.WebGLDrawCallSummaryTab = function(id, name, container_class)
   this.getBufferView = function()
   {
     var buffer_display = window.templates.webgl.drawcall_buffer(this._draw_call);
-    return {title: "Vertex attributes", content: buffer_display, class: "buffer-preview"};
+    return {title: "Vertex attributes", content: buffer_display, class: "buffer-preview fit"};
   };
 
   this.getAdditionalPrimaryViews = function()

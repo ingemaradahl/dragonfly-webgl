@@ -138,7 +138,7 @@ window.templates.webgl.buffer_info_table = function(buffer)
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
-    {name: "Bytesize", value: String(buffer.size) + " bytes"},
+    {name: "Byte size", value: String(buffer.size) + " bytes"},
     {name: "Length", value: String(buffer.data_length) + " elements"}
   ];
 
@@ -633,6 +633,15 @@ window.templates.webgl.framebuffer_image = function (framebuffer, additional_cla
 window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
 {
   var select = window.templates.webgl.framebuffer_selector(framebuffers, binding);
+  var text = "Dimensions: " + binding.image.width + "×" +
+    binding.image.height +" px";
+  var dimensions = [
+    "div",
+    [
+      "div", text
+    ],
+    "class", "dimensions-float"
+  ];
 
   var image = window.templates.webgl.framebuffer_image(binding, ["thumbnail"]);
 
@@ -640,6 +649,7 @@ window.templates.webgl.framebuffer_summary = function (framebuffers, binding)
     "div",
     select,
     image,
+    dimensions,
     "class", "framebuffer-thumbnail"
   ];
 };
@@ -768,7 +778,7 @@ window.templates.webgl.texture_info = function(texture)
   {
     texture_info.unshift({
       name: "Dimensions",
-      value: level0.height + "×" + level0.width + " px"
+      value: level0.width + "×" + level0.height + " px"
     });
 
     if (level0.url)
@@ -810,16 +820,16 @@ window.templates.webgl.mipmaps = function(texture, selected)
     {
       mipmaps.push({title: "Level " + i, index: i});
     }
-     
+
     img = window.templates.webgl.image(texture.levels[selected],
-            ["full-texture"]) || 
+            ["full-texture"]) ||
           window.templates.webgl.image(texture.levels[0],
-            ["full-texture"]); 
+            ["full-texture"]);
     var options = mipmaps.map(function(level) {
       var option = ['option', level.title];
         if (level.index === selected)
         {
-          option.push('selected', 'selected'); 
+          option.push('selected', 'selected');
         }
         return option;
       });
@@ -832,12 +842,12 @@ window.templates.webgl.mipmaps = function(texture, selected)
     img = window.templates.webgl.image(texture.levels[0], ["full-texture"]);
     selector = null;
   }
-  
+
   img = [
     "div", img,
     "style", "position: relative;"
   ];
-  
+
   if (selector)
   {
     ret.push(selector);
@@ -849,8 +859,6 @@ window.templates.webgl.mipmaps = function(texture, selected)
 
 window.templates.webgl.mipmap_table = function(texture)
 {
-  var ret = ["div", "No mipmaps"];
-
   var build_info_row = function(info)
   {
     return info == null ? [] : [
@@ -867,45 +875,52 @@ window.templates.webgl.mipmap_table = function(texture)
       ]
     ];
   };
+
   var mipmap_table = [];
-  if (texture.mipmapped && texture.levels.length > 1)
+  if (!texture.mipmapped || texture.levels.length === 0)
   {
-    var mipmap_index=1;
-    var mipmap_levels = texture.levels.slice(1).map(function(level) {
-      var image = window.templates.webgl.image(level);
-      var image_source = null;
-      if (level.url)
-        image_source = { name: "Image source", value: level.url };
-
-      var level_info_rows = [
-        { name: "Level", value: String(level.level) },
-        { name: "Source", value: level.element_type },
-        image_source,
-        { name: "Dimensions", value: level.height + "×" + level.width + " px" },
-      ].map(build_info_row);
-
-      var info_table = [
-        "table",
-        level_info_rows,
-        "class", "table-info"
-      ];
-
-      return [ "tr",
-        [ "th", image, "handler", "webgl-mipmap-click", "index",
-          String(mipmap_index++) ],
-        [ "td", info_table ]
-        ];
-    });
-
-    mipmap_table = [ "div",
-      [ "h3", "Custom mipmap levels" ],
-      [ "table", mipmap_levels, "class", "sortable-table" ],
-      "class", "mipmap-table"
-    ];
-    ret = mipmap_table;
+    return ["div", "No mipmaps"];
   }
 
-  return ret;
+  var mipmap_index = 1;
+  var mipmap_levels = texture.levels.slice(1).map(function(level)
+  {
+    var image = window.templates.webgl.image(level, "mipmap-image");
+    var image_source = null;
+    if (level.url)
+      image_source = { name: "Image source", value: level.url };
+
+    var level_info_rows = [
+      { name: "Level", value: String(level.level) },
+      { name: "Source", value: level.element_type },
+      image_source,
+      { name: "Dimensions: ", value: level.width + "×" + level.height + " px" },
+    ].map(build_info_row);
+
+    var info_table = [
+      "table",
+      level_info_rows,
+      "class", "table-info"
+    ];
+
+    return [
+      "tr",
+      [
+        "th", image,
+        "handler", "webgl-mipmap-click",
+        "index", String(mipmap_index++)
+      ],
+      ["td", info_table]
+    ];
+  });
+
+  mipmap_table = [ "div",
+    [ "h3", "Custom mipmap levels" ],
+    [ "table", mipmap_levels, "class", "sortable-table" ],
+    "class", "mipmap-table"
+  ];
+
+  return mipmap_table;
 };
 
 /**

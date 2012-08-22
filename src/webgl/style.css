@@ -68,7 +68,7 @@
   position: relative;
 }
 
-.framebuffer .select-float,
+.framebuffer-full .select-float,
 .texture .select-float
 {
   display: none;
@@ -79,14 +79,14 @@
   position: absolute;
 }
 
-.framebuffer .select-float select,
+.framebuffer-full .select-float select,
 .texture .select-float select
 {
   position: fixed;
 }
 
 .summary-item:hover .select-float,
-.framebuffer:hover .select-float,
+.framebuffer-full:hover .select-float,
 .texture:hover .select-float
 {
   display: block;
@@ -110,6 +110,40 @@ svg.thumbnail
   max-width: 100%;
   -o-object-fit: contain;
   -o-object-position: left;
+}
+
+/* Floating framebuffer dimensions */
+
+.framebuffer .dimensions-float
+{
+  position: relative;
+}
+
+.framebuffer .dimensions-float div
+{
+  position: absolute;
+  display: none;
+  left: 15px;
+  top: -40px;
+  width: 200px;
+
+  color: #ffffff;
+  text-shadow: 0px 0px 0px;
+  font-weight: normal;
+  text-align: left;
+
+  padding: 5px;
+  border: 2px solid #b1b1b1;
+  box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.64), 0px 1px 6px rgba(0, 0, 0, 0.300);
+  background: rgba(16, 16, 16, 0.8);
+  border-radius: 5px;
+
+  z-index: 2;
+}
+
+.framebuffer:hover .dimensions-float div
+{
+  display: block;
 }
 
 /* Tabs */
@@ -575,6 +609,12 @@ div.mipmap-table
 .mipmap-table > .sortable-table
 {
   border: 1px solid #ccc;
+}
+
+img.mipmap-image
+{
+  max-width: 300px;
+  height: auto;
 }
 
 img.full-texture,
