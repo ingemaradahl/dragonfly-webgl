@@ -138,7 +138,7 @@ window.templates.webgl.buffer_info_table = function(buffer)
   var buffer_info = [
     {name: "Target", value: buffer.target_string()},
     {name: "Usage", value: buffer.usage_string()},
-    {name: "Bytesize", value: String(buffer.size) + " bytes"},
+    {name: "Byte size", value: String(buffer.size) + " bytes"},
     {name: "Length", value: String(buffer.data_length) + " elements"}
   ];
 
@@ -885,7 +885,7 @@ window.templates.webgl.mipmap_table = function(texture)
   var mipmap_index = 1;
   var mipmap_levels = texture.levels.slice(1).map(function(level)
   {
-    var image = window.templates.webgl.image(level);
+    var image = window.templates.webgl.image(level, "mipmap-image");
     var image_source = null;
     if (level.url)
       image_source = { name: "Image source", value: level.url };
