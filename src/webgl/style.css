@@ -112,12 +112,17 @@ svg.thumbnail
   -o-object-position: left;
 }
 
-/* Floating dimensions */
+/* Floating framebuffer dimensions */
 
-.framebuffer .dimension-float
+.framebuffer .dimensions-float
 {
   position: relative;
-  visibility: hidden;
+}
+
+.framebuffer .dimensions-float div
+{
+  position: absolute;
+  display: none;
   left: 15px;
   top: -40px;
   width: 200px;
@@ -136,9 +141,9 @@ svg.thumbnail
   z-index: 2;
 }
 
-.framebuffer:hover .dimension-float 
+.framebuffer:hover .dimensions-float div
 {
-  visibility: visible;
+  display: block;
 }
 
 /* Tabs */

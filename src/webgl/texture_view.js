@@ -274,7 +274,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
     this._container = container;
     if (!this._table)
     {
-      this._table = new SortableTable(this.tabledef, null, ["name", "dimension"], null, "call", false, "texture-table");
+      this._table = new SortableTable(this.tabledef, null, ["name", "dimensions"], null, "call", false, "texture-table");
       this._table.group = WebGLUtils.make_group(this._table,
         [ {group: "call",    remove: "call_index", add: "name"},
           {group: "texture", remove: "name",       add: "call_index"} ]
@@ -312,7 +312,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
       var lvl0 = texture.levels[0];
       return {
         name: String(texture),
-        dimension: lvl0 && lvl0.width ? String(lvl0.width) + "x" + String(lvl0.height) : "?",
+        dimensions: lvl0 && lvl0.width ? String(lvl0.width) + "×" + String(lvl0.height) : "?",
         size: lvl0 && lvl0.width && lvl0.height ? lvl0.width*lvl0.height: 0,
         texture: texture,
         call_index_val: texture.call_index,
@@ -334,7 +334,7 @@ cls.WebGLTextureSideView = function(id, name, container_class)
 
   this.tabledef = {
     handler: "webgl-texture-table",
-    column_order: ["call_index", "name", "dimension"],
+    column_order: ["call_index", "name", "dimensions"],
     idgetter: function(res) { return String(res.id); },
     columns: {
       call_index : {
@@ -353,8 +353,8 @@ cls.WebGLTextureSideView = function(id, name, container_class)
             a_name > b_name ? 1 : 0;
         }
       },
-      dimension: {
-        label: "Dimension",
+      dimensions: {
+        label: "Dimensions",
         sorter: function(a,b) {
           return a.size < b.size ? -1 : a.size > b.size ? 1 : 0;
         }
