@@ -219,6 +219,7 @@ svg.thumbnail
 img.flipped
 {
   -o-transform: scaleY(-1);
+  transform: scaleY(-1);
 }
 
 
