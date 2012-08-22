@@ -68,7 +68,7 @@
   position: relative;
 }
 
-.framebuffer .select-float,
+.framebuffer-full .select-float,
 .texture .select-float
 {
   display: none;
@@ -79,14 +79,14 @@
   position: absolute;
 }
 
-.framebuffer .select-float select,
+.framebuffer-full .select-float select,
 .texture .select-float select
 {
   position: fixed;
 }
 
 .summary-item:hover .select-float,
-.framebuffer:hover .select-float,
+.framebuffer-full:hover .select-float,
 .texture:hover .select-float
 {
   display: block;

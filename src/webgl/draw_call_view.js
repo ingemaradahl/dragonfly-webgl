@@ -12,7 +12,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   var shared_settings = {framebuffer: null};
 
   var summary = new cls.WebGLDrawCallSummaryTab("summary", "Summary", "scroll");
-  var framebuffer = new cls.WebGLFramebufferTab("framebuffer", "Framebuffer", "scroll framebuffer");
+  var framebuffer = new cls.WebGLFramebufferTab("framebuffer", "Framebuffer", "scroll framebuffer-full");
 
   summary.settings = framebuffer.settings = shared_settings;
 
