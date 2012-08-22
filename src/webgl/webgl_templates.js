@@ -1442,7 +1442,10 @@ window.templates.webgl.uniform_table = function(call_index, program)
       ];
       value = format_matrix(value);
     }
-    // End
+    else if (value instanceof Array)
+    {
+      value = value.join(", ");
+    }
 
     rows.push([
       "tr",
