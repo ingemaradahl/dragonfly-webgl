@@ -447,6 +447,9 @@ cls.WebGLSnapshotArray = function(context_id)
             }
         }
 
+        // Erroneous calls could have non-linked objects where they should have
+        linked_object = linked_object instanceof cls.WebGLLinkedObject ? linked_object : null;
+
         if (linked_object == null && group !== "draw") group = "generic";
 
         trace_list.push(new TraceEntry(function_name, error_code, redundant, result, args, loc, group, linked_object));
@@ -627,7 +630,7 @@ cls.WebGLLinkedObject = function(object, call_index, snapshot)
       }.bind(this);
       break;
     case "WebGLUniformLocation":
-      if (this.program_index == null) return;
+      if (!this.program_index) return;
       this.program = snapshot.programs.lookup(Number(this.program_index), call_index);
       this.uniform = this.program.uniforms[this.uniform_index];
       this.text = this.uniform.name;

@@ -30,6 +30,13 @@ cls.WebGLProgramSummaryTab = function(id, name, container_class)
   {
     this._program = call_index === -1 ? object :
       snapshot.trace[call_index].linked_object.program;
+
+    if (!this._program)
+    {
+      window.views.webgl_generic_call.display_call(snapshot, call_index);
+      return;
+    }
+
     cls.WebGLSummaryTab.set_call.apply(this, arguments);
   };
 
