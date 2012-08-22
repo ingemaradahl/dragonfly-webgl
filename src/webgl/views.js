@@ -1530,6 +1530,25 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         this._secondary_clearer = false;
       }
 
+      // Fix the size of loading boxes
+      var loadings = this._container.querySelectorAll(".summary-item .loading-image");
+      if (loadings)
+      {
+        for (var i = 0; i < loadings.length; i++)
+        {
+          var loading = loadings[i];
+          var elem = loading;
+          while (!elem.hasClass("summary-item"))
+            elem = elem.parentNode;
+
+          var old_width = parseInt(loading.style.width);
+          var old_height = parseInt(loading.style.height);
+          loading.style.width = elem.style.width;
+          var height = Math.floor(parseInt(elem.style.width) * (old_height / old_width));
+          loading.style.height = height + "px";
+        }
+      }
+
       // If the "container" does not have a scrollbar before the calculation
       // but afterwards then make a second pass
       if (container_offset_width !== this._container.childNodes[0].offsetWidth && !second_pass)
