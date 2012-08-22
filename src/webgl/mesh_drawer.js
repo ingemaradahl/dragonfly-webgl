@@ -198,7 +198,7 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(force)
   {
     // Make sure there's no funky stuff going on
     var constructor;
-    switch (buffer.constructor)
+    switch (buffer.data_constructor)
     {
       case "Float32Array":
       case "Uint8Array":
@@ -207,10 +207,10 @@ cls.WebGLMeshDrawer.prototype.init_buffer = function(force)
       case "Int8Array":
       case "Int16Array":
       case "Int32Array":
-        constructor = eval(buffer.constructor);
+        constructor = eval(buffer.data_constructor);
         break;
       default:
-        throw "Invalid constructor: " + buffer.constructor + " in init_buffer";
+        throw "Invalid constructor: " + buffer.data_constructor + " in init_buffer";
     }
 
     if (buffer.data instanceof constructor)

@@ -1324,6 +1324,10 @@ window.templates.webgl.attribute_table = function(call_index, program)
     var changed_this_call = pointer && call_index !== -1 ?
       pointer.call_index === call_index : false;
 
+    var tooltip = pointer && pointer.layout
+      ? [ "data-tooltip", "webgl-layout-tooltip", "data-layout", pointer.layout ]
+      : [];
+
     rows.push([
       "tr",
       [
@@ -1349,9 +1353,7 @@ window.templates.webgl.attribute_table = function(call_index, program)
               + String(pointer.layout.stride)
             : "",
           "class", changed_this_call ? "changed" : "",
-          "data-tooltip", "webgl-layout-tooltip",
-          "data-layout", pointer.layout
-        ]
+        ].concat(tooltip)
       ]
     ]);
   }

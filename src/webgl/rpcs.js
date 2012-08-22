@@ -265,7 +265,7 @@ cls.WebGL.RPCs.injection = function () {
           }
           buffer.size = new_data.byteLength;
           buffer.data = clone_array(new_data);
-          buffer.constructor = new_data.constructor.name;
+          buffer.data_constructor = new_data.constructor.name;
         }
         // TODO: Make data cloning a selectable option?
       }
@@ -293,6 +293,11 @@ cls.WebGL.RPCs.injection = function () {
           buffer.data[i + offset] = new_data[i];
         }
       }
+
+      buffer.data_constructor = buffer.data_constructor
+        ? buffer.data_constructor
+        : new_data.constructor.name;
+
       return redundant;
     };
     innerFuns.deleteBuffer = function(result, args)
@@ -1839,7 +1844,7 @@ cls.WebGL.RPCs.injection = function () {
         buffer_state.usage = buffer.usage;
         buffer_state.target = buffer.target;
         buffer_state.data_length = buffer.data.length;
-        buffer_state.constructor = buffer.constructor;
+        buffer_state.data_constructor = buffer.data_constructor;
       }
 
       this.buffers.push(buffer_state);
