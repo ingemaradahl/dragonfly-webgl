@@ -1316,11 +1316,13 @@ window.templates.webgl.attribute_table = function(call_index, program)
     "class", "header"
   ]);
 
-  for (var i=0; i<attributes.length; i++)
+  for (var i = 0; i < attributes.length; i++)
   {
     var attribute = attributes[i];
-    var pointer = attribute.pointers.lookup ? attribute.pointers.lookup(call_index) : null;
-    var changed_this_call = pointer ? pointer.call_index === call_index : false;
+    var pointer = attribute.pointers.lookup ?
+      attribute.pointers.lookup(call_index) : null;
+    var changed_this_call = pointer && call_index !== -1 ?
+      pointer.call_index === call_index : false;
 
     rows.push([
       "tr",
