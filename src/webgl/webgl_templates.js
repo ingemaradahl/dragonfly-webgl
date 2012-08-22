@@ -1169,7 +1169,8 @@ window.templates.webgl.summary_view = function(item)
 
   var classes = "summary-item";
   if (item.class) classes += " " + item.class;
-  return [
+
+  var content = [
     "div",
     [
       header,
@@ -1177,6 +1178,25 @@ window.templates.webgl.summary_view = function(item)
     ],
     "class", classes
   ];
+
+  var onclick = item.onclick;
+  if (onclick)
+  {
+    var target = onclick.header_only === true ? header : content;
+
+    if (onclick.tab)
+    {
+      target.push("handler", "webgl-summary-view-goto-tab");
+      target.push("data-tab", onclick.tab);
+    }
+    else if (onclick.func)
+    {
+      target.push("handler", "webgl-summary-view-function");
+      target.push("data-function", onclick.func);
+    }
+  }
+
+  return content;
 };
 
 /**

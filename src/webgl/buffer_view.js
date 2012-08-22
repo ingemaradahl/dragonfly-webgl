@@ -118,7 +118,10 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
     return {
       title: "Buffer preview",
       content: window.templates.webgl.preview_canvas(),
-      class: "buffer-preview fit"
+      class: "buffer-preview fit",
+      onclick: {
+        tab: "preview"
+      }
     };
   };
 
@@ -132,7 +135,12 @@ cls.WebGLBufferCallSummaryTab = function(id, name, container_class)
 
   this.getAdditionalPrimaryViews = function()
   {
-    return [this.getBufferView(), this.getBufferInfo()];
+    return [this.getBufferView()];
+  };
+
+  this.getSecondaryViews = function()
+  {
+    return [this.getBufferInfo()];
   };
 
   this.renderAfter = function()
