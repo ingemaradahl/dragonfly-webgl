@@ -606,6 +606,12 @@ div.mipmap-table
   border: 1px solid #ccc;
 }
 
+img.mipmap-image
+{
+  max-width: 300px;
+  height: auto;
+}
+
 img.full-texture,
 .full-framebuffer
 {
