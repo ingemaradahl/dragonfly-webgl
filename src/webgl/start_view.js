@@ -57,6 +57,12 @@ cls.WebGLStartView = function(id, name, container_class)
     overlay.change_group("webgl");
   };
 
+  var on_clear = function(event, target)
+  {
+    snapshot_present = false;
+    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+  };
+
   var on_snapshot = function(event, target)
   {
     snapshot_present = true;
@@ -124,6 +130,7 @@ cls.WebGLStartView = function(id, name, container_class)
 
   messages.addListener('setting-changed', on_settings.bind(this));
   messages.addListener('webgl-new-snapshot', on_snapshot.bind(this));
+  messages.addListener('webgl-clear', on_clear.bind(this));
 
   var eh = window.eventHandlers;
   eh.click["webgl-open-settings"] = on_open_settings.bind(this);

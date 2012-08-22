@@ -1017,6 +1017,20 @@ cls.WebGLCallView.initialize = function()
     this.active_view.active_tab.render();
   };
 
+  var on_new_snapshot = function(context_id)
+  {
+    var snapshot = window.webgl.snapshots[context_id].get_latest_snapshot();
+    var draw_call = snapshot.drawcalls[snapshot.drawcalls.length - 1];
+    if (draw_call)
+    {
+      window.views["webgl_draw_call"].display_call(snapshot, draw_call.call_index);
+    }
+    else
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_start");
+    }
+  };
+
   var on_take_snapshot = function()
   {
     var ctx_id = window['cst-selects']['snapshot-select'].get_selected_context();
@@ -1094,6 +1108,7 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-summary-view-function"] = on_summary_view_function.bind(this);
 
   messages.addListener("webgl-fbo-data", on_framebuffer_data.bind(this));
+  messages.addListener("webgl-new-snapshot", on_new_snapshot.bind(this));
 
   var uniform_tooltip = Tooltips.register("webgl-uniform-tooltip");
   uniform_tooltip.ontooltip = function (event, target)
@@ -1513,6 +1528,25 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         clear_elem = secondary.firstChild;
         clear_elem.className = clear_elem.className.replace(" clear", "");
         this._secondary_clearer = false;
+      }
+
+      // Fix the size of loading boxes
+      var loadings = this._container.querySelectorAll(".summary-item .loading-image");
+      if (loadings)
+      {
+        for (var i = 0; i < loadings.length; i++)
+        {
+          var loading = loadings[i];
+          var elem = loading;
+          while (!elem.hasClass("summary-item"))
+            elem = elem.parentNode;
+
+          var old_width = parseInt(loading.style.width);
+          var old_height = parseInt(loading.style.height);
+          loading.style.width = elem.style.width;
+          var height = Math.floor(parseInt(elem.style.width) * (old_height / old_width));
+          loading.style.height = height + "px";
+        }
       }
 
       // If the "container" does not have a scrollbar before the calculation
