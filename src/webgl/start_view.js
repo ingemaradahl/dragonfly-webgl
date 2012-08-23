@@ -60,7 +60,14 @@ cls.WebGLStartView = function(id, name, container_class)
   var on_clear = function(event, target)
   {
     snapshot_present = false;
-    window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+    if (window.topCell.tab.activeTab === "webgl_mode")
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
+    }
+    else
+    {
+      window.views.webgl_mode.cell.children[0].children[0].tab.activeTab = this.id;
+    }
   };
 
   var on_snapshot = function(event, target)
