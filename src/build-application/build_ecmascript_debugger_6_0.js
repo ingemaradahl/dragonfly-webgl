@@ -20,6 +20,7 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
 
     cls.InspectableJSObject = namespace.InspectableJSObject;
     cls.JSInspectionTooltip.register();
+    cls.EventListenerTooltip.register();
     // disabled for now. see CORE-32113
     // cls.InspectableJSObject.register_enabled_listener();
     // for now we are filtering on the client side
@@ -84,11 +85,21 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
                         'scroll mono');
 
     /* Runtime State */
+    var js_side_panel_sections = service_interface.satisfies_version(6, 10)
+                               ? ['watches', 'return-values', 'callstack', 'inspection']
+                               : ['watches', 'callstack', 'inspection'];
     new cls.JSSidePanelView('scripts-side-panel',
                             ui_strings.M_VIEW_LABEL_RUNTIME_STATE,
-                            ['watches', 'callstack', 'inspection'],
+                            js_side_panel_sections,
                             // default expanded flags for the view list
-                            [false, true, true]);
+                            [false, true, true, true]);
+
+    /* Return Values */
+    cls.ReturnValuesView.prototype = ViewBase;
+    new cls.ReturnValuesView('return-values',
+                             ui_strings.M_VIEW_LABEL_RETURN_VALUES,
+                             'scroll mono');
+    cls.ReturnValuesView.create_ui_widgets();
 
     /* Callstack */
     cls.CallstackView.prototype = ViewBase;
@@ -179,6 +190,23 @@ window.app.builders.EcmascriptDebugger["6.0"] = function(service)
     new cls.JSSearchView('js-search',
                          ui_strings.M_VIEW_LABEL_SEARCH,
                          'scroll js-search');
+
+    /* Listeners */
+    if (service_interface.satisfies_version(6, 11))
+    {
+      new cls.SelectedNodeListenersView("ev-listeners-selected-node",
+                                        ui_strings.M_VIEW_LABEL_EVENT_LISTENERS_SELECTED_NODE,
+                                        "ev-listeners-selected-node scroll");
+      new cls.EventListenersView("ev-listeners-all",
+                                 ui_strings.M_VIEW_LABEL_EVENT_LISTENERS_ALL,
+                                 "ev-listeners-all scroll");
+      new cls.EventListenerSidePanelView("ev-listeners-side-panel",
+                                         ui_strings.M_VIEW_LABEL_EVENT_LISTENERS,
+                                         ["ev-listeners-selected-node", "ev-listeners-all"],
+                                         // default expanded flags for the view list
+                                         [true, true]);
+      cls.EventListenerSidePanelView.create_ui_widgets();
+    }
 
     /* adjust the base class */
 
