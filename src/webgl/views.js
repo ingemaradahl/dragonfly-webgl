@@ -768,6 +768,12 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       }
     }
   },
+  active_tab_is_pinned: {
+    value: function()
+    {
+      return this.active_tab === this.get_start_tab();
+    }
+  },
   set_active_tab: {
     value: function(tab, user_click)
     {
@@ -783,6 +789,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       else if(user_click === true)
       {
         var pinned_tabs = cls.WebGLCallView.pinned_tabs;
+
         // When unpinning a tab, remove all pinns for other tabs that is
         // available in the current view.
         var clear_pinned_tabs = function()
@@ -812,6 +819,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         }
         pinned_tabs.unshift(tab.id);
         pinned_tabs.splice(pinned_tabs.max);
+        this._render_tabbar();
       }
 
       if (this._body)
@@ -854,7 +862,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
   _render_tabbar: {
     value: function()
     {
-      var template = window.templates.webgl.tabs(this.tabs, this.active_tab);
+      var template = window.templates.webgl.tabs(this.tabs, this.active_tab, this.active_tab_is_pinned());
       cls.WebGLContentView._render_tabbar.call(this, template);
     }
   },

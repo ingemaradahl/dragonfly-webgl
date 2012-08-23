@@ -186,6 +186,16 @@ svg.thumbnail
   box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.102);
 }
 
+.webgl-view .tabs > div.active:hover
+{
+  background-color: #8A8A8A;
+}
+
+.webgl-view .tabs > div.active.pinned
+{
+  background-color: #616161;
+}
+
 .webgl-view .tabs > div.disabled
 {
   opacity: 0.45;

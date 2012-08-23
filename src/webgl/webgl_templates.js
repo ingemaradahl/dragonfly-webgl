@@ -1043,7 +1043,7 @@ window.templates.webgl.error_message = function(solutions)
   ];
 };
 
-window.templates.webgl.tabs = function(tabs, active_tab)
+window.templates.webgl.tabs = function(tabs, active_tab, active_is_pinned)
 {
   var html = tabs.map(function(tab)
   {
@@ -1054,9 +1054,16 @@ window.templates.webgl.tabs = function(tabs, active_tab)
     ];
 
     if (tab === active_tab)
-      content.push("class", "active");
+    {
+      var class_name = "active";
+      if (active_is_pinned)
+        class_name += " pinned";
+      content.push("class", class_name);
+    }
     else if (!tab.enabled)
+    {
       content.push("class", "disabled");
+    }
 
     return content;
   });
