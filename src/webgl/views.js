@@ -1416,6 +1416,8 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
         this._secondary_clearer = false;
       }
 
+      var MAX_CHILD_HEIGHT = 300;
+
       var MIN_CHILD_WIDTH = 300;
       var MIN_CHILD_IMAGE_WIDTH = 200;
       var MAX_CHILD_WIDTH = 500;
@@ -1543,9 +1545,25 @@ cls.WebGLSummaryTab = Object.create(cls.WebGLTab, {
 
           var old_width = parseInt(loading.style.width);
           var old_height = parseInt(loading.style.height);
-          loading.style.width = elem.style.width;
-          var height = Math.floor(parseInt(elem.style.width) * (old_height / old_width));
+          var image_ratio = old_width / old_height;
+
+          var elem_width = parseInt(elem.style.width);
+          var elem_ratio = elem_width / MAX_CHILD_HEIGHT;
+
+          var height, width;
+          if (old_height > MAX_CHILD_HEIGHT && elem_ratio > image_ratio)
+          {
+            height = MAX_CHILD_HEIGHT;
+            width = MAX_CHILD_HEIGHT * image_ratio;
+          }
+          else
+          {
+            height = elem_width / image_ratio;
+            width = elem_width;
+          }
+
           loading.style.height = height + "px";
+          loading.style.width = width + "px";
         }
       }
 
