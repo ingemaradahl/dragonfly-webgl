@@ -808,17 +808,24 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
           }
         }.bind(this);
 
+        var found = false;
         for (var i = 0; i < pinned_tabs.length; i++)
         {
           var pinned = pinned_tabs[i];
           if (pinned === tab.id)
           {
             clear_pinned_tabs();
-            return;
+            found = true;
+            break;
           }
         }
-        pinned_tabs.unshift(tab.id);
-        pinned_tabs.splice(pinned_tabs.max);
+
+        if (!found)
+        {
+          pinned_tabs.unshift(tab.id);
+          pinned_tabs.splice(pinned_tabs.max);
+        }
+
         this._render_tabbar();
       }
 
