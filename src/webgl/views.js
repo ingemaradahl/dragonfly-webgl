@@ -769,7 +769,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
     }
   },
   set_active_tab: {
-    value: function(tab)
+    value: function(tab, user_click)
     {
       if (this.active_tab !== tab)
       {
@@ -777,9 +777,46 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
           this.active_tab.ondestroy();
         this.active_tab = tab;
 
-        this._body.className = tab.container_class;
         this._render_tabbar();
         tab.createView(this._body);
+      }
+      else if(user_click === true)
+      {
+        var pinned_tabs = cls.WebGLCallView.pinned_tabs;
+        // When unpinning a tab, remove all pinns for other tabs that is
+        // available in the current view.
+        var clear_pinned_tabs = function()
+        {
+          for (var j = 0; j < this.tabs.length; j++)
+          {
+            var tab = this.tabs[j];
+            for (var i = 0; i < pinned_tabs.length; i++)
+            {
+              var pinned = pinned_tabs[i];
+              if (pinned === tab.id)
+              {
+                pinned_tabs.splice(i, 1);
+              }
+            }
+          }
+        }.bind(this);
+
+        for (var i = 0; i < pinned_tabs.length; i++)
+        {
+          var pinned = pinned_tabs[i];
+          if (pinned === tab.id)
+          {
+            clear_pinned_tabs();
+            return;
+          }
+        }
+        pinned_tabs.unshift(tab.id);
+        pinned_tabs.splice(pinned_tabs.max);
+      }
+
+      if (this._body)
+      {
+        this._body.className = this.active_tab.container_class;
       }
     }
   },
@@ -835,13 +872,37 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
       return null;
     }
   },
+  get_start_tab: {
+    /**
+     * Get the tab that should be shown when the view is entered.
+     */
+    value: function()
+    {
+      var pinned_tabs = cls.WebGLCallView.pinned_tabs;
+      for (var i = 0; i < pinned_tabs.length; i++)
+      {
+        var pinned = pinned_tabs[i];
+        for (var j = 0; j < this.tabs.length; j++)
+        {
+          var tab = this.tabs[j];
+          if (pinned === tab.id && tab.enabled)
+          {
+            return tab;
+          }
+        }
+      }
+
+      // If there where no matching pinned tab, use the first tab.
+      return this.tabs[0];
+    }
+  },
   show_tab: {
-    value: function(tab_name)
+    value: function(tab_name, user_click)
     {
       var tab = this._lookup_tab(tab_name);
       if (!tab || !tab.enabled) return;
 
-      this.set_active_tab(tab);
+      this.set_active_tab(tab, user_click);
 
       tab.set_call(this._snapshot, this._call_index, this._object);
     }
@@ -902,7 +963,7 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
         window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab(this.id);
       }
 
-      this.set_active_tab(this.tabs[0]);
+      this.set_active_tab(this.get_start_tab());
 
       this.active_tab.set_call(snapshot, this._call_index, object);
 
@@ -963,6 +1024,11 @@ cls.WebGLCallView = Object.create(cls.WebGLContentView, {
 // starting dragonfly
 cls.WebGLCallView.initialize = function()
 {
+  // Stores ids of tabs that are currently pinned in the order they where pinned in.
+  cls.WebGLCallView.pinned_tabs = [];
+  // Limit the amount of tabs that can be pinned.
+  cls.WebGLCallView.pinned_tabs.max = 5;
+
   // A bit hacky, but no good interface to do this exists in dragonfly..
   var last_view = window.settings.general.get('last-selected-view');
   if (/webgl_/.test(last_view))
@@ -993,7 +1059,7 @@ cls.WebGLCallView.initialize = function()
   var tab_handler = function(evt, target)
   {
     var tab_id = target.id;
-    cls.WebGLCallView.active_view.show_tab(tab_id);
+    cls.WebGLCallView.active_view.show_tab(tab_id, true);
   };
 
   var on_tab_scroll = function(evt, target)
