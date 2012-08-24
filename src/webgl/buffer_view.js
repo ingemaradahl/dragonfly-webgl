@@ -16,8 +16,8 @@ cls.WebGLBufferCallView = function(id, name, container_class)
     summary_tab,
     preview_tab,
     new cls.WebGLBufferDataTab("buffer-data", "Data", "scroll"),
-    new cls.WebGLStateTab("state", "State", "scroll"),
-    new cls.WebGLBufferHistoryTab("buffer-history", "History", "scroll")
+    new cls.WebGLStateTab("state", "State", "scroll state-tab"),
+    new cls.WebGLBufferHistoryTab("buffer-history", "History", "scroll history-tab")
   ]);
 
   var clear = function()

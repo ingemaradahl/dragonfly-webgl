@@ -20,8 +20,8 @@ cls.WebGLTextureCallView = function(id, name, container_class)
     new cls.WebGLTextureCallSummaryTab("summary", "Summary", "scroll"),
     full_texture,
     texture_mipmap,
-    new cls.WebGLStateTab("state", "State", "scroll"),
-    new cls.WebGLTextureHistoryTab("texture-history", "History", "scroll")
+    new cls.WebGLStateTab("state", "State", "scroll state-tab"),
+    new cls.WebGLTextureHistoryTab("texture-history", "History", "scroll history-tab")
   ]);
 
   this.display_call = function(snapshot, call_index, object)

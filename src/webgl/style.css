@@ -225,6 +225,17 @@ svg.thumbnail
   width: 40%;
 }
 
+.state-tab .sortable-table td:first-child
+{
+  width: 280px;
+}
+
+.history-tab .sortable-table td:first-child
+{
+  width: 35px;
+  text-align: right;
+}
+
 /* Flipped images */
 img.flipped
 {

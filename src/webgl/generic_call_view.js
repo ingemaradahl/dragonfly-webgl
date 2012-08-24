@@ -12,7 +12,7 @@ cls.WebGLGenericCallView = function(id, name, container_class)
 {
   this.set_tabs([
     new cls.WebGLGenericCallSummaryTab("summary", "Summary", "scroll"),
-    new cls.WebGLStateTab("state", "State", "scroll")
+    new cls.WebGLStateTab("state", "State", "scroll state-tab")
   ]);
 
   this.init(id, name, container_class);
