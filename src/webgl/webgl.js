@@ -8,6 +8,7 @@ cls.WebGL.WebGLDebugger = function ()
 {
   this.injected = false;
   this.runtime_id = -1;
+  this.enabled = false;
 
   /* Context IDs for wrapped contexts. NOT an object id */
   this.contexts = [];
@@ -38,10 +39,14 @@ cls.WebGL.WebGLDebugger = function ()
   /* Contains shader used when displaying textures and buffers in the debugger */
   this.shaders = {};
 
+  this.enable = function ()
+  {
+    this.enabled = true;
+  };
+
   this.inject = function (rt_id, cont_callback)
   {
-    // TODO: Better disabling
-    if (this.runtime_id !== rt_id && window.settings['webgl-general'].map['enable-debugger'])
+    if (this.runtime_id !== rt_id)
     {
       this.runtime_id = rt_id;
       window.host_tabs.activeTab.addEventListener("webgl-debugger-ready",

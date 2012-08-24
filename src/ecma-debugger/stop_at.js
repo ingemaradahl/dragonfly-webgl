@@ -418,7 +418,7 @@ cls.EcmascriptDebugger["6.0"].StopAt = function()
           stopAt.stopped_reason == 'new script')
       {
         runtime_id = stopAt.runtime_id;
-        if (!webgl.injected)
+        if (!webgl.injected && webgl.enabled)
         {
           var continue_callback = (function () { this.__continue('run'); }).bind(this);
           webgl.inject(stopAt.runtime_id, continue_callback);

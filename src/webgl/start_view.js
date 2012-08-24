@@ -21,17 +21,25 @@ cls.WebGLStartView = function(id, name, container_class)
   {
     if (!this._container) return;
 
-    var state = window.webgl.injected
-      ? snapshot_present
-        ? "select"
-        : "snapshot"
-      : "init";
+    var state = window.webgl.enabled
+      ? window.webgl.injected
+        ? snapshot_present
+          ? "select"
+          : "snapshot"
+        : "init"
+      : "enable";
     this._container.clearAndRender(window.templates.webgl.start_view(state, info_open));
   };
 
   this.ondestroy = function()
   {
     this._container = null;
+  };
+
+  var on_enable = function(event, target)
+  {
+    webgl.enable();
+    runtimes.reloadWindow();
   };
 
   var on_settings = function(msg)
@@ -140,6 +148,7 @@ cls.WebGLStartView = function(id, name, container_class)
   messages.addListener('webgl-clear', on_clear.bind(this));
 
   var eh = window.eventHandlers;
+  eh.click["webgl-enable"] = on_enable.bind(this);
   eh.click["webgl-open-settings"] = on_open_settings.bind(this);
   eh.click["webgl-info-box-toggle"] = on_toggle_info.bind(this);
 
