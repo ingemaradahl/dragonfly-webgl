@@ -592,13 +592,13 @@ cls.WebGLSideView.create_ui_widgets = function(id)
       {
         handler: 'webgl-take-snapshot',
         title: "Take snapshot",
-        icon: 'webgl-take-snapshot',
+        icon: 'webgl-snapshot',
         id: 'webgl-' + id + '-take-snapshot',
       },
       {
         handler: 'webgl-take-custom-snapshot',
         title: "Take custom snapshot",
-        icon: 'webgl-take-snapshot',
+        icon: 'webgl-custom-snapshot',
       }
     ],
     null,

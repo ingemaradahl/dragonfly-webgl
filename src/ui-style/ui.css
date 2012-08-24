@@ -371,10 +371,16 @@ cst-select-option-list,
   background-image: url("../ui-images/icons/icon_table.png");
 }
 
-.webgl-take-snapshot::before
+.webgl-snapshot::before
 {
-  background-image: url("../ui-images/icons/icon_reload.png");
+  background-image: url("../ui-images/icons/icon_snapshot.png");
 }
+
+.webgl-custom-snapshot::before
+{
+  background-image: url("../ui-images/icons/icon_custom_snapshot.png");
+}
+
 .request_list\.clear-log-on-runtime-switch::before
 {
   background-image: url("../ui-images/icons/icon_clearonreload.png");
