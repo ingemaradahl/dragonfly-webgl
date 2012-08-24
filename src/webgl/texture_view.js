@@ -126,10 +126,17 @@ cls.WebGLTextureCallSummaryTab = function(id, name, container_class)
   this.getTextureInfoView = function()
   {
     var info_content = window.templates.webgl.texture_info(this._texture);
-    return {
-      title: "Texture info",
-      content: info_content
-    };
+    if (info_content)
+    {
+      return {
+        title: "Texture info",
+        content: info_content
+      };
+    }
+    else
+    {
+      return null;
+    }
   };
 
   this.getAdditionalPrimaryViews = function()
