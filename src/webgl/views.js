@@ -1044,13 +1044,6 @@ cls.WebGLCallView.initialize = function()
   // Limit the amount of tabs that can be pinned.
   cls.WebGLCallView.pinned_tabs.max = 5;
 
-  // A bit hacky, but no good interface to do this exists in dragonfly..
-  //var last_view = window.settings.general.get('last-selected-view');
-  //if (/webgl_/.test(last_view))
-  //{
-  //  window.settings.general.set('last-selected-view', "webgl_start");
-  //}
-
   var on_goto_script_click = function(evt, target)
   {
     var line = parseInt(target.getAttribute("data-line"));
