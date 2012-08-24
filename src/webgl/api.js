@@ -1503,19 +1503,11 @@ cls.WebGLAPI.CONSTANTS = {
   ZERO: 0
 };
 
-// TODO temporary values.
+// TODO add more possible solutions.
 cls.WebGLAPI.ERROR_MESSAGES = {
   "drawArrays": {
     "INVALID_VALUE": [{
         "txt": "Parameter 'first' or 'count' is negative.",
-        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
-    }, {
-        "txt": "Dup. Parameter 'first' or 'count' is negative.",
-        "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
-    }, {
-        "txt": "Dup. Parameter 'first' or 'count' is negative."
-    }, {
-        "txt": "Dup. Parameter 'first' or 'count' is negative.",
         "ref": "http://www.khronos.org/registry/webgl/specs/latest/#5.14.11"
     }],
     "INVALID_ENUM": [{

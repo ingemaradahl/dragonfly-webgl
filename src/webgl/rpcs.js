@@ -34,6 +34,7 @@ cls.WebGL.RPCs.injection = function () {
   var events = {};
 
   // TODO Temporary, see HTMLCanvas.prototype.getContext why
+  // Only used when the onframeend event is not in Core
   var contexts = [];
 
   // The minimum version of Core that have improved functionality:
