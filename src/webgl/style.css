@@ -152,6 +152,8 @@ svg.thumbnail
   /* copy of styles from panel-toolbar */
   background-color: #E9E9E9;
   background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.553) 0px, rgba(255, 255, 255, 0.251) 100%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.55) 0,
+                                    rgba(255, 255, 255, 0.25) 100%);
   border-bottom-color: #BFBFBF;
   border-bottom-width: 1px;
   border-left-color: #BFBFBF;
@@ -177,8 +179,10 @@ svg.thumbnail
 
 .webgl-view .tabs > div.active
 {
-  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
   background-color: #CECECE;
+  background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.251) 100%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.85) 0,
+                                    rgba(255, 255, 255, 0.25) 100%);
   border-bottom-color: rgba(0, 0, 0, 0.196);
   border-left-color: rgba(0, 0, 0, 0.196);
   border-right-color: rgba(0, 0, 0, 0.196);
@@ -282,6 +286,8 @@ img.flipped
   border-bottom-color: #D7D7D7;
   background-color: #E9E9E9;
   background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.447) 100%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.85) 0,
+                                    rgba(255, 255, 255, 0.45) 100%);
   border-bottom: 1px solid #CCCCCC;
 }
 
@@ -370,6 +376,8 @@ img.flipped
 {
   background-color: #E9E9E9;
   background-image: -o-linear-gradient(-90deg, rgba(255, 255, 255, 0.851) 0px, rgba(255, 255, 255, 0.447) 100%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.85) 0,
+                                    rgba(255, 255, 255, 0.45) 100%);
   text-align: left;
   font-size: 14px;
   font-weight: 700;
