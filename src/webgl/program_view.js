@@ -13,7 +13,7 @@ cls.WebGLProgramCallView = function(id, name, container_class)
   this.set_tabs([
     new cls.WebGLProgramSummaryTab("summary", "Summary", "scroll"),
     new cls.WebGLProgramTab("program", "Shaders", "scroll shaders"),
-    new cls.WebGLStateTab("state", "State", "scroll")
+    new cls.WebGLStateTab("state", "State", "scroll state-tab")
   ]);
 
   this.init(id, name, container_class);

@@ -19,7 +19,7 @@ cls.WebGLDrawCallView = function(id, name, container_class)
   this.set_tabs([
     summary,
     framebuffer,
-    new cls.WebGLStateTab("state", "State", "scroll")
+    new cls.WebGLStateTab("state", "State", "scroll state-tab")
   ]);
 
   this.display_call = function(snapshot, call_index, object)
