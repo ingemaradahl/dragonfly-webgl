@@ -724,22 +724,32 @@ window.templates.webgl.texture_info = function(texture)
     name: "Border",
     value: String(level0.border)
   };
+  var info_table_is_empty = true;
 
   var build_info_row = function(info)
   {
-    return info == null ? [] : [
-      "tr",
-      [
+    if (info == null || info.value === "undefined")
+    {
+      return []
+    }
+    else
+    {
+      info_table_is_empty = false;
+      return [
+        "tr",
         [
-          "th",
-          info.name
-        ],
-        [
-          "td",
-          info.value
+          [
+            "th",
+            info.name
+          ],
+          [
+            "td",
+            info.value
+          ]
         ]
-      ]
-    ];
+      ];
+    }
+    info_table_is_empty = false;
   };
 
   var texture_info = [
@@ -796,6 +806,10 @@ window.templates.webgl.texture_info = function(texture)
   }
 
   var info_table_rows = texture_info.map(build_info_row);
+  if (info_table_is_empty)
+  {
+    return null;
+  }
 
   var info_table = [
     "table",
