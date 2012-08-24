@@ -1066,6 +1066,7 @@ cls.WebGLCallView.initialize = function()
 
   var tab_handler = function(evt, target)
   {
+    evt.preventDefault();
     var tab_id = target.id;
     cls.WebGLCallView.active_view.show_tab(tab_id, true);
   };
@@ -1184,7 +1185,7 @@ cls.WebGLCallView.initialize = function()
   eh.click["webgl-take-custom-snapshot"] = on_take_custom_snapshot.bind(this);
   eh.click["webgl-speclink-click"] = on_speclink_click;
   eh.click["webgl-drawcall-goto-script"] = on_goto_script_click;
-  eh.click["webgl-tab"] = tab_handler.bind(this);
+  eh.mousedown["webgl-tab"] = tab_handler.bind(this);
   eh.change["webgl-select-framebuffer"] = on_framebuffer_select.bind(this);
   eh.click["webgl-state-argument"] = on_state_parameter_click.bind(this);
   eh.mousewheel["webgl-tab"] = on_tab_scroll.bind(this);

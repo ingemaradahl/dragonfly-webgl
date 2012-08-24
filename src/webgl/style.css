@@ -188,12 +188,12 @@ svg.thumbnail
 
 .webgl-view .tabs > div.active:hover
 {
-  background-color: #AAAAAA;
+  background-color: #999999;
 }
 
 .webgl-view .tabs > div.active.pinned
 {
-  background-color: #BBBBBB;
+  background-color: #AAAAAA;
 }
 
 .webgl-view .tabs > div.disabled
