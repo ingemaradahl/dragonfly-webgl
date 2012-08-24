@@ -34,6 +34,7 @@ cls.WebGL.RPCs.injection = function () {
   var events = {};
 
   // TODO Temporary, see HTMLCanvas.prototype.getContext why
+  // Only used when the onframeend event is not in Core
   var contexts = [];
 
   // The minimum version of Core that have improved functionality:
@@ -709,7 +710,11 @@ cls.WebGL.RPCs.injection = function () {
           var viewport = gl.getParameter(gl.VIEWPORT);
           image = {
             width : viewport[2],
-            height : viewport[3]
+            height : viewport[3],
+            img : {
+              data : null,
+              flipped : false
+            }
           };
         }
 

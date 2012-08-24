@@ -188,12 +188,12 @@ svg.thumbnail
 
 .webgl-view .tabs > div.active:hover
 {
-  background-color: #8A8A8A;
+  background-color: #AAAAAA;
 }
 
 .webgl-view .tabs > div.active.pinned
 {
-  background-color: #616161;
+  background-color: #BBBBBB;
 }
 
 .webgl-view .tabs > div.disabled
@@ -401,12 +401,6 @@ h4.uniform-tooltip
 margin-top: 2px;
 }
 
-/* TODO: does not work, looks very bad currently. Looks like the cell needs to have a width specified */
-/*.webgl-view .uniforms td*/
-/*{*/
-  /*white-space: nowrap;*/
-/*}*/
-
 /* Buffer */
 
 .buffer-visual .webgl-holder
@@ -505,7 +499,6 @@ margin-top: 2px;
 {
   text-align: right;
 }
-
 
 /* Draw Call */
 .webgl-view .webgl-holder

@@ -1093,15 +1093,25 @@ cls.WebGLCallView.initialize = function()
 
   var on_new_snapshot = function(context_id)
   {
-    var snapshot = window.webgl.snapshots[context_id].get_latest_snapshot();
-    var draw_call = snapshot.drawcalls[snapshot.drawcalls.length - 1];
-    if (draw_call)
+    // If the webgl tab is currently active then try to show the last draw call
+    // else show the start view
+    if (window.topCell.tab.activeTab === "webgl_mode")
     {
-      window.views["webgl_draw_call"].display_call(snapshot, draw_call.call_index);
+      var snapshot = window.webgl.snapshots[context_id].get_latest_snapshot();
+      var draw_call = snapshot.drawcalls[snapshot.drawcalls.length - 1];
+
+      if (draw_call)
+      {
+        window.views["webgl_draw_call"].display_call(snapshot, draw_call.call_index);
+      }
+      else
+      {
+        window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_start");
+      }
     }
     else
     {
-      window.views.webgl_mode.cell.children[0].children[0].tab.setActiveTab("webgl_start");
+      window.views.webgl_mode.cell.children[0].children[0].tab.activeTab = "webgl_start";
     }
   };
 
@@ -1714,13 +1724,6 @@ cls.WebGLStateTab.initialize = function ()
       },
       value: {
         label: "Value"
-      }
-    },
-    groups: {
-      type: {
-        label: "Parameter type", // TODO
-        // TODO use the parameter groups
-        grouper : function (res) { return Math.round(Math.random() * 5); },
       }
     }
   };
