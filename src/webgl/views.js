@@ -1732,13 +1732,6 @@ cls.WebGLStateTab.initialize = function ()
       value: {
         label: "Value"
       }
-    },
-    groups: {
-      type: {
-        label: "Parameter type", // TODO
-        // TODO use the parameter groups
-        grouper : function (res) { return Math.round(Math.random() * 5); },
-      }
     }
   };
 
