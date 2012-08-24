@@ -1637,10 +1637,18 @@ window.templates.webgl.collapse_box = function(title, string, button, custom, in
 window.templates.webgl.start_view = function(state, info_open)
 {
   var html = ["div"];
-  html.push(["h2", "Welcome to the Dragonfly WebGL Debugger"]);
 
+
+  // TODO: Do this check at a better place :/
+  if (!window.services["ecmascript-debugger"].is_enabled)
+  {
+    return window.templates.disabled_view();
+  }
+
+  // Add the pre-compositing warning if applicable
   switch (state)
   {
+    case "enable":
     case "init":
       var warning = window.settings["webgl-snapshot"].map["pre-composite-capture"];
       if (warning)
@@ -1657,14 +1665,31 @@ window.templates.webgl.start_view = function(state, info_open)
         ];
         html.push(warning_html);
       }
+      break;
+  }
 
+  switch (state)
+  {
+    case "enable":
       html.push(window.templates.webgl.info_box(
-        "Refresh the page you want to debug",
-        "The WebGL Debugger needs to be present from the start of the " +
+        "Enable the WebGL debugger",
+        "Click the button below to enable the WebGL debugger. This will " +
+        "refresh the current debugging context window",
+        [ "span", "Enable the WebGL debugger",
+          "class", "ui-button",
+          "handler", "webgl-enable",
+          "tabindex", "1"
+        ]
+      ));
+      break;
+    case "init":
+      html.push(window.templates.webgl.info_box(
+        "Refresh the window you want to debug",
+        "The WebGL debugger needs to be present from the start of the " +
            "execution of the application you want to debug. Click the button " +
            "below to refresh.",
-        [ "span", "Initialize WebGL Debugger",
-          "class", "ui-button reload-window",
+        [ "span", "Refresh window",
+          "class", "ui-button",
           "handler", "reload-window",
           "tabindex", "1"
         ]

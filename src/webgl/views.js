@@ -173,7 +173,7 @@ cls.WebGLGeneralView.create_ui_widgets = function()
     'webgl-general',
     // key-value map
     {
-      'enable-debugger' : true,
+      'enable-debugger' : true, // TODO: Actually use this setting for hiding the webgl-mode tab
       'highlight-objects' : true,
 
       'first-run' : true,
