@@ -710,7 +710,11 @@ cls.WebGL.RPCs.injection = function () {
           var viewport = gl.getParameter(gl.VIEWPORT);
           image = {
             width : viewport[2],
-            height : viewport[3]
+            height : viewport[3],
+            img : {
+              data : null,
+              flipped : false
+            }
           };
         }
 
